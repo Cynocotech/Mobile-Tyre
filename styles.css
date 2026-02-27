@@ -184,7 +184,7 @@
 
 .nav-mobile-panel {
   position: fixed;
-  top: 3.5rem;
+  top: 3.5rem; /* matches h-14 */
   left: 0;
   right: 0;
   bottom: 0;
@@ -199,7 +199,7 @@
 }
 @media (min-width: 640px) {
   .nav-mobile-panel {
-    top: 4rem;
+    top: 4rem; /* matches h-16 */
   }
 }
 body.nav-open .nav-mobile-panel {
@@ -243,4 +243,9 @@ body.nav-open {
 }
 .nav-mobile-toggle .nav-menu-icon-close {
   display: none;
+}
+
+/* Safe area padding helper for iOS bottom bar */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
