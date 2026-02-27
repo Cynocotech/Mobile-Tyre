@@ -133,3 +133,114 @@
     padding: 0.65rem 1rem 0.7rem;
   }
 }
+
+/* ============================================
+   Responsive navbar
+   ============================================ */
+
+.nav-desktop {
+  display: none;
+}
+@media (min-width: 768px) {
+  .nav-desktop {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+}
+
+.nav-mobile-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: #e4e4e7;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.2s, color 0.2s;
+}
+.nav-mobile-toggle:hover {
+  background: #3f3f46;
+  color: #fff;
+}
+.nav-mobile-toggle:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-safety);
+}
+.nav-mobile-toggle[aria-expanded="true"] {
+  background: #3f3f46;
+  color: var(--color-safety);
+}
+@media (min-width: 768px) {
+  .nav-mobile-toggle {
+    display: none;
+  }
+}
+
+.nav-mobile-panel {
+  position: fixed;
+  top: 3.5rem;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  background: #18181b;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: visibility 0.2s, opacity 0.2s, transform 0.2s;
+}
+@media (min-width: 640px) {
+  .nav-mobile-panel {
+    top: 4rem;
+  }
+}
+body.nav-open .nav-mobile-panel {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (min-width: 768px) {
+  .nav-mobile-panel {
+    display: none;
+  }
+}
+
+body.nav-open {
+  overflow: hidden;
+}
+@media (min-width: 768px) {
+  body.nav-open {
+    overflow: auto;
+  }
+}
+
+.nav-mobile-link {
+  display: block;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  color: #e4e4e7;
+  transition: background-color 0.2s, color 0.2s;
+}
+.nav-mobile-link:hover {
+  background: #3f3f46;
+  color: #fff;
+}
+
+.nav-mobile-toggle[aria-expanded="true"] .nav-menu-icon-open {
+  display: none;
+}
+.nav-mobile-toggle[aria-expanded="true"] .nav-menu-icon-close {
+  display: block;
+}
+.nav-mobile-toggle .nav-menu-icon-close {
+  display: none;
+}
