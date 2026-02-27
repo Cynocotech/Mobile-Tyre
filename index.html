@@ -121,18 +121,6 @@
   </script>
 </head>
 <body class="bg-zinc-900 text-zinc-200 antialiased min-h-screen">
-  <!-- Background wheel: rotates with scroll -->
-  <div id="scroll-wheel-bg" class="scroll-wheel-bg" aria-hidden="true">
-    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.5" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="50" cy="50" r="46"/>
-      <circle cx="50" cy="50" r="36"/>
-      <circle cx="50" cy="50" r="8"/>
-      <line x1="50" y1="14" x2="50" y2="86"/>
-      <line x1="14" y1="50" x2="86" y2="50"/>
-      <line x1="28" y1="28" x2="72" y2="72"/>
-      <line x1="72" y1="28" x2="28" y2="72"/>
-    </svg>
-  </div>
   <!-- Responsive Navbar -->
   <header class="sticky top-0 z-50 bg-zinc-900 border-b border-zinc-700 shadow-lg">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14 sm:h-16 gap-3 md:gap-4">
@@ -677,26 +665,6 @@
       toggle.querySelector('.theme-icon-dark').classList.toggle('hidden', isLight);
       toggle.querySelector('.theme-icon-light').classList.toggle('hidden', !isLight);
       toggle.setAttribute('aria-label', isLight ? 'Switch to dark theme' : 'Switch to light theme');
-    })();
-  </script>
-
-  <script>
-    (function(){
-      var wheel = document.getElementById('scroll-wheel-bg');
-      if (!wheel) return;
-      var ticking = false;
-      function updateRotation() {
-        wheel.style.transform = 'rotate(' + (window.scrollY * 0.4) + 'deg)';
-        ticking = false;
-      }
-      function onScroll() {
-        if (!ticking) {
-          requestAnimationFrame(updateRotation);
-          ticking = true;
-        }
-      }
-      window.addEventListener('scroll', onScroll, { passive: true });
-      updateRotation();
     })();
   </script>
 
