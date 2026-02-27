@@ -3,11 +3,182 @@
    Load after Tailwind CDN
    ============================================ */
 
+/* Page transition: fade in on load, fade out before navigate */
+body {
+  opacity: 0;
+  transition: opacity 0.25s ease-out;
+}
+body.page-loaded {
+  opacity: 1;
+}
+body.page-leaving {
+  opacity: 0;
+  transition-duration: 0.2s;
+}
+
 /* Brand color (also in Tailwind config) */
 :root {
   --color-safety: #fede00;
   --color-safety-hover: #e5c900;
   --color-safety-active: #ccb300;
+}
+
+/* ============================================
+   Light theme (data-theme="light" on <html>)
+   ============================================ */
+[data-theme="light"] body {
+  background-color: #f4f4f5;
+  color: #18181b;
+}
+[data-theme="light"] header {
+  background-color: #fff;
+  border-color: #e4e4e7;
+}
+[data-theme="light"] header .nav-desktop a {
+  color: #52525b;
+}
+[data-theme="light"] header .nav-desktop a:hover {
+  background-color: #f4f4f5;
+  color: #18181b;
+}
+[data-theme="light"] header .nav-desktop a.bg-zinc-800 {
+  background-color: #e4e4e7;
+  color: #18181b;
+}
+[data-theme="light"] .nav-mobile-panel {
+  background: #fff;
+}
+[data-theme="light"] .nav-mobile-link {
+  color: #52525b;
+}
+[data-theme="light"] .nav-mobile-link:hover {
+  background: #f4f4f5;
+  color: #18181b;
+}
+[data-theme="light"] .nav-mobile-panel .border-t {
+  border-color: #e4e4e7;
+}
+[data-theme="light"] .nav-mobile-toggle {
+  color: #52525b;
+}
+[data-theme="light"] .nav-mobile-toggle:hover {
+  background: #f4f4f5;
+  color: #18181b;
+}
+[data-theme="light"] .nav-mobile-toggle[aria-expanded="true"] {
+  background: #e4e4e7;
+  color: var(--color-safety);
+}
+[data-theme="light"] footer {
+  background-color: #fff;
+  border-color: #e4e4e7;
+}
+[data-theme="light"] footer p.font-bold.text-white,
+[data-theme="light"] footer .text-white {
+  color: #18181b !important;
+}
+[data-theme="light"] footer .text-zinc-400,
+[data-theme="light"] footer .text-zinc-500 {
+  color: #71717a !important;
+}
+[data-theme="light"] footer a.text-zinc-400:hover,
+[data-theme="light"] footer a.text-zinc-500:hover {
+  color: #18181b !important;
+}
+[data-theme="light"] main .text-white,
+[data-theme="light"] h1.text-white,
+[data-theme="light"] h2.text-white {
+  color: #18181b !important;
+}
+[data-theme="light"] main .text-zinc-300,
+[data-theme="light"] main .text-zinc-400 {
+  color: #52525b !important;
+}
+[data-theme="light"] main .text-zinc-100 {
+  color: #18181b !important;
+}
+[data-theme="light"] .hero-overlay {
+  background: linear-gradient(180deg, rgba(244,244,245,0.92) 0%, rgba(228,228,231,0.88) 50%, rgba(244,244,245,0.94) 100%);
+}
+[data-theme="light"] .hero-section .text-white {
+  color: #18181b !important;
+}
+[data-theme="light"] .hero-section .text-zinc-300,
+[data-theme="light"] .hero-section .text-zinc-400 {
+  color: #3f3f46 !important;
+}
+[data-theme="light"] .hero-section .bg-zinc-900\/80 {
+  background-color: rgba(255,255,255,0.9);
+  border-color: var(--color-safety);
+  color: #18181b;
+}
+[data-theme="light"] .bg-zinc-800,
+[data-theme="light"] .service-block.bg-zinc-800,
+[data-theme="light"] article.bg-zinc-800 {
+  background-color: #fff !important;
+  border-color: #e4e4e7 !important;
+}
+[data-theme="light"] .service-block:hover,
+[data-theme="light"] article.service-block:hover {
+  background-color: #fafafa !important;
+  border-color: var(--color-safety) !important;
+}
+[data-theme="light"] #vehicle-result,
+[data-theme="light"] .bg-zinc-800\/80 {
+  background-color: rgba(255,255,255,0.95) !important;
+  border-color: #e4e4e7 !important;
+}
+[data-theme="light"] #vehicle-result .border-zinc-600,
+[data-theme="light"] #vehicle-result .border-b {
+  border-color: #e4e4e7 !important;
+}
+[data-theme="light"] #vehicle-result .text-zinc-500 {
+  color: #71717a !important;
+}
+[data-theme="light"] #vehicle-result .text-zinc-200 {
+  color: #18181b !important;
+}
+[data-theme="light"] .vrm-label {
+  color: #71717a;
+}
+[data-theme="light"] main input.bg-zinc-800,
+[data-theme="light"] main textarea.bg-zinc-800,
+[data-theme="light"] main .bg-zinc-800 {
+  background-color: #fff !important;
+  border-color: #d4d4d8 !important;
+  color: #18181b !important;
+}
+[data-theme="light"] main input.bg-zinc-700 {
+  background-color: #f4f4f5 !important;
+  border-color: #d4d4d8 !important;
+  color: #18181b !important;
+}
+[data-theme="light"] main .text-zinc-300 {
+  color: #52525b !important;
+}
+[data-theme="light"] main label .text-zinc-300 {
+  color: #52525b !important;
+}
+[data-theme="light"] .fixed.bottom-0 a.bg-zinc-700 {
+  background-color: #e4e4e7;
+  color: #18181b;
+  border-color: #d4d4d8;
+}
+[data-theme="light"] .fixed.bottom-0 a.bg-zinc-700:hover {
+  background-color: #d4d4d8;
+}
+[data-theme="light"] .border-zinc-600 {
+  border-color: #e4e4e7;
+}
+[data-theme="light"] .border-t.border-zinc-700 {
+  border-color: #e4e4e7 !important;
+}
+[data-theme="light"] #theme-toggle {
+  color: #71717a;
+}
+[data-theme="light"] #theme-toggle:hover {
+  background: #f4f4f5;
+  color: #18181b;
 }
 
 /* Remove tap highlight on touch devices for call buttons */
@@ -248,4 +419,37 @@ body.nav-open {
 /* Safe area padding helper for iOS bottom bar */
 .safe-area-pb {
   padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* ============================================
+   Background wheel – scroll-linked rotation
+   ============================================ */
+.scroll-wheel-bg {
+  position: fixed;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  width: 90vmin;
+  height: 90vmin;
+  max-width: 520px;
+  max-height: 520px;
+  margin-left: -45vmin;
+  margin-top: -45vmin;
+  pointer-events: none;
+  opacity: 0.07;
+  will-change: transform;
+}
+@media (min-width: 578px) {
+  .scroll-wheel-bg {
+    margin-left: -260px;
+    margin-top: -260px;
+  }
+}
+[data-theme="light"] .scroll-wheel-bg {
+  opacity: 0.06;
+}
+.scroll-wheel-bg svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }

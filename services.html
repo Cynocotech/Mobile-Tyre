@@ -10,6 +10,9 @@
   <meta name="theme-color" content="#18181b">
   <link rel="canonical" href="https://no5tyreandmot.co.uk/mobile-tyre/services.html">
   <link rel="stylesheet" href="styles.css">
+  <script>
+    (function(){var t=localStorage.getItem('theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');else document.documentElement.removeAttribute('data-theme');})();
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { theme: { extend: { colors: { safety: '#fede00' } } } };</script>
   <script type="application/ld+json">
@@ -35,6 +38,13 @@
   </script>
 </head>
 <body class="bg-zinc-900 text-zinc-200 antialiased min-h-screen">
+  <div id="scroll-wheel-bg" class="scroll-wheel-bg" aria-hidden="true">
+    <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2.5" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="46"/><circle cx="50" cy="50" r="36"/><circle cx="50" cy="50" r="8"/>
+      <line x1="50" y1="14" x2="50" y2="86"/><line x1="14" y1="50" x2="86" y2="50"/>
+      <line x1="28" y1="28" x2="72" y2="72"/><line x1="72" y1="28" x2="28" y2="72"/>
+    </svg>
+  </div>
   <header class="sticky top-0 z-50 bg-zinc-900 border-b border-zinc-700 shadow-lg">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14 sm:h-16 gap-3 md:gap-4">
       <a href="index.html" class="flex items-center shrink-0 min-w-0">
@@ -47,6 +57,10 @@
         <a href="contact.html" class="px-3 py-2 rounded-lg text-zinc-200 font-medium hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900">Contact</a>
       </nav>
       <div class="flex items-center gap-2 shrink-0">
+        <button type="button" id="theme-toggle" class="p-2 rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900 transition-colors tap-highlight-none" aria-label="Switch to light theme">
+          <svg class="w-5 h-5 theme-icon-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <svg class="w-5 h-5 theme-icon-light hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        </button>
         <a href="tel:07895859505" class="inline-flex items-center justify-center gap-2 bg-safety text-zinc-900 font-bold text-sm sm:text-base px-3 sm:px-6 py-2.5 sm:py-3 rounded-lg hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900 tap-highlight-none transition-colors">
           <svg class="w-5 h-5 shrink-0 hidden sm:block" fill="currentColor" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
           CALL 07895 859505
@@ -237,6 +251,57 @@
   <div class="h-16 sm:hidden" aria-hidden="true"></div>
 
   <script>document.getElementById('footer-year') && (document.getElementById('footer-year').textContent = new Date().getFullYear());</script>
+  <script>
+    (function(){
+      function fadeIn(){ document.body.classList.add('page-loaded'); }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fadeIn); else fadeIn();
+      document.addEventListener('click', function(e){
+        var a = e.target.closest('a[href]');
+        if (!a || a.target === '_blank' || a.getAttribute('href').startsWith('tel:') || a.getAttribute('href').startsWith('mailto:') || a.getAttribute('href').startsWith('#')) return;
+        try { if (a.hostname !== window.location.hostname) return; } catch(_) { return; }
+        if (a.pathname === window.location.pathname && !a.getAttribute('href').replace(/^#.*/, '')) return;
+        e.preventDefault();
+        document.body.classList.add('page-leaving');
+        setTimeout(function(){ window.location.href = a.href; }, 220);
+      });
+    })();
+  </script>
+  <script>
+    (function(){
+      var toggle = document.getElementById('theme-toggle');
+      if (!toggle) return;
+      function applyTheme(light) {
+        var root = document.documentElement;
+        if (light) { root.setAttribute('data-theme', 'light'); localStorage.setItem('theme', 'light'); }
+        else { root.removeAttribute('data-theme'); localStorage.setItem('theme', 'dark'); }
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', light ? '#f4f4f5' : '#18181b');
+        if (toggle) {
+          toggle.querySelector('.theme-icon-dark').classList.toggle('hidden', light);
+          toggle.querySelector('.theme-icon-light').classList.toggle('hidden', !light);
+          toggle.setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
+        }
+      }
+      toggle.addEventListener('click', function() {
+        applyTheme(document.documentElement.getAttribute('data-theme') !== 'light');
+      });
+      var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      toggle.querySelector('.theme-icon-dark').classList.toggle('hidden', isLight);
+      toggle.querySelector('.theme-icon-light').classList.toggle('hidden', !isLight);
+      toggle.setAttribute('aria-label', isLight ? 'Switch to dark theme' : 'Switch to light theme');
+    })();
+  </script>
+  <script>
+    (function(){
+      var wheel = document.getElementById('scroll-wheel-bg');
+      if (!wheel) return;
+      var ticking = false;
+      function updateRotation() { wheel.style.transform = 'rotate(' + (window.scrollY * 0.4) + 'deg)'; ticking = false; }
+      function onScroll() { if (!ticking) { requestAnimationFrame(updateRotation); ticking = true; } }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      updateRotation();
+    })();
+  </script>
   <script>
     (function () {
       var toggle = document.getElementById('nav-mobile-toggle');
