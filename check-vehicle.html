@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Check Vehicle Details by VRM | Mobile Tyres</title>
+  <meta name="description" content="Check UK vehicle details by registration number (VRM). Make, model, MOT and tax status. Mobile Tyres – we come to you.">
+  <meta name="theme-color" content="#18181b">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { safety: '#fede00' } } } };
+  </script>
+</head>
+<body class="bg-zinc-900 text-zinc-200 antialiased min-h-screen">
+  <header class="sticky top-0 z-50 bg-zinc-900 border-b border-zinc-700 shadow-lg">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14 sm:h-16 gap-4">
+      <a href="index.html" class="flex items-center shrink-0">
+        <img src="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png" alt="No 5 Tyre and MOT" class="h-8 sm:h-9 w-auto object-contain">
+      </a>
+      <nav class="flex items-center gap-1 flex-wrap justify-center sm:justify-start" aria-label="Main">
+        <a href="index.html" class="px-2 sm:px-3 py-2 rounded-lg text-zinc-200 font-medium text-sm sm:text-base hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900">Home</a>
+        <a href="check-vehicle.html" class="px-2 sm:px-3 py-2 rounded-lg text-zinc-200 font-medium text-sm sm:text-base hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900">Check vehicle</a>
+      </nav>
+      <a href="tel:07895859505" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-safety text-zinc-900 font-bold text-sm sm:text-base px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900 tap-highlight-none transition-colors">
+        <svg class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+        CALL 07895 859505
+      </a>
+      <a href="https://wa.me/447895859505" target="_blank" rel="noopener noreferrer" class="hidden sm:inline-flex items-center justify-center gap-2 bg-zinc-700 text-zinc-100 font-bold text-sm px-4 py-2.5 rounded-lg hover:bg-zinc-600 focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900 tap-highlight-none transition-colors" aria-label="WhatsApp">
+        <svg class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.865 9.865 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        WhatsApp
+      </a>
+    </div>
+  </header>
+
+  <main class="max-w-2xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+    <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2">Check vehicle details</h1>
+    <p class="text-zinc-400 text-sm sm:text-base mb-8">Enter a UK registration (plate) to see make, model, MOT and tax information.</p>
+
+    <form id="vrm-form" class="mb-8">
+      <div class="vrm-plate-wrap mb-4">
+        <span class="vrm-label">Vehicle registration (plate)</span>
+        <div class="vrm-plate-container">
+          <div class="vrm-plate-gb" aria-hidden="true">
+            <svg class="vrm-gb-svg" viewBox="0 0 52 112" xmlns="http://www.w3.org/2000/svg">
+              <rect width="52" height="112" fill="#003399" rx="2"/>
+              <g fill="#FFD700" transform="translate(26,36)">
+                <circle r="2.5" cx="0" cy="-12"/><circle r="2.5" cx="0" cy="12"/><circle r="2.5" cx="-10.4" cy="-6"/><circle r="2.5" cx="10.4" cy="-6"/><circle r="2.5" cx="-10.4" cy="6"/><circle r="2.5" cx="10.4" cy="6"/><circle r="2.5" cx="-12" cy="0"/><circle r="2.5" cx="12" cy="0"/><circle r="2.5" cx="-6" cy="-10.4"/><circle r="2.5" cx="6" cy="-10.4"/><circle r="2.5" cx="-6" cy="10.4"/><circle r="2.5" cx="6" cy="10.4"/>
+              </g>
+              <text x="26" y="88" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-weight="bold" font-size="22">GB</text>
+            </svg>
+          </div>
+          <label for="vrm" class="sr-only">VRM (vehicle registration)</label>
+          <input
+            id="vrm"
+            type="text"
+            name="vrm"
+            placeholder="AB12 CDE"
+            maxlength="8"
+            class="vrm-plate-input"
+            required
+            autocomplete="off"
+          />
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <button
+          type="submit"
+          id="vrm-submit"
+          class="px-6 py-3.5 bg-safety text-zinc-900 font-bold rounded-lg hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900 transition-colors uppercase tracking-wide disabled:opacity-70"
+        >
+          Check
+        </button>
+      </div>
+      <p id="vrm-status" class="text-sm mt-3 hidden" aria-live="polite"></p>
+    </form>
+
+    <div id="vehicle-result" class="hidden rounded-xl border-2 border-zinc-600 bg-zinc-800/80 overflow-hidden">
+      <div class="p-4 sm:p-6 border-b border-zinc-600">
+        <h2 id="result-title" class="text-lg font-bold text-white"></h2>
+        <p id="result-reg" class="text-safety font-semibold text-sm mt-1"></p>
+      </div>
+      <dl class="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+        <template id="result-row">
+          <div class="flex justify-between sm:block gap-2">
+            <dt class="text-zinc-500 font-medium"></dt>
+            <dd class="text-zinc-200 font-semibold"></dd>
+          </div>
+        </template>
+      </dl>
+    </div>
+  </main>
+
+  <footer class="bg-zinc-900 border-t border-zinc-700 py-10 sm:py-12 mt-auto">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+        <div>
+          <a href="index.html" class="inline-block">
+            <img src="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png" alt="No 5 Tyre and MOT" class="h-8 w-auto object-contain">
+          </a>
+          <p class="font-bold text-white text-lg mt-2">Mobile Tyres</p>
+          <p class="text-zinc-400 text-sm mt-1">Emergency mobile tyre fitting – we come to you.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-4">
+          <a href="tel:07895859505" class="inline-flex items-center gap-2 text-safety font-semibold hover:text-[#e5c900] transition-colors tap-highlight-none">07895 859505</a>
+          <a href="https://wa.me/447895859505" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-zinc-400 font-semibold hover:text-zinc-200 transition-colors" aria-label="WhatsApp">WhatsApp</a>
+        </div>
+      </div>
+      <div class="mt-8 pt-6 border-t border-zinc-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm text-zinc-500">
+        <p>© <span id="footer-year"></span> Mobile Tyres. All rights reserved.</p>
+        <a href="https://www.cybercina.co.uk" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-zinc-500 hover:text-zinc-300 transition-colors" aria-label="Site developed by Cybercina">
+          <span>Site developed by</span>
+          <img src="https://cybercina.co.uk/wp-content/uploads/2025/10/cropped-2.png" alt="Cybercina" class="h-6 w-auto object-contain">
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <div class="h-16 sm:hidden" aria-hidden="true"></div>
+
+  <script>
+    document.getElementById('footer-year') && (document.getElementById('footer-year').textContent = new Date().getFullYear());
+
+    (function () {
+      var API_BASE = 'vehicle-check.php';
+      var form = document.getElementById('vrm-form');
+      var input = document.getElementById('vrm');
+      var submitBtn = document.getElementById('vrm-submit');
+      var statusEl = document.getElementById('vrm-status');
+      var resultEl = document.getElementById('vehicle-result');
+      var resultTitle = document.getElementById('result-title');
+      var resultReg = document.getElementById('result-reg');
+      var resultDl = resultEl && resultEl.querySelector('dl');
+
+      function setStatus(msg, isError) {
+        if (!statusEl) return;
+        statusEl.textContent = msg;
+        statusEl.className = 'text-sm mt-3 ' + (isError ? 'text-red-400' : 'text-safety');
+        statusEl.classList.remove('hidden');
+      }
+
+      function showResult(data) {
+        if (!resultEl || !data) return;
+        var reg = (data.registrationNumber || '').toUpperCase();
+        var make = data.make || '';
+        var model = data.model || '';
+        resultTitle.textContent = make && model ? make + ' ' + model : (make || model || 'Vehicle details');
+        resultReg.textContent = reg ? 'Registration: ' + reg : '';
+
+        var rows = [
+          { label: 'Make', value: data.make },
+          { label: 'Model', value: data.model },
+          { label: 'Colour', value: data.colour },
+          { label: 'Fuel type', value: data.fuelType },
+          { label: 'Engine capacity', value: data.engineCapacity ? data.engineCapacity + ' cc' : '' },
+          { label: 'Year of manufacture', value: data.yearOfManufacture },
+          { label: 'Vehicle age', value: data.vehicleAge },
+          { label: 'Wheelplan', value: data.wheelplan },
+          { label: 'Last V5C issued', value: data.dateOfLastV5CIssued },
+          { label: 'Type approval', value: data.typeApproval },
+          { label: 'CO₂ emissions', value: data.co2Emissions != null ? data.co2Emissions + ' g/km' : '' },
+          { label: 'Registration place', value: data.registrationPlace },
+          { label: 'Tax status', value: data.tax && data.tax.taxStatus },
+          { label: 'Tax due date', value: data.tax && data.tax.taxDueDate },
+          { label: 'MOT status', value: data.mot && data.mot.motStatus },
+          { label: 'MOT due date', value: data.mot && data.mot.motDueDate },
+          { label: 'MOT days', value: data.mot && data.mot.days != null ? data.mot.days + ' days' : '' }
+        ];
+
+        resultDl.innerHTML = '';
+        rows.forEach(function (r) {
+          if (r.value === undefined || r.value === null || r.value === '') return;
+          var div = document.createElement('div');
+          div.className = 'flex justify-between sm:block gap-2';
+          div.innerHTML = '<dt class="text-zinc-500 font-medium">' + escapeHtml(r.label) + '</dt><dd class="text-zinc-200 font-semibold">' + escapeHtml(String(r.value)) + '</dd>';
+          resultDl.appendChild(div);
+        });
+
+        resultEl.classList.remove('hidden');
+      }
+
+      function escapeHtml(s) {
+        var div = document.createElement('div');
+        div.textContent = s;
+        return div.innerHTML;
+      }
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var vrm = (input && input.value) ? input.value.trim().replace(/\s+/g, '') : '';
+        if (!vrm) {
+          setStatus('Please enter a registration number.', true);
+          return;
+        }
+
+        submitBtn.disabled = true;
+        if (statusEl) statusEl.classList.add('hidden');
+        resultEl.classList.add('hidden');
+
+        fetch(API_BASE + '?vrm=' + encodeURIComponent(vrm.toUpperCase()))
+          .then(function (res) { return res.json(); })
+          .then(function (data) {
+            submitBtn.disabled = false;
+            if (data && data.registrationNumber) {
+              setStatus('Vehicle found.', false);
+              showResult(data);
+            } else {
+              setStatus(data && data.error ? data.error : 'Vehicle not found. Check the registration and try again.', true);
+            }
+          })
+          .catch(function () {
+            submitBtn.disabled = false;
+            setStatus('Unable to check. Please try again or call us.', true);
+          });
+      });
+    })();
+  </script>
+</body>
+</html>
