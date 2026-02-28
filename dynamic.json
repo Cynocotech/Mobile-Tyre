@@ -27,5 +27,7 @@
     "",
     "",
     ""
-  ]
+  ],
+  "stripePublishableKey": "pk_test_51T5pfhBL0uqltDfycRWbLcvmTWp7oiPFDfgWEMMCDeP7gD92aax5ffWgVLxCI63qQWjJH124QJivEDMfta3FtxFb00Q4u5M1Ku",
+  "stripeSecretKey": "sk_test_REPLACE_WITH_YOUR_SECRET"
 }
