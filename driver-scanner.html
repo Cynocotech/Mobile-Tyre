@@ -6,46 +6,140 @@
   <title>Scan job QR | No 5 Tyre Driver</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#18181b">
+  <link rel="icon" type="image/png" href="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png" sizes="any">
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { theme: { extend: { colors: { safety: '#fede00' } } } };</script>
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    #reader { border-radius: 1rem; }
+    #reader video { border-radius: 1rem; }
+    #reader__scan_region { background: #000 !important; }
+    .scanner-frame {
+      position: relative;
+      border-radius: 1.5rem;
+      overflow: hidden;
+      box-shadow: 0 0 0 4px rgba(254, 222, 0, 0.15), 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    .scanner-frame::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 3px solid rgba(254, 222, 0, 0.4);
+      border-radius: 1.5rem;
+      pointer-events: none;
+      box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.5);
+    }
+    .corner {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-color: #fede00;
+      border-style: solid;
+      border-width: 0;
+      pointer-events: none;
+    }
+    .corner-tl { top: 12px; left: 12px; border-top-width: 4px; border-left-width: 4px; border-radius: 6px 0 0 0; }
+    .corner-tr { top: 12px; right: 12px; border-top-width: 4px; border-right-width: 4px; border-radius: 0 6px 0 0; }
+    .corner-bl { bottom: 12px; left: 12px; border-bottom-width: 4px; border-left-width: 4px; border-radius: 0 0 0 6px; }
+    .corner-br { bottom: 12px; right: 12px; border-bottom-width: 4px; border-right-width: 4px; border-radius: 0 0 6px 0; }
+  </style>
 </head>
 <body class="bg-zinc-900 text-zinc-200 antialiased min-h-screen">
-  <header class="bg-zinc-900 border-b border-zinc-700 py-4">
-    <div class="max-w-lg mx-auto px-4 flex items-center justify-between">
-      <h1 class="text-lg font-bold text-white">Scan job QR</h1>
-      <a href="verify.php" class="text-sm font-medium text-zinc-400 hover:text-safety">Enter ref</a>
+  <header class="sticky top-0 z-50 bg-zinc-900/95 backdrop-blur-sm border-b border-zinc-700 shadow-lg">
+    <div class="max-w-lg mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+      <div class="flex items-center gap-3">
+        <img src="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png" alt="No 5 Tyre" class="h-8 w-auto object-contain" loading="lazy">
+        <span class="text-zinc-500 text-xs font-medium hidden sm:inline">Driver</span>
+      </div>
+      <a href="verify.php" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-zinc-400 hover:text-safety hover:bg-zinc-800/80 font-medium text-sm transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        Enter ref
+      </a>
     </div>
   </header>
 
-  <main class="max-w-lg mx-auto px-4 py-6">
-    <div id="scanner-wrap" class="rounded-2xl overflow-hidden border-2 border-zinc-700 bg-black mb-6 min-h-[280px]">
-      <div id="reader" class="w-full"></div>
+  <main class="max-w-lg mx-auto px-4 sm:px-6 py-8 pb-12">
+    <div class="text-center mb-6">
+      <h1 class="text-xl sm:text-2xl font-bold text-white mb-1">Scan job receipt</h1>
+      <p class="text-zinc-500 text-sm">Point your camera at the customer’s receipt QR code</p>
     </div>
-    <p class="text-zinc-500 text-sm text-center mb-6">Point your camera at the receipt QR code. Or enter the 6-digit reference below.</p>
 
-    <div class="rounded-xl border border-zinc-700 bg-zinc-800/50 p-6">
-      <p class="text-zinc-400 text-sm font-medium mb-2">Enter reference manually</p>
-      <form id="ref-form" class="flex gap-2">
-        <input type="text" id="ref-input" placeholder="e.g. 123456" maxlength="6" pattern="[0-9]*" inputmode="numeric" class="flex-1 px-4 py-3 rounded-lg bg-zinc-700 border-2 border-zinc-600 text-white font-mono text-lg placeholder-zinc-500 focus:border-safety focus:outline-none">
-        <button type="submit" class="px-6 py-3 bg-safety text-zinc-900 font-bold rounded-lg hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety shrink-0">
+    <div class="relative scanner-frame mb-8">
+      <div class="corner corner-tl"></div>
+      <div class="corner corner-tr"></div>
+      <div class="corner corner-bl"></div>
+      <div class="corner corner-br"></div>
+      <div id="reader" class="w-full min-h-[300px] sm:min-h-[320px] bg-black"></div>
+      <div id="scanner-loading" class="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/90 rounded-2xl">
+        <div class="w-12 h-12 border-4 border-safety border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-zinc-400 text-sm">Starting camera…</p>
+      </div>
+      <div id="scanner-error" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/95 rounded-2xl p-6">
+        <div class="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mb-4">
+          <svg class="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+        <p class="text-white font-medium text-center mb-1">Camera unavailable</p>
+        <p class="text-zinc-400 text-sm text-center mb-6">Use the form below to enter the reference manually.</p>
+      </div>
+    </div>
+
+    <div class="relative flex items-center gap-4 mb-8">
+      <div class="flex-1 h-px bg-zinc-700"></div>
+      <span class="text-zinc-500 text-xs font-medium">or enter reference</span>
+      <div class="flex-1 h-px bg-zinc-700"></div>
+    </div>
+
+    <div class="rounded-2xl border border-zinc-700 bg-zinc-800/50 p-6 mb-6">
+      <form id="ref-form" class="flex gap-3">
+        <div class="flex-1 relative">
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-mono text-lg">#</span>
+          <input type="text" id="ref-input" placeholder="123456" maxlength="6" pattern="[0-9]*" inputmode="numeric" class="w-full pl-8 pr-4 py-4 rounded-xl bg-zinc-700/80 border-2 border-zinc-600 text-white font-mono text-xl placeholder-zinc-600 focus:border-safety focus:ring-2 focus:ring-safety/20 focus:outline-none transition-colors">
+        </div>
+        <button type="submit" class="px-6 py-4 bg-safety text-zinc-900 font-bold rounded-xl hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900 transition-colors shrink-0 flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
           View
         </button>
       </form>
     </div>
 
-    <p id="scan-status" class="text-center text-sm mt-4 hidden"></p>
+    <p id="scan-status" class="text-center text-sm py-3 rounded-lg hidden"></p>
+
+    <div class="mt-8 text-center">
+      <a href="verify.php" class="text-zinc-500 text-sm hover:text-safety transition-colors">I know the reference – skip to enter</a>
+    </div>
   </main>
 
   <script>
     (function() {
-      var readerEl = document.getElementById('reader');
       var refForm = document.getElementById('ref-form');
       var refInput = document.getElementById('ref-input');
       var scanStatus = document.getElementById('scan-status');
+      var scannerLoading = document.getElementById('scanner-loading');
+      var scannerError = document.getElementById('scanner-error');
       var scanner = null;
       var lastScanned = '';
+
+      function hideLoading() {
+        if (scannerLoading) scannerLoading.classList.add('hidden');
+      }
+
+      function showError() {
+        hideLoading();
+        if (scannerError) scannerError.classList.remove('hidden');
+      }
+
+      function showStatus(msg, type) {
+        scanStatus.textContent = msg;
+        scanStatus.classList.remove('hidden', 'text-green-400', 'text-amber-400', 'bg-green-500/10', 'bg-amber-500/10');
+        if (type === 'success') {
+          scanStatus.classList.add('text-green-400', 'bg-green-500/10');
+        } else if (type === 'error') {
+          scanStatus.classList.add('text-amber-400', 'bg-amber-500/10');
+        } else {
+          scanStatus.classList.add('text-zinc-500');
+        }
+      }
 
       function goToVerify(urlOrRef) {
         var u = urlOrRef.trim();
@@ -59,9 +153,7 @@
             window.location.href = u;
           }
         } else {
-          scanStatus.textContent = 'Unknown format. Scan the receipt QR or enter reference.';
-          scanStatus.classList.remove('hidden', 'text-green-400');
-          scanStatus.classList.add('text-amber-400');
+          showStatus('Unknown format. Scan the receipt QR or enter the 6-digit reference.', 'error');
         }
       }
 
@@ -71,24 +163,20 @@
           var back = cameras.find(function(c) { return c.label.toLowerCase().indexOf('back') !== -1; });
           var cameraId = (back || cameras[0]).id;
           scanner = new Html5Qrcode('reader');
-          return scanner.start(cameraId, { fps: 8, qrbox: { width: 250, height: 250 } }, function(decoded) {
+          return scanner.start(cameraId, { fps: 8, qrbox: { width: 240, height: 240 } }, function(decoded) {
             if (decoded !== lastScanned) {
               lastScanned = decoded;
-              scanStatus.textContent = 'Found! Loading…';
-              scanStatus.classList.remove('hidden', 'text-amber-400');
-              scanStatus.classList.add('text-green-400');
+              showStatus('Found! Loading job…', 'success');
               goToVerify(decoded);
             }
           }, function() {});
+        }).then(function() {
+          hideLoading();
         }).catch(function(err) {
-          scanStatus.textContent = 'Camera access denied. Enter reference manually.';
-          scanStatus.classList.remove('hidden');
-          scanStatus.classList.add('text-amber-400');
+          showError();
         });
       } else {
-        scanStatus.textContent = 'Scanner not loaded. Enter reference manually.';
-        scanStatus.classList.remove('hidden');
-        scanStatus.classList.add('text-zinc-500');
+        showError();
       }
 
       refForm.addEventListener('submit', function(e) {
@@ -97,9 +185,7 @@
         if (ref.length >= 4) {
           goToVerify(ref);
         } else {
-          scanStatus.textContent = 'Enter at least 4 digits.';
-          scanStatus.classList.remove('hidden', 'text-green-400');
-          scanStatus.classList.add('text-amber-400');
+          showStatus('Enter at least 4 digits of the reference.', 'error');
         }
       });
 
@@ -107,6 +193,9 @@
         this.value = this.value.replace(/\D/g, '').slice(0, 6);
       });
     })();
+  </script>
+  <script>
+    document.body.classList.add('page-loaded');
   </script>
 </body>
 </html>
