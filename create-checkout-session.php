@@ -72,7 +72,7 @@ $payload = [
         'currency' => 'gbp',
         'unit_amount' => $amountPence,
         'product_data' => [
-          'name' => $description,
+          'name' => 'Emergency Tyre Deposit',
           'description' => 'Emergency tyre deposit. Balance due on completion.',
         ],
       ],
