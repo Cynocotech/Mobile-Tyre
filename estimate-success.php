@@ -267,6 +267,39 @@ if ($paymentStatus === 'paid' && $sessionId) {
         fputcsv($fp, $row);
         fclose($fp);
         file_put_contents($dbSentLogPath, $sessionId . "\n", FILE_APPEND | LOCK_EX);
+
+        // Also save to jobs.json for fast verify lookups (ref + session_id index)
+        $jobsPath = $dbFolder . '/jobs.json';
+        $jobs = [];
+        if (is_file($jobsPath)) {
+          $jobs = @json_decode(file_get_contents($jobsPath), true) ?: [];
+        }
+        $job = [
+          'reference' => $reference,
+          'session_id' => $sessionId,
+          'email' => $customerEmail,
+          'name' => $customerName,
+          'phone' => $customerPhone,
+          'postcode' => $customerPostcode,
+          'lat' => $customerLat,
+          'lng' => $customerLng,
+          'vrm' => $vehicleVrm,
+          'make' => $vehicleMake,
+          'model' => $vehicleModel,
+          'colour' => $vehicleColour,
+          'year' => $vehicleYear,
+          'fuel' => $vehicleFuel,
+          'tyre_size' => $vehicleTyreSize,
+          'wheels' => $vehicleWheels,
+          'vehicle_desc' => $vehicleDesc,
+          'estimate_total' => $estimateTotal,
+          'amount_paid' => $amountFormatted,
+          'currency' => $currency,
+          'payment_status' => $paymentStatus,
+        ];
+        $jobs[$reference] = $job;
+        $jobs['_session_' . $sessionId] = $job;
+        @file_put_contents($jobsPath, json_encode($jobs, JSON_PRETTY_PRINT), LOCK_EX);
       }
     }
   }

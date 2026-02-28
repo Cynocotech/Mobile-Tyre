@@ -38,9 +38,47 @@ if (is_file($configPath)) {
   }
 }
 
-// Option 1: Look up by reference in CSV
-$dbCsvPath = __DIR__ . '/database/customers.csv';
-if ($ref !== '' && strlen($ref) <= 6 && is_file($dbCsvPath)) {
+// Option 1: Look up in jobs.json (fast, by ref or session_id)
+$dbFolder = __DIR__ . '/database';
+$jobsPath = $dbFolder . '/jobs.json';
+if (!$found && is_file($jobsPath)) {
+  $jobs = @json_decode(file_get_contents($jobsPath), true);
+  if (is_array($jobs)) {
+    $job = null;
+    if ($ref !== '' && strlen($ref) <= 6) {
+      $ref = str_pad($ref, 6, '0', STR_PAD_LEFT);
+      $job = $jobs[$ref] ?? null;
+    }
+    if (!$job && $sessionId !== '') {
+      $job = $jobs['_session_' . $sessionId] ?? null;
+    }
+    if ($job && is_array($job)) {
+      $found = true;
+      $reference = $job['reference'] ?? '';
+      $customerEmail = $job['email'] ?? '';
+      $customerName = $job['name'] ?? '';
+      $customerPhone = $job['phone'] ?? '';
+      $customerPostcode = $job['postcode'] ?? '';
+      $customerLat = $job['lat'] ?? '';
+      $customerLng = $job['lng'] ?? '';
+      $vehicleVrm = $job['vrm'] ?? '';
+      $vehicleMake = $job['make'] ?? '';
+      $vehicleModel = $job['model'] ?? '';
+      $vehicleColour = $job['colour'] ?? '';
+      $vehicleYear = $job['year'] ?? '';
+      $vehicleFuel = $job['fuel'] ?? '';
+      $vehicleTyreSize = $job['tyre_size'] ?? '';
+      $vehicleWheels = $job['wheels'] ?? '';
+      $estimateTotal = $job['estimate_total'] ?? '';
+      $amountFormatted = $job['amount_paid'] ?? '';
+      $paymentStatus = $job['payment_status'] ?? '';
+    }
+  }
+}
+
+// Option 2: Fallback to CSV if jobs.json miss
+$dbCsvPath = $dbFolder . '/customers.csv';
+if (!$found && $ref !== '' && strlen($ref) <= 6 && is_file($dbCsvPath)) {
   $ref = str_pad($ref, 6, '0', STR_PAD_LEFT);
   $rows = array_map('str_getcsv', file($dbCsvPath));
   $header = array_shift($rows);
@@ -73,7 +111,7 @@ if ($ref !== '' && strlen($ref) <= 6 && is_file($dbCsvPath)) {
   }
 }
 
-// Option 2: Fetch from Stripe by session_id
+// Option 3: Fetch from Stripe by session_id
 if (!$found && $sessionId && preg_match('/^cs_[a-zA-Z0-9_]+$/', $sessionId) && $stripeSecretKey) {
   $ch = curl_init('https://api.stripe.com/v1/checkout/sessions/' . $sessionId);
   curl_setopt_array($ch, [

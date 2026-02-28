@@ -3,4 +3,5 @@
 
 # Customer database (contains personal data – do not commit)
 database/*.csv
+database/jobs.json
 .stripe-db-saved
