@@ -20,6 +20,7 @@ $configPath = __DIR__ . '/dynamic.json';
 $stripeSecretKey = getenv('STRIPE_SECRET_KEY');
 $BOT_TOKEN = null;
 $CHAT_IDS = [];
+$driverScannerUrl = '';
 if (is_file($configPath)) {
   $config = @json_decode(file_get_contents($configPath), true);
   if (!$stripeSecretKey && !empty($config['stripeSecretKey'])) {
@@ -33,6 +34,9 @@ if (is_file($configPath)) {
       $id = trim((string) $id);
       if ($id !== '') $CHAT_IDS[] = $id;
     }
+  }
+  if (!empty($config['driverScannerUrl'])) {
+    $driverScannerUrl = trim((string) $config['driverScannerUrl']);
   }
 }
 
@@ -165,12 +169,15 @@ if ($session && $BOT_TOKEN && !empty($CHAT_IDS)) {
       $mapUrl = 'https://www.google.com/maps/search/' . urlencode($customerPostcode);
     }
     $basePayload = ['text' => $text];
+    $keyboardButtons = [];
     if ($mapUrl) {
-      $basePayload['reply_markup'] = [
-        'inline_keyboard' => [
-          [['text' => '📍 Open location', 'url' => $mapUrl]],
-        ],
-      ];
+      $keyboardButtons[] = ['text' => '📍 Open location', 'url' => $mapUrl];
+    }
+    if ($driverScannerUrl !== '') {
+      $keyboardButtons[] = ['text' => '📱 Scan QR', 'url' => $driverScannerUrl];
+    }
+    if (!empty($keyboardButtons)) {
+      $basePayload['reply_markup'] = ['inline_keyboard' => [$keyboardButtons]];
     }
 
     $url = "https://api.telegram.org/bot{$BOT_TOKEN}/sendMessage";

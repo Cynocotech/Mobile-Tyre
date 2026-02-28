@@ -216,25 +216,21 @@ elseif ($vehicleVrm !== '') $vehicleDesc .= ' (' . $vehicleVrm . ')';
 
         <div class="py-3 border-b border-zinc-600">
           <p class="text-zinc-500 text-xs mb-2">Vehicle details</p>
-          <dl class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">
-            <?php if ($vehicleVrm !== ''): ?><dt class="text-zinc-400">VRM</dt><dd class="font-semibold text-white"><?php echo htmlspecialchars($vehicleVrm); ?></dd><?php endif; ?>
-            <?php if ($vehicleMake !== ''): ?><dt class="text-zinc-400">Make</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleMake); ?></dd><?php endif; ?>
-            <?php if ($vehicleModel !== ''): ?><dt class="text-zinc-400">Model</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleModel); ?></dd><?php endif; ?>
-            <?php if ($vehicleColour !== ''): ?><dt class="text-zinc-400">Colour</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleColour); ?></dd><?php endif; ?>
-            <?php if ($vehicleYear !== ''): ?><dt class="text-zinc-400">Year</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleYear); ?></dd><?php endif; ?>
-            <?php if ($vehicleFuel !== ''): ?><dt class="text-zinc-400">Fuel</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleFuel); ?></dd><?php endif; ?>
-            <?php if ($vehicleTyreSize !== ''): ?><dt class="text-zinc-400">Tyre size</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleTyreSize); ?></dd><?php endif; ?>
-            <?php if ($vehicleWheels !== ''): ?><dt class="text-zinc-400">Wheels</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleWheels); ?></dd><?php endif; ?>
+          <dl class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1.5 text-sm">
+            <dt class="text-zinc-400">VRM</dt><dd class="font-semibold text-white"><?php echo htmlspecialchars($vehicleVrm !== '' ? $vehicleVrm : '—'); ?></dd>
+            <dt class="text-zinc-400">Make</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleMake !== '' ? $vehicleMake : '—'); ?></dd>
+            <dt class="text-zinc-400">Model</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleModel !== '' ? $vehicleModel : '—'); ?></dd>
+            <dt class="text-zinc-400">Colour</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleColour !== '' ? $vehicleColour : '—'); ?></dd>
+            <dt class="text-zinc-400">Year</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleYear !== '' ? $vehicleYear : '—'); ?></dd>
+            <dt class="text-zinc-400">Fuel</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleFuel !== '' ? $vehicleFuel : '—'); ?></dd>
+            <dt class="text-zinc-400">Tyre size</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleTyreSize !== '' ? $vehicleTyreSize : '—'); ?></dd>
+            <dt class="text-zinc-400">Wheels</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleWheels !== '' ? $vehicleWheels : '—'); ?></dd>
           </dl>
-          <?php if ($vehicleVrm === '' && $vehicleMake === '' && $vehicleModel === '' && $vehicleDesc !== ''): ?>
-          <p class="font-medium text-white"><?php echo htmlspecialchars($vehicleDesc); ?></p>
-          <?php endif; ?>
         </div>
 
-        <?php if ($customerPostcode !== '' || ($customerLat !== '' && $customerLng !== '')): ?>
         <div class="py-3 border-b border-zinc-600">
           <p class="text-zinc-500 text-xs mb-1">Location</p>
-          <p class="font-semibold text-white"><?php echo htmlspecialchars($customerPostcode); ?></p>
+          <p class="font-semibold text-white"><?php echo htmlspecialchars($customerPostcode !== '' ? $customerPostcode : '—'); ?></p>
           <?php if ($customerLat !== '' && $customerLng !== ''): ?>
           <a href="https://www.google.com/maps?q=<?php echo urlencode($customerLat . ',' . $customerLng); ?>" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-safety text-sm font-medium mt-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
@@ -242,13 +238,12 @@ elseif ($vehicleVrm !== '') $vehicleDesc .= ' (' . $vehicleVrm . ')';
           </a>
           <?php endif; ?>
         </div>
-        <?php endif; ?>
 
         <div class="py-3">
           <p class="text-zinc-500 text-xs mb-2">Customer</p>
-          <?php if ($customerName !== ''): ?><p class="font-medium text-white"><?php echo htmlspecialchars($customerName); ?></p><?php endif; ?>
-          <?php if ($customerPhone !== ''): ?><p><a href="tel:<?php echo htmlspecialchars($customerPhone); ?>" class="text-safety font-semibold"><?php echo htmlspecialchars($customerPhone); ?></a></p><?php endif; ?>
-          <?php if ($customerEmail !== ''): ?><p class="text-zinc-400 text-sm"><?php echo htmlspecialchars($customerEmail); ?></p><?php endif; ?>
+          <p class="font-medium text-white"><?php echo htmlspecialchars($customerName !== '' ? $customerName : '—'); ?></p>
+          <?php if ($customerPhone !== ''): ?><p><a href="tel:<?php echo htmlspecialchars($customerPhone); ?>" class="text-safety font-semibold"><?php echo htmlspecialchars($customerPhone); ?></a></p><?php else: ?><p class="text-zinc-400">—</p><?php endif; ?>
+          <p class="text-zinc-400 text-sm"><?php echo htmlspecialchars($customerEmail !== '' ? $customerEmail : '—'); ?></p>
         </div>
       </div>
 

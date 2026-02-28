@@ -107,56 +107,40 @@
       }
 
       function startScanner() {
-        if (typeof Html5QrcodeScanner !== 'undefined') {
-          try {
-            var config = {
-              fps: 20,
-              qrbox: { width: 220, height: 220 },
-              disableFlip: true,
-              formatsToSupport: [0],
-              experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-            };
-            var html5QrcodeScanner = new Html5QrcodeScanner('reader', config, false);
-            html5QrcodeScanner.render(
-              function(decodedText, decodedResult) {
-                var text = decodedText || (decodedResult && decodedResult.decodedText);
-                if (text && text !== lastScanned) {
-                  lastScanned = text;
-                  showStatus('Found! Loading job…', 'success');
-                  goToVerify(text);
-                }
-              },
-              function() {}
-            );
-            return;
-          } catch (e) { console.warn('Html5QrcodeScanner failed:', e); }
-        }
-        if (typeof Html5Qrcode !== 'undefined') {
-          Html5Qrcode.getCameras().then(function(cameras) {
-            if (!cameras || cameras.length === 0) throw new Error('No camera');
-            var cam = cameras.find(function(c) { return /back|rear/i.test(c.label); }) || cameras[0];
-            var scanner = new Html5Qrcode('reader');
-            var scanConfig = {
-              fps: 20,
-              qrbox: 220,
-              disableFlip: true,
-              experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-            };
-            scanner.start(cam.id, scanConfig, function(decodedText) {
-              if (decodedText && decodedText !== lastScanned) {
-                lastScanned = decodedText;
-                showStatus('Found! Loading job…', 'success');
-                goToVerify(decodedText);
-              }
-            }, function() {}).catch(function() {
-              showStatus('Camera denied. Use file upload above or enter reference.', 'error');
-            });
-          }).catch(function() {
-            showStatus('Camera unavailable. Use file upload or enter reference.', 'error');
-          });
-        } else {
+        if (typeof Html5Qrcode === 'undefined') {
           showStatus('Scanner not loaded. Enter reference below.', 'error');
+          return;
         }
+        var scanner = new Html5Qrcode('reader');
+        var scanConfig = {
+          fps: 20,
+          qrbox: 220,
+          disableFlip: true,
+          experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+        };
+        function onScan(decodedText) {
+          if (decodedText && decodedText !== lastScanned) {
+            lastScanned = decodedText;
+            showStatus('Found! Loading job…', 'success');
+            goToVerify(decodedText);
+          }
+        }
+        function tryStart(constraint) {
+          return scanner.start(constraint, scanConfig, onScan, function() {}).then(function() {
+            return constraint;
+          });
+        }
+        tryStart({ facingMode: 'environment' }).catch(function() {
+          return tryStart({ facingMode: 'user' }).catch(function() {
+            return Html5Qrcode.getCameras().then(function(cams) {
+              if (!cams || cams.length === 0) throw new Error('No camera');
+              var cam = cams.find(function(c) { return /back|rear|environment/i.test(c.label); }) || cams[0];
+              return tryStart(cam.id);
+            });
+          });
+        }).catch(function() {
+          showStatus('Camera denied. Enter reference below.', 'error');
+        });
       }
       startScanner();
 
