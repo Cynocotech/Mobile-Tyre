@@ -343,7 +343,7 @@
                 aria-label="Tyre size"
               >
               <option value="">Tyre size (e.g. 205/55 R16)</option>
-              <option value="Not sure / Other">Not sure / Other</option>
+              <option value="Other">Other</option>
               <optgroup label="R14">
                 <option value="155/65 R14">155/65 R14</option>
                 <option value="165/70 R14">165/70 R14</option>
@@ -422,6 +422,21 @@
                 <option value="285/30 R20">285/30 R20</option>
               </optgroup>
             </select>
+            </div>
+          </div>
+          <div id="tyre-size-other-wrap" class="grid grid-cols-1 sm:grid-cols-3 gap-3 hidden">
+            <label for="tyre-size-other" class="block text-sm font-medium text-zinc-300 mb-1 sm:col-span-3">Enter your tyre size</label>
+            <div class="form-field-icon-wrap col-span-1 sm:col-span-3">
+              <span class="form-field-icon" aria-hidden="true">
+                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L9 8H3v2h5l2 5-2 5h2l1-3h4l1 3h2l-2-5 2-5h5V8h-6l-3-6zm-1.5 11L12 7l1.5 6h-3z"/></svg>
+              </span>
+              <input
+                type="text"
+                id="tyre-size-other"
+                placeholder="e.g. 205/55 R16"
+                class="w-full px-4 py-3.5 text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-0 text-base"
+                autocomplete="off"
+              >
             </div>
           </div>
           <div>
@@ -626,6 +641,32 @@
       </div>
     </section>
 
+    <!-- How to read your tyre size – guide -->
+    <section id="tyre-size-guide" class="px-4 sm:px-6 py-10 sm:py-14 bg-zinc-800 border-y border-zinc-700">
+      <div class="max-w-4xl mx-auto">
+        <h2 class="text-xl sm:text-2xl font-bold text-white text-center mb-2 w-full flex justify-center section-title-icon">
+          <svg class="text-safety w-7 h-7 sm:w-8 sm:h-8" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L9 8H3v2h5l2 5-2 5h2l1-3h4l1 3h2l-2-5 2-5h5V8h-6l-3-6zm-1.5 11L12 7l1.5 6h-3z"/></svg>
+          How to read your tyre size
+        </h2>
+        <p class="text-zinc-400 text-sm sm:text-base text-center mb-6 max-w-2xl mx-auto">
+          Your tyre size is printed on the sidewall. Use the guide below to find the numbers (e.g. 205/55 R16) so you can select the right size when getting a quote.
+        </p>
+        <div class="rounded-xl overflow-hidden border-2 border-zinc-600 bg-zinc-900 shadow-lg">
+          <img
+            src="https://www.mobiletyres2u.co.uk/wp-content/uploads/2016/08/bg-trye-guide-big-2-1200x490.jpg"
+            alt="Tyre size guide: how to read the numbers on your tyre sidewall (width, aspect ratio, rim diameter)"
+            width="1200"
+            height="490"
+            class="w-full h-auto object-contain"
+            loading="lazy"
+          >
+        </div>
+        <p class="text-zinc-500 text-xs sm:text-sm text-center mt-4">
+          Not sure? Enter your registration in the form above or <a href="check-vehicle.html" class="text-safety hover:underline">check vehicle details</a> – we can look up the correct tyre size for you.
+        </p>
+      </div>
+    </section>
+
     <!-- Price list – attract with transparent pricing -->
     <section id="prices" class="px-4 sm:px-6 py-10 sm:py-14 bg-zinc-800/50 border-y border-zinc-700">
       <div class="max-w-3xl mx-auto">
@@ -647,23 +688,27 @@
             <tbody class="text-zinc-300">
               <tr class="border-b border-zinc-700 hover:bg-zinc-800/80 transition-colors">
                 <td class="py-4 px-4 sm:px-6">Puncture repair</td>
-                <td class="py-4 px-4 sm:px-6 text-right"><span class="text-safety font-bold">£25</span></td>
+                <td class="py-4 px-4 sm:px-6 text-right"><span class="text-safety font-bold" data-price="punctureRepair">£25</span></td>
               </tr>
               <tr class="border-b border-zinc-700 hover:bg-zinc-800/80 transition-colors">
                 <td class="py-4 px-4 sm:px-6">Tyre fitting (per tyre, you supply)</td>
-                <td class="py-4 px-4 sm:px-6 text-right"><span class="text-safety font-bold" data-price-per-tyre>£15</span></td>
+                <td class="py-4 px-4 sm:px-6 text-right"><span class="text-safety font-bold" data-price="pricePerTyre">£15</span></td>
               </tr>
               <tr class="border-b border-zinc-700 hover:bg-zinc-800/80 transition-colors">
                 <td class="py-4 px-4 sm:px-6">Wheel balancing (per wheel)</td>
-                <td class="py-4 px-4 sm:px-6 text-right"><span class="text-safety font-bold" data-price-balance>£12</span></td>
+                <td class="py-4 px-4 sm:px-6 text-right"><span class="text-safety font-bold" data-price="priceBalance">£12</span></td>
               </tr>
               <tr class="border-b border-zinc-700 hover:bg-zinc-800/80 transition-colors">
                 <td class="py-4 px-4 sm:px-6">Locking wheel nut removal</td>
-                <td class="py-4 px-4 sm:px-6 text-right"><span class="text-safety font-bold">£30</span></td>
+                <td class="py-4 px-4 sm:px-6 text-right"><span class="text-safety font-bold" data-price="lockingWheelNutRemoval">£30</span></td>
               </tr>
               <tr class="border-b border-zinc-700 hover:bg-zinc-800/80 transition-colors">
                 <td class="py-4 px-4 sm:px-6">Jump start</td>
-                <td class="py-4 px-4 sm:px-6 text-right"><span class="text-safety font-bold">£35</span></td>
+                <td class="py-4 px-4 sm:px-6 text-right"><span class="text-safety font-bold" data-price="jumpStart">£35</span></td>
+              </tr>
+              <tr class="border-b border-zinc-700 hover:bg-zinc-800/80 transition-colors">
+                <td class="py-4 px-4 sm:px-6">Battery replacement</td>
+                <td class="py-4 px-4 sm:px-6 text-right"><span class="text-safety font-bold" data-price="batteryReplacement">£45</span></td>
               </tr>
               <tr class="hover:bg-zinc-800/80 transition-colors">
                 <td class="py-4 px-4 sm:px-6">Same day tyre supply &amp; fit</td>
@@ -690,11 +735,11 @@
                 <input type="number" id="calc-tyres" min="1" max="8" value="2" class="flex-1 max-w-24 rounded-lg border-2 border-zinc-600 bg-zinc-800 px-4 py-3 text-white text-center text-lg font-semibold focus:border-safety focus:outline-none focus:ring-1 focus:ring-safety">
                 <button type="button" id="calc-tyres-plus" aria-label="One more tyre" class="flex-shrink-0 w-10 h-10 rounded-lg border-2 border-zinc-600 bg-zinc-800 text-white font-bold text-lg hover:bg-zinc-700 hover:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-safety disabled:opacity-40 disabled:pointer-events-none transition-colors">+</button>
               </div>
-              <p class="text-zinc-500 text-xs mt-1">£15 per tyre (you supply the tyres)</p>
+              <p class="text-zinc-500 text-xs mt-1">£<span id="calc-per-tyre-hint">15</span> per tyre (you supply the tyres)</p>
             </div>
             <div class="flex items-center gap-3 py-2">
               <input type="checkbox" id="calc-balance" class="h-5 w-5 rounded border-zinc-600 bg-zinc-800 text-safety focus:ring-safety focus:ring-offset-0">
-              <label for="calc-balance" class="text-zinc-300">Add wheel balancing — £12 per wheel</label>
+              <label for="calc-balance" class="text-zinc-300">Add wheel balancing — £<span id="calc-balance-hint">12</span> per wheel</label>
             </div>
             <div class="rounded-lg bg-zinc-800/80 border border-zinc-700 p-4 space-y-2">
               <div class="flex justify-between text-sm">
@@ -753,9 +798,24 @@
               if (calcTyresMinus) calcTyresMinus.disabled = tyres <= 1;
               if (calcTyresPlus) calcTyresPlus.disabled = tyres >= 8;
             }
-            function initCalculator(config){
+            function applyPrices(config) {
+              var p = (config && config.prices) ? config.prices : {};
+              PER_TYRE = (p.pricePerTyre != null) ? Number(p.pricePerTyre) : 15;
+              PER_BALANCE = (p.priceBalance != null) ? Number(p.priceBalance) : 12;
               LABOR = (config && (config.laborPrice != null)) ? Number(config.laborPrice) : 20;
+              var hintPerTyre = document.getElementById('calc-per-tyre-hint');
+              var hintBalance = document.getElementById('calc-balance-hint');
+              if (hintPerTyre) hintPerTyre.textContent = PER_TYRE;
+              if (hintBalance) hintBalance.textContent = PER_BALANCE;
               if (calcLaborLine) calcLaborLine.textContent = '£' + LABOR;
+              document.querySelectorAll('[data-price]').forEach(function(span) {
+                var key = span.getAttribute('data-price');
+                var val = p[key];
+                if (val != null) span.textContent = '£' + Number(val);
+              });
+            }
+            function initCalculator(config){
+              applyPrices(config);
               if (calcTyres) calcTyres.addEventListener('input', updateCalc);
               if (calcBalance) calcBalance.addEventListener('change', updateCalc);
               if (calcTyresMinus) calcTyresMinus.addEventListener('click', function(){ calcTyres.value = Math.max(1, (parseInt(calcTyres.value,10)||1) - 1); updateCalc(); });
@@ -1235,6 +1295,22 @@
         }
       })();
 
+      (function () {
+        var select = document.getElementById('tyre-size');
+        var wrap = document.getElementById('tyre-size-other-wrap');
+        if (!select || !wrap) return;
+        function toggle() {
+          if (select.value === 'Other') {
+            wrap.classList.remove('hidden');
+            if (document.getElementById('tyre-size-other')) document.getElementById('tyre-size-other').focus();
+          } else {
+            wrap.classList.add('hidden');
+          }
+        }
+        select.addEventListener('change', toggle);
+        toggle();
+      })();
+
       function setStatus(msg, isError) {
         if (!statusEl) return;
         statusEl.textContent = msg;
@@ -1259,7 +1335,9 @@
         if (mobile) mobile = '+44' + mobile;
         var carMake = (document.getElementById('car-make') && document.getElementById('car-make').value) || '';
         var carModel = (document.getElementById('car-model') && document.getElementById('car-model').value) || '';
-        var tyreSize = (document.getElementById('tyre-size') && document.getElementById('tyre-size').value) || '';
+        var tyreSizeSelect = document.getElementById('tyre-size');
+        var tyreSizeOther = document.getElementById('tyre-size-other');
+        var tyreSize = (tyreSizeSelect && tyreSizeSelect.value === 'Other' && tyreSizeOther) ? (tyreSizeOther.value || '').trim() : ((tyreSizeSelect && tyreSizeSelect.value) || '');
         var wheelsEl = document.getElementById('wheels');
         var wheels = (wheelsEl && wheelsEl.value) ? wheelsEl.value : '';
 
@@ -1269,7 +1347,7 @@
         fetch(QUOTE_API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+            body: JSON.stringify({
             vrm: vrm.trim(),
             location: location.trim(),
             mobile: mobile.trim(),
@@ -1285,6 +1363,7 @@
             if (result.ok && result.data && result.data.ok) {
               setStatus('Thanks! We\'ll contact you shortly with a quote.', false);
               form.reset();
+              if (document.getElementById('tyre-size-other-wrap')) document.getElementById('tyre-size-other-wrap').classList.add('hidden');
               if (window.trackEvent) window.trackEvent('quote_submit', 'lead', 'hero_form');
             } else {
               setStatus(result.data && result.data.error ? result.data.error : 'Something went wrong. Please call us.', true);

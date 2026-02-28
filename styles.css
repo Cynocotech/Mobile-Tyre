@@ -297,12 +297,17 @@ body.page-leaving {
   height: 1.25rem;
 }
 .form-field-icon-wrap input,
-.form-field-icon-wrap select {
+.form-field-icon-wrap select,
+.form-field-icon-wrap textarea {
   flex: 1;
   min-width: 0;
   border: none;
   border-radius: 0;
   background: transparent;
+}
+.form-field-icon-wrap textarea {
+  resize: vertical;
+  min-height: 5rem;
 }
 
 /* UK-style number plate look for VRM (vehicle registration) */
