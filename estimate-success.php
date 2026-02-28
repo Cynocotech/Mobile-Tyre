@@ -307,6 +307,23 @@ $vehicleDesc = trim($vehicleMake . ' ' . $vehicleModel);
 if ($vehicleDesc === '' && $vehicleVrm !== '') $vehicleDesc = $vehicleVrm;
 elseif ($vehicleVrm !== '') $vehicleDesc .= ' (' . $vehicleVrm . ')';
 $receiptDate = date('d M Y, H:i');
+
+// VAT from config
+$vatNumber = '';
+$vatRate = 0;
+if (is_file($configPath)) {
+  $vc = @json_decode(file_get_contents($configPath), true);
+  if (!empty($vc['vatNumber'])) $vatNumber = trim((string) $vc['vatNumber']);
+  if (isset($vc['vatRate'])) $vatRate = (int) $vc['vatRate'];
+}
+
+// QR code URL for driver verification (encode verify URL with session_id)
+$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+$baseUrl = rtrim($scheme . '://' . $host . $scriptDir, '/');
+$verifyUrl = $sessionId ? $baseUrl . '/verify.php?session_id=' . urlencode($sessionId) : '';
+$qrCodeUrl = $verifyUrl ? 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' . urlencode($verifyUrl) : '';
 ?>
 <!DOCTYPE html>
 <html lang="en-GB">
@@ -392,8 +409,16 @@ $receiptDate = date('d M Y, H:i');
       <table class="w-full text-sm">
         <tr class="border-b border-zinc-600"><td class="py-3 text-zinc-400">Deposit paid</td><td class="py-3 text-right font-semibold text-white"><?php echo htmlspecialchars($amountFormatted); ?></td></tr>
         <tr class="border-b border-zinc-600"><td class="py-3 text-zinc-400">Estimate total</td><td class="py-3 text-right font-semibold text-white"><?php echo htmlspecialchars($estimateFormatted); ?></td></tr>
-        <tr><td class="py-3 text-zinc-400">Balance due on completion</td><td class="py-3 text-right font-semibold text-white"><?php echo htmlspecialchars($balanceDue); ?></td></tr>
+        <tr class="border-b border-zinc-600"><td class="py-3 text-zinc-400">Balance due on completion</td><td class="py-3 text-right font-semibold text-white"><?php echo htmlspecialchars($balanceDue); ?></td></tr>
+        <?php if ($vatRate > 0): ?><tr class="border-b border-zinc-600"><td class="py-3 text-zinc-400">VAT</td><td class="py-3 text-right text-zinc-400 text-xs"><?php echo (int) $vatRate; ?>% included</td></tr><?php endif; ?>
+        <?php if ($vatNumber !== ''): ?><tr><td colspan="2" class="py-2 text-zinc-500 text-xs">VAT Reg No: <?php echo htmlspecialchars($vatNumber); ?></td></tr><?php endif; ?>
       </table>
+      <?php if ($qrCodeUrl): ?>
+      <div class="mt-6 flex flex-col items-center">
+        <p class="text-zinc-400 text-xs mb-2">Driver scan to verify details</p>
+        <img src="<?php echo htmlspecialchars($qrCodeUrl); ?>" alt="QR code for job verification" width="180" height="180" class="rounded-lg border border-zinc-600">
+      </div>
+      <?php endif; ?>
       <?php if ($vehicleDesc !== '' || $customerPostcode !== ''): ?>
       <div class="mt-6 pt-4 border-t border-zinc-600 text-sm">
         <?php if ($vehicleDesc !== ''): ?><p class="text-zinc-400 mb-1">Vehicle</p><p class="text-zinc-200 font-medium mb-3"><?php echo htmlspecialchars($vehicleDesc); ?></p><?php endif; ?>

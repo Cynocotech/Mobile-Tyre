@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scan job QR | No 5 Tyre Driver</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#18181b">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { colors: { safety: '#fede00' } } } };</script>
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body class="bg-zinc-900 text-zinc-200 antialiased min-h-screen">
+  <header class="bg-zinc-900 border-b border-zinc-700 py-4">
+    <div class="max-w-lg mx-auto px-4 flex items-center justify-between">
+      <h1 class="text-lg font-bold text-white">Scan job QR</h1>
+      <a href="verify.php" class="text-sm font-medium text-zinc-400 hover:text-safety">Enter ref</a>
+    </div>
+  </header>
+
+  <main class="max-w-lg mx-auto px-4 py-6">
+    <div id="scanner-wrap" class="rounded-2xl overflow-hidden border-2 border-zinc-700 bg-black mb-6 min-h-[280px]">
+      <div id="reader" class="w-full"></div>
+    </div>
+    <p class="text-zinc-500 text-sm text-center mb-6">Point your camera at the receipt QR code. Or enter the 6-digit reference below.</p>
+
+    <div class="rounded-xl border border-zinc-700 bg-zinc-800/50 p-6">
+      <p class="text-zinc-400 text-sm font-medium mb-2">Enter reference manually</p>
+      <form id="ref-form" class="flex gap-2">
+        <input type="text" id="ref-input" placeholder="e.g. 123456" maxlength="6" pattern="[0-9]*" inputmode="numeric" class="flex-1 px-4 py-3 rounded-lg bg-zinc-700 border-2 border-zinc-600 text-white font-mono text-lg placeholder-zinc-500 focus:border-safety focus:outline-none">
+        <button type="submit" class="px-6 py-3 bg-safety text-zinc-900 font-bold rounded-lg hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety shrink-0">
+          View
+        </button>
+      </form>
+    </div>
+
+    <p id="scan-status" class="text-center text-sm mt-4 hidden"></p>
+  </main>
+
+  <script>
+    (function() {
+      var readerEl = document.getElementById('reader');
+      var refForm = document.getElementById('ref-form');
+      var refInput = document.getElementById('ref-input');
+      var scanStatus = document.getElementById('scan-status');
+      var scanner = null;
+      var lastScanned = '';
+
+      function goToVerify(urlOrRef) {
+        var u = urlOrRef.trim();
+        if (u.match(/^[0-9]{4,6}$/)) {
+          window.location.href = 'verify.php?ref=' + encodeURIComponent(u);
+        } else if (u.indexOf('verify.php') !== -1 || u.indexOf('session_id=') !== -1) {
+          var m = u.match(/verify\.php[^&#]*session_id=([a-zA-Z0-9_]+)/);
+          if (m) {
+            window.location.href = 'verify.php?session_id=' + encodeURIComponent(m[1]);
+          } else {
+            window.location.href = u;
+          }
+        } else {
+          scanStatus.textContent = 'Unknown format. Scan the receipt QR or enter reference.';
+          scanStatus.classList.remove('hidden', 'text-green-400');
+          scanStatus.classList.add('text-amber-400');
+        }
+      }
+
+      if (typeof Html5Qrcode !== 'undefined') {
+        Html5Qrcode.getCameras().then(function(cameras) {
+          if (!cameras || cameras.length === 0) throw new Error('No camera');
+          var back = cameras.find(function(c) { return c.label.toLowerCase().indexOf('back') !== -1; });
+          var cameraId = (back || cameras[0]).id;
+          scanner = new Html5Qrcode('reader');
+          return scanner.start(cameraId, { fps: 8, qrbox: { width: 250, height: 250 } }, function(decoded) {
+            if (decoded !== lastScanned) {
+              lastScanned = decoded;
+              scanStatus.textContent = 'Found! Loading…';
+              scanStatus.classList.remove('hidden', 'text-amber-400');
+              scanStatus.classList.add('text-green-400');
+              goToVerify(decoded);
+            }
+          }, function() {});
+        }).catch(function(err) {
+          scanStatus.textContent = 'Camera access denied. Enter reference manually.';
+          scanStatus.classList.remove('hidden');
+          scanStatus.classList.add('text-amber-400');
+        });
+      } else {
+        scanStatus.textContent = 'Scanner not loaded. Enter reference manually.';
+        scanStatus.classList.remove('hidden');
+        scanStatus.classList.add('text-zinc-500');
+      }
+
+      refForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var ref = refInput.value.replace(/\D/g, '');
+        if (ref.length >= 4) {
+          goToVerify(ref);
+        } else {
+          scanStatus.textContent = 'Enter at least 4 digits.';
+          scanStatus.classList.remove('hidden', 'text-green-400');
+          scanStatus.classList.add('text-amber-400');
+        }
+      });
+
+      refInput.addEventListener('input', function() {
+        this.value = this.value.replace(/\D/g, '').slice(0, 6);
+      });
+    })();
+  </script>
+</body>
+</html>
