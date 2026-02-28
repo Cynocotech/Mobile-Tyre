@@ -45,7 +45,7 @@ if (!$stripeSecretKey) {
 $input = json_decode(file_get_contents('php://input'), true) ?: [];
 $amountPence = isset($input['amount_pence']) ? (int) $input['amount_pence'] : 0;
 $customerEmail = isset($input['customer_email']) ? trim((string) $input['customer_email']) : '';
-$description = isset($input['description']) ? trim((string) $input['description']) : 'Deposit (20% of estimate) – Mobile Tyres';
+$description = isset($input['description']) ? trim((string) $input['description']) : 'Emergency Tyre Deposit';
 
 // Stripe minimum charge (e.g. 50p for GBP)
 if ($amountPence < 50) {
@@ -64,7 +64,7 @@ $cancelUrl = $baseUrl . '/estimate.html?canceled=1';
 
 $payload = [
   'mode' => 'payment',
-  'automatic_tax' => ['enabled' => false],
+  'automatic_tax' => ['enabled' => 'false'],
   'line_items' => [
     [
       'quantity' => 1,
@@ -73,7 +73,7 @@ $payload = [
         'unit_amount' => $amountPence,
         'product_data' => [
           'name' => $description,
-          'description' => 'Secures your mobile tyre fitting booking. Balance due on completion.',
+          'description' => 'Emergency tyre deposit. Balance due on completion.',
         ],
       ],
     ],

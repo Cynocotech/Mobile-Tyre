@@ -653,7 +653,7 @@
           customer_name: name.trim(),
           customer_phone: phone.replace(/\D/g, '').replace(/^0+/, ''),
           estimate_total: total,
-          description: 'Deposit (20% of estimate) – Mobile Tyres',
+          description: 'Emergency Tyre Deposit',
           customer_postcode: postcode.trim()
         };
         if (locationLat && locationLng) {
@@ -678,7 +678,15 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         })
-          .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+          .then(function (r) {
+            return r.text().then(function (text) {
+              var data = null;
+              try { data = text ? JSON.parse(text) : null; } catch (e) {
+                data = { error: (text && text.length < 500 && !text.trim().startsWith('<')) ? text : 'Server error. Please call us on 07895 859505.' };
+              }
+              return { ok: r.ok, data: data, status: r.status };
+            });
+          })
           .then(function (result) {
             if (result.ok && result.data && result.data.url) {
               window.location.href = result.data.url;
@@ -686,15 +694,19 @@
             }
             payBtn.disabled = false;
             if (statusEl) {
-              statusEl.textContent = (result.data && result.data.error) ? result.data.error : 'Unable to start payment. Please try again or call us.';
+              var errMsg = (result.data && result.data.error) ? result.data.error : 'Unable to start payment. Please try again or call us.';
+              if (result.status === 500 && result.data && result.data.error && result.data.error.length > 200) {
+                errMsg = 'Server error. Please call us on 07895 859505.';
+              }
+              statusEl.textContent = errMsg;
               statusEl.className = 'text-sm mt-4 text-red-400';
               statusEl.classList.remove('hidden');
             }
           })
-          .catch(function () {
+          .catch(function (err) {
             payBtn.disabled = false;
             if (statusEl) {
-              statusEl.textContent = 'Something went wrong. Please try again or call us.';
+              statusEl.textContent = 'Network error. Check your connection, or call us on 07895 859505.';
               statusEl.className = 'text-sm mt-4 text-red-400';
               statusEl.classList.remove('hidden');
             }
