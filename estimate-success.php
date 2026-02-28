@@ -356,7 +356,7 @@ $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
 $baseUrl = rtrim($scheme . '://' . $host . $scriptDir, '/');
 $verifyUrl = $sessionId ? $baseUrl . '/verify.php?session_id=' . urlencode($sessionId) : '';
-$qrCodeUrl = $verifyUrl ? 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' . urlencode($verifyUrl) : '';
+$qrCodeUrl = $verifyUrl ? 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' . urlencode($verifyUrl) : '';
 ?>
 <!DOCTYPE html>
 <html lang="en-GB">
@@ -372,12 +372,15 @@ $qrCodeUrl = $verifyUrl ? 'https://api.qrserver.com/v1/create-qr-code/?size=180x
     body { background: #fff !important; }
     main { padding: 0 !important; }
     .no-print { display: none !important; }
-    #receipt { max-width: 100% !important; background: #fff !important; color: #000 !important; border: 1px solid #333 !important; box-shadow: none !important; }
+    #receipt { max-width: 100% !important; background: #fff !important; color: #000 !important; border: 1px solid #333 !important; box-shadow: none !important; padding: 8mm !important; font-size: 11px !important; }
     #receipt * { color: #000 !important; border-color: #333 !important; }
     #receipt .text-safety, #receipt .text-white { color: #000 !important; font-weight: bold; }
     #receipt .text-zinc-400, #receipt .text-zinc-500 { color: #555 !important; }
     #receipt .text-zinc-200 { color: #000 !important; }
-    @page { margin: 12mm; size: A5; }
+    #receipt img[alt*="QR"] { width: 90px !important; height: 90px !important; margin: 4px auto !important; }
+    #receipt table { font-size: 10px !important; }
+    #receipt table td { padding: 2px 0 !important; }
+    @page { margin: 8mm; size: A6; }
   </style>
   <script>
     (function(){var t=localStorage.getItem('theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');else document.documentElement.removeAttribute('data-theme');})();
@@ -429,38 +432,37 @@ $qrCodeUrl = $verifyUrl ? 'https://api.qrserver.com/v1/create-qr-code/?size=180x
     </div>
 
     <?php if ($paymentStatus === 'paid' && $sessionId): ?>
-    <div id="receipt" class="receipt-print rounded-2xl border border-zinc-700 bg-zinc-800/50 p-6 sm:p-8 mb-8 text-left max-w-md mx-auto">
-      <div class="text-center border-b border-zinc-600 pb-6 mb-6">
-        <img src="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png" alt="No 5 Tyre & MOT" class="h-10 sm:h-12 w-auto mx-auto mb-3" loading="lazy">
-        <p class="text-zinc-400 text-sm font-semibold">PAYMENT RECEIPT</p>
+    <div id="receipt" class="receipt-print rounded-xl border border-zinc-700 bg-zinc-800/50 p-4 sm:p-5 mb-8 text-left max-w-xs mx-auto text-sm">
+      <div class="text-center border-b border-zinc-600 pb-3 mb-3">
+        <img src="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png" alt="No 5 Tyre & MOT" class="h-7 w-auto mx-auto mb-1" loading="lazy">
+        <p class="text-zinc-400 text-xs font-semibold">PAYMENT RECEIPT</p>
       </div>
       <?php if ($reference): ?>
-      <p class="text-zinc-400 text-sm mb-1">Reference</p>
-      <p class="text-xl font-mono font-bold text-safety mb-6"><?php echo htmlspecialchars($reference); ?></p>
+      <p class="text-zinc-400 text-xs mb-0.5">Reference</p>
+      <p class="text-lg font-mono font-bold text-safety mb-3"><?php echo htmlspecialchars($reference); ?></p>
       <?php endif; ?>
-      <p class="text-zinc-500 text-xs mb-4"><?php echo htmlspecialchars($receiptDate); ?></p>
-      <table class="w-full text-sm">
-        <tr class="border-b border-zinc-600"><td class="py-3 text-zinc-400">Deposit paid</td><td class="py-3 text-right font-semibold text-white"><?php echo htmlspecialchars($amountFormatted); ?></td></tr>
-        <tr class="border-b border-zinc-600"><td class="py-3 text-zinc-400">Estimate total</td><td class="py-3 text-right font-semibold text-white"><?php echo htmlspecialchars($estimateFormatted); ?></td></tr>
-        <tr class="border-b border-zinc-600"><td class="py-3 text-zinc-400">Balance due on completion</td><td class="py-3 text-right font-semibold text-white"><?php echo htmlspecialchars($balanceDue); ?></td></tr>
-        <?php if ($vatRate > 0): ?><tr class="border-b border-zinc-600"><td class="py-3 text-zinc-400">VAT</td><td class="py-3 text-right text-zinc-400 text-xs"><?php echo (int) $vatRate; ?>% included</td></tr><?php endif; ?>
-        <?php if ($vatNumber !== ''): ?><tr><td colspan="2" class="py-2 text-zinc-500 text-xs">VAT Reg No: <?php echo htmlspecialchars($vatNumber); ?></td></tr><?php endif; ?>
+      <p class="text-zinc-500 text-xs mb-2"><?php echo htmlspecialchars($receiptDate); ?></p>
+      <table class="w-full text-xs">
+        <tr class="border-b border-zinc-600"><td class="py-1.5 text-zinc-400">Deposit paid</td><td class="py-1.5 text-right font-semibold text-white"><?php echo htmlspecialchars($amountFormatted); ?></td></tr>
+        <tr class="border-b border-zinc-600"><td class="py-1.5 text-zinc-400">Estimate total</td><td class="py-1.5 text-right font-semibold text-white"><?php echo htmlspecialchars($estimateFormatted); ?></td></tr>
+        <tr class="border-b border-zinc-600"><td class="py-1.5 text-zinc-400">Balance due</td><td class="py-1.5 text-right font-semibold text-white"><?php echo htmlspecialchars($balanceDue); ?></td></tr>
+        <?php if ($vatRate > 0): ?><tr class="border-b border-zinc-600"><td class="py-1.5 text-zinc-400">VAT</td><td class="py-1.5 text-right text-zinc-400"><?php echo (int) $vatRate; ?>% incl.</td></tr><?php endif; ?>
+        <?php if ($vatNumber !== ''): ?><tr><td colspan="2" class="py-1 text-zinc-500">VAT Reg: <?php echo htmlspecialchars($vatNumber); ?></td></tr><?php endif; ?>
       </table>
-      <?php if ($qrCodeUrl): ?>
-      <div class="mt-6 flex flex-col items-center">
-        <p class="text-zinc-400 text-xs mb-2">Driver scan to verify details</p>
-        <img src="<?php echo htmlspecialchars($qrCodeUrl); ?>" alt="QR code for job verification" width="180" height="180" class="rounded-lg border border-zinc-600">
+      <div class="flex items-start gap-3 mt-3">
+        <?php if ($qrCodeUrl): ?>
+        <div class="flex-shrink-0">
+          <img src="<?php echo htmlspecialchars($qrCodeUrl); ?>" alt="QR code for job verification" width="100" height="100" class="rounded border border-zinc-600">
+          <p class="text-zinc-500 text-[10px] mt-0.5 text-center">Scan to verify</p>
+        </div>
+        <?php endif; ?>
+        <div class="flex-1 min-w-0">
+          <?php if ($vehicleDesc !== ''): ?><p class="text-zinc-400 text-[10px] mb-0.5">Vehicle</p><p class="text-zinc-200 font-medium text-xs mb-1.5"><?php echo htmlspecialchars($vehicleDesc); ?></p><?php endif; ?>
+          <?php if ($customerPostcode !== ''): ?><p class="text-zinc-400 text-[10px] mb-0.5">Location</p><p class="text-zinc-200 font-medium text-xs"><?php echo htmlspecialchars($customerPostcode); ?></p><?php endif; ?>
+        </div>
       </div>
-      <?php endif; ?>
-      <?php if ($vehicleDesc !== '' || $customerPostcode !== ''): ?>
-      <div class="mt-6 pt-4 border-t border-zinc-600 text-sm">
-        <?php if ($vehicleDesc !== ''): ?><p class="text-zinc-400 mb-1">Vehicle</p><p class="text-zinc-200 font-medium mb-3"><?php echo htmlspecialchars($vehicleDesc); ?></p><?php endif; ?>
-        <?php if ($customerPostcode !== ''): ?><p class="text-zinc-400 mb-1">Location</p><p class="text-zinc-200 font-medium"><?php echo htmlspecialchars($customerPostcode); ?></p><?php endif; ?>
-      </div>
-      <?php endif; ?>
-      <div class="mt-6 pt-4 border-t border-zinc-600 text-center">
-        <p class="text-zinc-500 text-sm">No 5 Tyre &amp; MOT</p>
-        <p class="text-zinc-400 text-sm font-semibold">07895 859505</p>
+      <div class="mt-3 pt-2 border-t border-zinc-600 text-center">
+        <p class="text-zinc-500 text-xs">No 5 Tyre &amp; MOT · 07895 859505</p>
       </div>
     </div>
 

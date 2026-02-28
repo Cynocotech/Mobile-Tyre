@@ -168,7 +168,7 @@ elseif ($vehicleVrm !== '') $vehicleDesc .= ' (' . $vehicleVrm . ')';
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { theme: { extend: { colors: { safety: '#fede00' } } } };</script>
 </head>
-<body class="bg-zinc-900 text-zinc-200 antialiased min-h-screen">
+<body class="bg-zinc-900 text-zinc-200 antialiased min-h-screen page-loaded">
   <header class="bg-zinc-900 border-b border-zinc-700 py-4">
     <div class="max-w-lg mx-auto px-4 flex items-center justify-between">
       <h1 class="text-lg font-bold text-white">Driver verification</h1>
