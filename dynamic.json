@@ -31,7 +31,7 @@
   "stripePublishableKey": "pk_test_51T5pfhBL0uqltDfycRWbLcvmTWp7oiPFDfgWEMMCDeP7gD92aax5ffWgVLxCI63qQWjJH124QJivEDMfta3FtxFb00Q4u5M1Ku",
   "stripeSecretKey": "sk_test_51T5pfhBL0uqltDfyfE0PIHcdAIWHmcTwSQSiRtTHlNDmE5TsxyI5vzwC3jrIqgxwjWpRuajcXagdS0jRtiwWEdV000Yj3pPRCd",
   "smtp": {
-    "host": "smtppro.zoho.com",
+    "host": "smtp.zoho.eu",
     "port": 465,
     "user": "booking@no5tyreandmot.co.uk",
     "pass": "N5rooz2025!cyberc"

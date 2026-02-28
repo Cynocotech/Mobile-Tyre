@@ -168,38 +168,38 @@ if ($session && $BOT_TOKEN && !empty($CHAT_IDS)) {
     if ($telegramSent) {
       file_put_contents($sentLogPath, $sessionId . "\n", FILE_APPEND | LOCK_EX);
     }
+  }
+}
 
-    // Send confirmation email with invoice to customer (once per session)
-    if ($paymentStatus === 'paid' && !empty($customerEmail)) {
-      $emailSentLogPath = __DIR__ . '/.stripe-email-sent';
-      $emailSentIds = is_file($emailSentLogPath) ? array_filter(explode("\n", file_get_contents($emailSentLogPath))) : [];
-      if (!in_array($sessionId, $emailSentIds, true)) {
-        require_once __DIR__ . '/smtp-send.php';
-        $amountFormatted = '£' . number_format($amountTotal / 100, 2);
-        $estimateFormatted = $estimateTotal !== '' ? '£' . number_format((float) $estimateTotal, 2) : '—';
-        $balanceDue = $estimateTotal !== '' ? '£' . number_format(max(0, (float) $estimateTotal - $amountTotal / 100), 2) : '—';
-        $vehicleDesc = trim($vehicleMake . ' ' . $vehicleModel);
-        if ($vehicleDesc === '' && $vehicleVrm !== '') $vehicleDesc = $vehicleVrm;
-        elseif ($vehicleVrm !== '') $vehicleDesc .= ' (' . $vehicleVrm . ')';
-        $invoiceHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;padding:20px}.header{text-align:center;border-bottom:2px solid #fede00;padding-bottom:15px;margin-bottom:20px}.ref{font-size:18px;font-weight:bold;color:#18181b;background:#fede00;padding:8px 16px;display:inline-block;margin:10px 0}.table{width:100%;border-collapse:collapse;margin:20px 0}.table td{padding:10px;border-bottom:1px solid #ddd}.table .label{color:#666}.table .amount{text-align:right;font-weight:bold}.footer{margin-top:30px;font-size:12px;color:#666;text-align:center}</style></head><body>';
-        $invoiceHtml .= '<div class="header"><h1 style="margin:0;color:#18181b">No 5 Tyre &amp; MOT</h1><p style="margin:5px 0 0">Mobile Tyre Fitting</p></div>';
-        $invoiceHtml .= '<h2>Payment Confirmation</h2><p>Thank you for your deposit. Your booking is secured.</p>';
-        $invoiceHtml .= '<p><strong>Reference:</strong> <span class="ref">' . htmlspecialchars($reference) . '</span></p>';
-        $invoiceHtml .= '<p>Please quote this reference when you call us on <strong>07895 859505</strong>.</p>';
-        $invoiceHtml .= '<table class="table"><tr><td class="label">Deposit paid</td><td class="amount">' . htmlspecialchars($amountFormatted) . '</td></tr>';
-        $invoiceHtml .= '<tr><td class="label">Estimate total</td><td class="amount">' . htmlspecialchars($estimateFormatted) . '</td></tr>';
-        $invoiceHtml .= '<tr><td class="label">Balance due on completion</td><td class="amount">' . htmlspecialchars($balanceDue) . '</td></tr></table>';
-        if ($vehicleDesc !== '' || $customerPostcode !== '') {
-          $invoiceHtml .= '<p><strong>Vehicle:</strong> ' . htmlspecialchars($vehicleDesc ?: '—') . '</p>';
-          $invoiceHtml .= '<p><strong>Location:</strong> ' . htmlspecialchars($customerPostcode ?: '—') . '</p>';
-        }
-        $invoiceHtml .= '<p style="margin-top:25px">We&rsquo;ll be in touch to confirm your booking. For any questions, call us on <strong>07895 859505</strong>.</p>';
-        $invoiceHtml .= '<div class="footer"><p>No 5 Tyre &amp; MOT &bull; Mobile Tyre Fitting London<br>07895 859505 &bull; ' . date('Y-m-d H:i', time()) . '</p></div>';
-        $invoiceHtml .= '</body></html>';
-        if (function_exists('sendSmtpMail') && sendSmtpMail($customerEmail, 'Deposit received – Ref ' . $reference . ' | No 5 Tyre & MOT', $invoiceHtml)) {
-          file_put_contents($emailSentLogPath, $sessionId . "\n", FILE_APPEND | LOCK_EX);
-        }
-      }
+// Send confirmation email with invoice to customer (once per session) — runs independently of Telegram
+if ($paymentStatus === 'paid' && $sessionId && !empty($customerEmail)) {
+  $emailSentLogPath = __DIR__ . '/.stripe-email-sent';
+  $emailSentIds = is_file($emailSentLogPath) ? array_filter(explode("\n", file_get_contents($emailSentLogPath))) : [];
+  if (!in_array($sessionId, $emailSentIds, true)) {
+    require_once __DIR__ . '/smtp-send.php';
+    $amountFormatted = '£' . number_format($amountTotal / 100, 2);
+    $estimateFormatted = $estimateTotal !== '' ? '£' . number_format((float) $estimateTotal, 2) : '—';
+    $balanceDue = $estimateTotal !== '' ? '£' . number_format(max(0, (float) $estimateTotal - $amountTotal / 100), 2) : '—';
+    $vehicleDesc = trim($vehicleMake . ' ' . $vehicleModel);
+    if ($vehicleDesc === '' && $vehicleVrm !== '') $vehicleDesc = $vehicleVrm;
+    elseif ($vehicleVrm !== '') $vehicleDesc .= ' (' . $vehicleVrm . ')';
+    $invoiceHtml = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;padding:20px}.header{text-align:center;border-bottom:2px solid #fede00;padding-bottom:15px;margin-bottom:20px}.ref{font-size:18px;font-weight:bold;color:#18181b;background:#fede00;padding:8px 16px;display:inline-block;margin:10px 0}.table{width:100%;border-collapse:collapse;margin:20px 0}.table td{padding:10px;border-bottom:1px solid #ddd}.table .label{color:#666}.table .amount{text-align:right;font-weight:bold}.footer{margin-top:30px;font-size:12px;color:#666;text-align:center}</style></head><body>';
+    $invoiceHtml .= '<div class="header"><h1 style="margin:0;color:#18181b">No 5 Tyre &amp; MOT</h1><p style="margin:5px 0 0">Mobile Tyre Fitting</p></div>';
+    $invoiceHtml .= '<h2>Payment Confirmation</h2><p>Thank you for your deposit. Your booking is secured.</p>';
+    $invoiceHtml .= '<p><strong>Reference:</strong> <span class="ref">' . htmlspecialchars($reference) . '</span></p>';
+    $invoiceHtml .= '<p>Please quote this reference when you call us on <strong>07895 859505</strong>.</p>';
+    $invoiceHtml .= '<table class="table"><tr><td class="label">Deposit paid</td><td class="amount">' . htmlspecialchars($amountFormatted) . '</td></tr>';
+    $invoiceHtml .= '<tr><td class="label">Estimate total</td><td class="amount">' . htmlspecialchars($estimateFormatted) . '</td></tr>';
+    $invoiceHtml .= '<tr><td class="label">Balance due on completion</td><td class="amount">' . htmlspecialchars($balanceDue) . '</td></tr></table>';
+    if ($vehicleDesc !== '' || $customerPostcode !== '') {
+      $invoiceHtml .= '<p><strong>Vehicle:</strong> ' . htmlspecialchars($vehicleDesc ?: '—') . '</p>';
+      $invoiceHtml .= '<p><strong>Location:</strong> ' . htmlspecialchars($customerPostcode ?: '—') . '</p>';
+    }
+    $invoiceHtml .= '<p style="margin-top:25px">We&rsquo;ll be in touch to confirm your booking. For any questions, call us on <strong>07895 859505</strong>.</p>';
+    $invoiceHtml .= '<div class="footer"><p>No 5 Tyre &amp; MOT &bull; Mobile Tyre Fitting London<br>07895 859505 &bull; ' . date('Y-m-d H:i', time()) . '</p></div>';
+    $invoiceHtml .= '</body></html>';
+    if (function_exists('sendSmtpMail') && sendSmtpMail($customerEmail, 'Deposit received – Ref ' . $reference . ' | No 5 Tyre & MOT', $invoiceHtml)) {
+      file_put_contents($emailSentLogPath, $sessionId . "\n", FILE_APPEND | LOCK_EX);
     }
   }
 }
