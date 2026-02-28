@@ -376,6 +376,12 @@
 
       function formatPounds(n) { return '£' + (n || 0).toFixed(2); }
 
+      function escapeHtml(str) {
+        if (str == null) return '';
+        var s = String(str);
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      }
+
       function getPrice(key) {
         return key === 'laborPrice' ? CONFIG.laborPrice : (CONFIG.prices[key] || 0);
       }
@@ -408,9 +414,9 @@
           var div = document.createElement('div');
           div.className = 'flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-600';
           div.innerHTML =
-            '<span class="text-zinc-200 text-sm">' + (def.label || def.id) + '</span>' +
+            '<span class="text-zinc-200 text-sm">' + escapeHtml(def.label || def.id) + '</span>' +
             '<span class="text-safety font-medium tabular-nums">' + formatPounds(price) + '</span>' +
-            '<button type="button" class="estimate-add-service px-3 py-1.5 rounded bg-safety text-zinc-900 font-semibold text-sm hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety" data-id="' + def.id + '">Add</button>';
+            '<button type="button" class="estimate-add-service px-3 py-1.5 rounded bg-safety text-zinc-900 font-semibold text-sm hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety" data-id="' + escapeHtml(def.id) + '">Add</button>';
           availableEl.appendChild(div);
         });
         availableEl.querySelectorAll('.estimate-add-service').forEach(function (btn) {
@@ -428,7 +434,7 @@
           row.className = 'estimate-selected-row flex flex-wrap items-center gap-2 py-2 border-b border-zinc-600 last:border-0';
           var lineTotal = line.price * (line.qty || 1);
           row.innerHTML =
-            '<span class="flex-1 min-w-[120px] text-zinc-200 text-sm">' + (line.label || line.id) + (line.qty > 1 ? ' ×' + line.qty : '') + '</span>' +
+            '<span class="flex-1 min-w-[120px] text-zinc-200 text-sm">' + escapeHtml(line.label || line.id) + (line.qty > 1 ? ' ×' + line.qty : '') + '</span>' +
             '<span class="text-safety font-medium tabular-nums">' + formatPounds(line.price) + '</span>' +
             '<span class="font-semibold text-white tabular-nums w-16 text-right">' + formatPounds(lineTotal) + '</span>' +
             '<button type="button" class="estimate-remove-selected text-zinc-500 hover:text-red-400 p-1" data-idx="' + idx + '" aria-label="Remove">×</button>';
@@ -439,8 +445,8 @@
           row.className = 'estimate-selected-row flex flex-wrap items-center gap-2 py-2 border-b border-zinc-600 last:border-0';
           var amt = Number(line.amount) || 0;
           row.innerHTML =
-            '<input type="text" placeholder="Description" class="custom-desc flex-1 min-w-[100px] px-2 py-1 rounded bg-zinc-700 border border-zinc-600 text-zinc-100 text-sm" value="' + (line.desc || '').replace(/"/g, '&quot;') + '">' +
-            '<input type="number" min="0" step="0.01" placeholder="£" class="custom-amount w-16 px-2 py-1 rounded bg-zinc-700 border border-zinc-600 text-zinc-100 text-sm" value="' + (line.amount != null ? line.amount : '') + '">' +
+            '<input type="text" placeholder="Description" class="custom-desc flex-1 min-w-[100px] px-2 py-1 rounded bg-zinc-700 border border-zinc-600 text-zinc-100 text-sm" value="' + escapeHtml(line.desc || '') + '">' +
+            '<input type="number" min="0" step="0.01" placeholder="£" class="custom-amount w-16 px-2 py-1 rounded bg-zinc-700 border border-zinc-600 text-zinc-100 text-sm" value="' + escapeHtml(line.amount != null ? String(line.amount) : '') + '">' +
             '<span class="estimate-custom-total font-semibold text-white tabular-nums w-16 text-right">' + formatPounds(amt) + '</span>' +
             '<button type="button" class="estimate-remove-custom text-zinc-500 hover:text-red-400 p-1" data-idx="' + idx + '" aria-label="Remove">×</button>';
           selectedEl.appendChild(row);

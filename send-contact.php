@@ -24,9 +24,15 @@ $BOT_TOKEN = '8798625642:AAHaq1No3a4lcO3tdHDz2jrmWC24VUF_N3s';
 $CHAT_ID   = '1819809453';
 
 $input = json_decode(file_get_contents('php://input'), true) ?: [];
-$fullName = isset($input['full_name']) ? trim((string)$input['full_name']) : '';
-$number   = isset($input['number'])   ? trim((string)$input['number'])   : '';
-$message  = isset($input['message'])  ? trim((string)$input['message'])  : '';
+
+function sanitizeContact($v, $max = 500) {
+  $v = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', (string) $v);
+  return substr(trim($v), 0, $max);
+}
+
+$fullName = isset($input['full_name']) ? sanitizeContact($input['full_name'], 200) : '';
+$number   = isset($input['number'])   ? preg_replace('/[^0-9+\s\-]/', '', substr(trim((string)($input['number'] ?? '')), 0, 30) : '';
+$message  = isset($input['message'])  ? sanitizeContact($input['message'], 2000) : '';
 $captchaNum1  = isset($input['captcha_num1'])  ? (int)$input['captcha_num1']  : 0;
 $captchaNum2  = isset($input['captcha_num2'])  ? (int)$input['captcha_num2']  : 0;
 $captchaAnswer = isset($input['captcha_answer']) ? (int)$input['captcha_answer'] : null;

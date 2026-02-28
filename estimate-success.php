@@ -1,4 +1,5 @@
 <?php
+header('X-Content-Type-Options: nosniff');
 /**
  * Thank you page after Stripe Checkout (estimate deposit).
  * - Retrieves session from Stripe, sends full details + payment status to Telegram.
@@ -8,6 +9,11 @@
  * Config: Stripe + Telegram in dynamic.json or env (see create-checkout-session.php and send-quote.php).
  */
 $sessionId = isset($_GET['session_id']) ? trim((string) $_GET['session_id']) : '';
+
+// Validate Stripe session ID format (cs_xxx) to prevent injection / invalid requests
+if ($sessionId !== '' && !preg_match('/^cs_[a-zA-Z0-9_]+$/', $sessionId)) {
+  $sessionId = '';
+}
 
 // Load config: Stripe secret + Telegram
 $configPath = __DIR__ . '/dynamic.json';
@@ -35,6 +41,8 @@ $paymentStatus = '';
 $amountTotal = 0;
 $currency = 'GBP';
 $customerEmail = '';
+$customerName = '';
+$customerPhone = '';
 $estimateTotal = '';
 $customerPostcode = '';
 $customerLat = '';
@@ -45,6 +53,8 @@ $vehicleModel = '';
 $vehicleColour = '';
 $vehicleYear = '';
 $vehicleFuel = '';
+$vehicleTyreSize = '';
+$vehicleWheels = '';
 
 if ($sessionId && $stripeSecretKey) {
   $ch = curl_init('https://api.stripe.com/v1/checkout/sessions/' . $sessionId);
@@ -71,6 +81,12 @@ if ($sessionId && $stripeSecretKey) {
       if (!empty($session['metadata']['estimate_total'])) {
         $estimateTotal = $session['metadata']['estimate_total'];
       }
+      if (!empty($session['metadata']['customer_name'])) {
+        $customerName = $session['metadata']['customer_name'];
+      }
+      if (!empty($session['metadata']['customer_phone'])) {
+        $customerPhone = $session['metadata']['customer_phone'];
+      }
       if (!empty($session['metadata']['customer_postcode'])) {
         $customerPostcode = $session['metadata']['customer_postcode'];
       }
@@ -95,6 +111,12 @@ if ($sessionId && $stripeSecretKey) {
       }
       if (!empty($session['metadata']['vehicle_fuel'])) {
         $vehicleFuel = $session['metadata']['vehicle_fuel'];
+      }
+      if (!empty($session['metadata']['vehicle_tyre_size'])) {
+        $vehicleTyreSize = $session['metadata']['vehicle_tyre_size'];
+      }
+      if (!empty($session['metadata']['vehicle_wheels'])) {
+        $vehicleWheels = $session['metadata']['vehicle_wheels'];
       }
     }
   }
@@ -197,6 +219,59 @@ if ($paymentStatus === 'paid' && $sessionId && !empty($customerEmail)) {
   }
 }
 
+// Save customer & car details to database/customers.csv (once per paid session)
+$dbFolder = __DIR__ . '/database';
+$dbCsvPath = $dbFolder . '/customers.csv';
+$dbSentLogPath = __DIR__ . '/.stripe-db-saved';
+if ($paymentStatus === 'paid' && $sessionId) {
+  if (!is_dir($dbFolder)) {
+    @mkdir($dbFolder, 0755, true);
+  }
+  if (is_dir($dbFolder)) {
+    $dbSentIds = is_file($dbSentLogPath) ? array_filter(explode("\n", file_get_contents($dbSentLogPath))) : [];
+    if (!in_array($sessionId, $dbSentIds, true)) {
+      $amountFormatted = '£' . number_format($amountTotal / 100, 2);
+      $vehicleDesc = trim($vehicleMake . ' ' . $vehicleModel);
+      if ($vehicleDesc === '' && $vehicleVrm !== '') $vehicleDesc = $vehicleVrm;
+      elseif ($vehicleVrm !== '') $vehicleDesc .= ' (' . $vehicleVrm . ')';
+      $row = [
+        date('Y-m-d H:i:s'),
+        $reference,
+        $sessionId,
+        $customerEmail,
+        $customerName,
+        $customerPhone,
+        $customerPostcode,
+        $customerLat,
+        $customerLng,
+        $vehicleVrm,
+        $vehicleMake,
+        $vehicleModel,
+        $vehicleColour,
+        $vehicleYear,
+        $vehicleFuel,
+        $vehicleTyreSize,
+        $vehicleWheels,
+        $vehicleDesc,
+        $estimateTotal,
+        $amountFormatted,
+        $currency,
+        $paymentStatus,
+      ];
+      $newFile = !is_file($dbCsvPath);
+      $fp = @fopen($dbCsvPath, 'a');
+      if ($fp) {
+        if ($newFile) {
+          fputcsv($fp, ['date', 'reference', 'session_id', 'email', 'name', 'phone', 'postcode', 'lat', 'lng', 'vrm', 'make', 'model', 'colour', 'year', 'fuel', 'tyre_size', 'wheels', 'vehicle_desc', 'estimate_total', 'amount_paid', 'currency', 'payment_status']);
+        }
+        fputcsv($fp, $row);
+        fclose($fp);
+        file_put_contents($dbSentLogPath, $sessionId . "\n", FILE_APPEND | LOCK_EX);
+      }
+    }
+  }
+}
+
 // GTM container ID: set in dynamic.json as "gtmContainerId": "GTM-XXXXXXX" or leave empty to skip GTM
 $gtmId = '';
 if (is_file($configPath)) {
@@ -223,6 +298,15 @@ if ($paymentStatus === 'paid' && $sessionId && $amountTotal > 0) {
     ],
   ];
 }
+
+// Receipt data for display and PDF
+$amountFormatted = $amountTotal > 0 ? '£' . number_format($amountTotal / 100, 2) : '—';
+$estimateFormatted = $estimateTotal !== '' ? '£' . number_format((float) $estimateTotal, 2) : '—';
+$balanceDue = $estimateTotal !== '' ? '£' . number_format(max(0, (float) $estimateTotal - $amountTotal / 100), 2) : '—';
+$vehicleDesc = trim($vehicleMake . ' ' . $vehicleModel);
+if ($vehicleDesc === '' && $vehicleVrm !== '') $vehicleDesc = $vehicleVrm;
+elseif ($vehicleVrm !== '') $vehicleDesc .= ' (' . $vehicleVrm . ')';
+$receiptDate = date('d M Y, H:i');
 ?>
 <!DOCTYPE html>
 <html lang="en-GB">
@@ -234,6 +318,17 @@ if ($paymentStatus === 'paid' && $sessionId && $amountTotal > 0) {
   <meta name="theme-color" content="#18181b">
   <link rel="icon" type="image/png" href="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png" sizes="any">
   <link rel="stylesheet" href="styles.css">
+  <style media="print">
+    body { background: #fff !important; }
+    main { padding: 0 !important; }
+    .no-print { display: none !important; }
+    #receipt { max-width: 100% !important; background: #fff !important; color: #000 !important; border: 1px solid #333 !important; box-shadow: none !important; }
+    #receipt * { color: #000 !important; border-color: #333 !important; }
+    #receipt .text-safety, #receipt .text-white { color: #000 !important; font-weight: bold; }
+    #receipt .text-zinc-400, #receipt .text-zinc-500 { color: #555 !important; }
+    #receipt .text-zinc-200 { color: #000 !important; }
+    @page { margin: 12mm; size: A5; }
+  </style>
   <script>
     (function(){var t=localStorage.getItem('theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');else document.documentElement.removeAttribute('data-theme');})();
   </script>
@@ -263,7 +358,7 @@ if ($paymentStatus === 'paid' && $sessionId && $amountTotal > 0) {
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
   <?php endif; ?>
-  <header class="sticky top-0 z-50 bg-zinc-900 border-b border-zinc-700 shadow-lg">
+  <header class="sticky top-0 z-50 bg-zinc-900 border-b border-zinc-700 shadow-lg no-print">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14 sm:h-16">
       <a href="index.html" class="flex items-center shrink-0">
         <img src="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png" alt="No 5 Tyre and MOT logo" class="h-8 sm:h-9 w-auto object-contain" loading="lazy">
@@ -273,7 +368,7 @@ if ($paymentStatus === 'paid' && $sessionId && $amountTotal > 0) {
   </header>
 
   <main class="max-w-xl mx-auto px-4 sm:px-6 py-16 text-center">
-    <div class="rounded-2xl border border-zinc-700 bg-zinc-800/50 p-8 sm:p-10">
+    <div class="rounded-2xl border border-zinc-700 bg-zinc-800/50 p-8 sm:p-10 no-print mb-8">
       <div class="w-14 h-14 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6" aria-hidden="true">
         <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -281,6 +376,49 @@ if ($paymentStatus === 'paid' && $sessionId && $amountTotal > 0) {
       </div>
       <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2">Thank you</h1>
       <p class="text-zinc-400 mb-6">Your 20% deposit has been received and your booking is secured. We’ll be in touch to confirm the job and collect the remaining balance on completion.</p>
+    </div>
+
+    <?php if ($paymentStatus === 'paid' && $sessionId): ?>
+    <div id="receipt" class="receipt-print rounded-2xl border border-zinc-700 bg-zinc-800/50 p-6 sm:p-8 mb-8 text-left max-w-md mx-auto">
+      <div class="text-center border-b border-zinc-600 pb-6 mb-6">
+        <img src="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png" alt="No 5 Tyre & MOT" class="h-10 sm:h-12 w-auto mx-auto mb-3" loading="lazy">
+        <p class="text-zinc-400 text-sm font-semibold">PAYMENT RECEIPT</p>
+      </div>
+      <?php if ($reference): ?>
+      <p class="text-zinc-400 text-sm mb-1">Reference</p>
+      <p class="text-xl font-mono font-bold text-safety mb-6"><?php echo htmlspecialchars($reference); ?></p>
+      <?php endif; ?>
+      <p class="text-zinc-500 text-xs mb-4"><?php echo htmlspecialchars($receiptDate); ?></p>
+      <table class="w-full text-sm">
+        <tr class="border-b border-zinc-600"><td class="py-3 text-zinc-400">Deposit paid</td><td class="py-3 text-right font-semibold text-white"><?php echo htmlspecialchars($amountFormatted); ?></td></tr>
+        <tr class="border-b border-zinc-600"><td class="py-3 text-zinc-400">Estimate total</td><td class="py-3 text-right font-semibold text-white"><?php echo htmlspecialchars($estimateFormatted); ?></td></tr>
+        <tr><td class="py-3 text-zinc-400">Balance due on completion</td><td class="py-3 text-right font-semibold text-white"><?php echo htmlspecialchars($balanceDue); ?></td></tr>
+      </table>
+      <?php if ($vehicleDesc !== '' || $customerPostcode !== ''): ?>
+      <div class="mt-6 pt-4 border-t border-zinc-600 text-sm">
+        <?php if ($vehicleDesc !== ''): ?><p class="text-zinc-400 mb-1">Vehicle</p><p class="text-zinc-200 font-medium mb-3"><?php echo htmlspecialchars($vehicleDesc); ?></p><?php endif; ?>
+        <?php if ($customerPostcode !== ''): ?><p class="text-zinc-400 mb-1">Location</p><p class="text-zinc-200 font-medium"><?php echo htmlspecialchars($customerPostcode); ?></p><?php endif; ?>
+      </div>
+      <?php endif; ?>
+      <div class="mt-6 pt-4 border-t border-zinc-600 text-center">
+        <p class="text-zinc-500 text-sm">No 5 Tyre &amp; MOT</p>
+        <p class="text-zinc-400 text-sm font-semibold">07895 859505</p>
+      </div>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-3 justify-center no-print">
+      <button type="button" onclick="window.print()" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-safety text-zinc-900 font-bold rounded-lg hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293L17 7.586A2 2 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>
+        Download PDF
+      </button>
+      <a href="index.html" class="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-zinc-600 text-zinc-300 font-bold rounded-lg hover:border-safety hover:text-safety transition-colors">
+        Back to home
+      </a>
+    </div>
+
+    <p class="text-zinc-500 text-sm mt-6 no-print">For any questions, call us on <a href="tel:07895859505" class="text-safety font-semibold hover:underline">07895 859505</a>.</p>
+    <?php else: ?>
+    <div class="rounded-2xl border border-zinc-700 bg-zinc-800/50 p-8">
       <?php if ($reference): ?>
       <p class="text-zinc-300 text-sm sm:text-base font-mono font-semibold mb-2 rounded-lg bg-zinc-800 px-4 py-3 border border-zinc-600">Reference: <span class="text-safety"><?php echo htmlspecialchars($reference); ?></span></p>
       <p class="text-zinc-500 text-xs sm:text-sm mb-6">Please quote this reference when you call us.</p>
@@ -290,6 +428,7 @@ if ($paymentStatus === 'paid' && $sessionId && $amountTotal > 0) {
         Back to home
       </a>
     </div>
+    <?php endif; ?>
   </main>
 
   <script>

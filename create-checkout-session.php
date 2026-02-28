@@ -8,10 +8,11 @@
  * - Environment variable STRIPE_SECRET_KEY (recommended), or
  * - dynamic.json: "stripeSecretKey": "sk_live_..." or "sk_test_..."
  */
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+header('X-Content-Type-Options: nosniff');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
   http_response_code(204);
@@ -21,6 +22,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
   http_response_code(405);
   echo json_encode(['error' => 'Method not allowed']);
+  exit;
+}
+
+// Require JSON body to reduce risk of form-based CSRF
+$ct = isset($_SERVER['CONTENT_TYPE']) ? strtolower(trim($_SERVER['CONTENT_TYPE'])) : '';
+if (strpos($ct, 'application/json') !== 0) {
+  http_response_code(415);
+  echo json_encode(['error' => 'Content-Type must be application/json.']);
+  exit;
+}
+
+// Limit request body size (10KB) to prevent DoS
+$rawInput = file_get_contents('php://input');
+if (strlen($rawInput) > 10240) {
+  http_response_code(413);
+  echo json_encode(['error' => 'Request too large.']);
   exit;
 }
 
@@ -42,15 +59,37 @@ if (!$stripeSecretKey) {
   exit;
 }
 
-$input = json_decode(file_get_contents('php://input'), true) ?: [];
+$input = json_decode($rawInput, true) ?: [];
 $amountPence = isset($input['amount_pence']) ? (int) $input['amount_pence'] : 0;
 $customerEmail = isset($input['customer_email']) ? trim((string) $input['customer_email']) : '';
-$description = isset($input['description']) ? trim((string) $input['description']) : 'Emergency Tyre Deposit';
+$estimateTotal = isset($input['estimate_total']) ? (float) $input['estimate_total'] : 0;
 
-// Stripe minimum charge (e.g. 50p for GBP)
+// Prevent payment manipulation: min 50p, max £5,000
 if ($amountPence < 50) {
   http_response_code(400);
   echo json_encode(['error' => 'Deposit amount is too small. Minimum £0.50.']);
+  exit;
+}
+if ($amountPence > 500000) {
+  http_response_code(400);
+  echo json_encode(['error' => 'Deposit amount exceeds maximum. Please call us to arrange payment.']);
+  exit;
+}
+
+// Ensure deposit is at least 20% of estimate (prevent rounding down / underpayment)
+if ($estimateTotal > 0) {
+  $minDepositPence = (int) floor($estimateTotal * 20 / 100 * 100);
+  if ($amountPence < $minDepositPence - 1) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Deposit must be at least 20% of the estimate total.']);
+    exit;
+  }
+}
+
+// Validate email format
+if ($customerEmail !== '' && !filter_var($customerEmail, FILTER_VALIDATE_EMAIL)) {
+  http_response_code(400);
+  echo json_encode(['error' => 'Invalid email address.']);
   exit;
 }
 
@@ -86,42 +125,55 @@ if ($customerEmail !== '') {
   $payload['customer_email'] = $customerEmail;
 }
 
-// Optional: pass metadata for your records (visible in Stripe Dashboard)
+// Sanitize metadata: alphanumeric/safe chars only, strip XSS vectors
+$san = function ($v, $max) {
+  $v = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', (string) $v);
+  return substr(trim($v), 0, $max);
+};
+
 $payload['metadata'] = [
   'type' => 'estimate_deposit',
-  'estimate_total' => isset($input['estimate_total']) ? (string) $input['estimate_total'] : '',
+  'estimate_total' => $estimateTotal > 0 ? (string) $estimateTotal : '',
 ];
-$postcode = isset($input['customer_postcode']) ? trim((string) $input['customer_postcode']) : '';
+$customerName = isset($input['customer_name']) ? $san($input['customer_name'], 200) : '';
+$customerPhone = isset($input['customer_phone']) ? preg_replace('/[^0-9]/', '', substr((string) ($input['customer_phone'] ?? ''), 0, 20)) : '';
+$postcode = isset($input['customer_postcode']) ? $san($input['customer_postcode'], 100) : '';
+if ($customerName !== '') {
+  $payload['metadata']['customer_name'] = $customerName;
+}
+if ($customerPhone !== '') {
+  $payload['metadata']['customer_phone'] = $customerPhone;
+}
 if ($postcode !== '') {
-  $payload['metadata']['customer_postcode'] = substr($postcode, 0, 500);
+  $payload['metadata']['customer_postcode'] = $postcode;
 }
 if (!empty($input['customer_lat']) && !empty($input['customer_lng'])) {
-  $payload['metadata']['customer_lat'] = substr((string) $input['customer_lat'], 0, 50);
-  $payload['metadata']['customer_lng'] = substr((string) $input['customer_lng'], 0, 50);
+  $payload['metadata']['customer_lat'] = $san($input['customer_lat'], 30);
+  $payload['metadata']['customer_lng'] = $san($input['customer_lng'], 30);
 }
 if (!empty($input['vehicle_vrm'])) {
-  $payload['metadata']['vehicle_vrm'] = substr((string) $input['vehicle_vrm'], 0, 20);
+  $payload['metadata']['vehicle_vrm'] = preg_replace('/[^A-Za-z0-9\s]/', '', substr((string) $input['vehicle_vrm'], 0, 20));
 }
 if (!empty($input['vehicle_make'])) {
-  $payload['metadata']['vehicle_make'] = substr((string) $input['vehicle_make'], 0, 200);
+  $payload['metadata']['vehicle_make'] = $san($input['vehicle_make'], 200);
 }
 if (!empty($input['vehicle_model'])) {
-  $payload['metadata']['vehicle_model'] = substr((string) $input['vehicle_model'], 0, 200);
+  $payload['metadata']['vehicle_model'] = $san($input['vehicle_model'], 200);
 }
 if (isset($input['vehicle_colour']) && $input['vehicle_colour'] !== '') {
-  $payload['metadata']['vehicle_colour'] = substr((string) $input['vehicle_colour'], 0, 100);
+  $payload['metadata']['vehicle_colour'] = $san($input['vehicle_colour'], 100);
 }
 if (isset($input['vehicle_year']) && $input['vehicle_year'] !== '') {
-  $payload['metadata']['vehicle_year'] = substr((string) $input['vehicle_year'], 0, 20);
+  $payload['metadata']['vehicle_year'] = $san($input['vehicle_year'], 20);
 }
 if (isset($input['vehicle_fuel']) && $input['vehicle_fuel'] !== '') {
-  $payload['metadata']['vehicle_fuel'] = substr((string) $input['vehicle_fuel'], 0, 50);
+  $payload['metadata']['vehicle_fuel'] = $san($input['vehicle_fuel'], 50);
 }
 if (!empty($input['vehicle_tyre_size'])) {
-  $payload['metadata']['vehicle_tyre_size'] = substr((string) $input['vehicle_tyre_size'], 0, 50);
+  $payload['metadata']['vehicle_tyre_size'] = $san($input['vehicle_tyre_size'], 50);
 }
-if (!empty($input['vehicle_wheels'])) {
-  $payload['metadata']['vehicle_wheels'] = substr((string) $input['vehicle_wheels'], 0, 10);
+if (!empty($input['vehicle_wheels']) && preg_match('/^[1-4]$/', (string) $input['vehicle_wheels'])) {
+  $payload['metadata']['vehicle_wheels'] = $input['vehicle_wheels'];
 }
 
 // Stripe v1 API expects application/x-www-form-urlencoded, not JSON

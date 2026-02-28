@@ -1,2 +1,6 @@
 # SMTP error log (may contain debug info)
 .smtp-error.log
+
+# Customer database (contains personal data – do not commit)
+database/*.csv
+.stripe-db-saved
