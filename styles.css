@@ -198,6 +198,24 @@ body.page-leaving {
 [data-theme="light"] .service-detail {
   border-color: #e4e4e7;
 }
+[data-theme="light"] .bg-zinc-800\/50 {
+  background-color: rgba(244,244,245,0.8) !important;
+}
+[data-theme="light"] .rounded-xl.border-safety.bg-zinc-900 {
+  background-color: #fff !important;
+  border-color: var(--color-safety) !important;
+}
+[data-theme="light"] .rounded-xl.border-safety.bg-zinc-900 th,
+[data-theme="light"] .rounded-xl.border-safety.bg-zinc-900 td {
+  color: #18181b !important;
+}
+[data-theme="light"] .rounded-xl.border-safety .border-zinc-600,
+[data-theme="light"] .rounded-xl.border-safety .border-zinc-700 {
+  border-color: #e4e4e7 !important;
+}
+[data-theme="light"] .rounded-xl.border-safety tbody tr:hover {
+  background-color: #fafafa !important;
+}
 
 /* Remove tap highlight on touch devices for call buttons */
 .tap-highlight-none {
@@ -246,6 +264,45 @@ body.page-leaving {
 .hero-images .hero-img:hover {
   border-color: var(--color-safety);
   box-shadow: 0 0 0 2px var(--color-safety);
+}
+
+/* Quote form – fields with left icon */
+.form-field-icon-wrap {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 2px solid #52525b;
+  background: #27272a;
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.form-field-icon-wrap:focus-within {
+  border-color: #fede00;
+  box-shadow: 0 0 0 1px #fede00;
+}
+.form-field-icon-wrap .form-field-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.75rem;
+  padding: 0 0.5rem;
+  background: rgba(39, 39, 42, 0.8);
+  border-right: 1px solid #52525b;
+  color: #fede00;
+}
+.form-field-icon-wrap .form-field-icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.form-field-icon-wrap input,
+.form-field-icon-wrap select {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
 }
 
 /* UK-style number plate look for VRM (vehicle registration) */
@@ -557,4 +614,99 @@ body.nav-open {
 }
 .gallery-slideshow-dot.active {
   background: #fede00;
+}
+
+/* Section titles with icon */
+.section-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.section-title-icon svg {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+@media (min-width: 640px) {
+  .section-title-icon svg {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+/* London map – areas we cover */
+.areas-cover-with-map {
+  position: relative;
+  min-height: 420px;
+}
+.areas-cover-bg-map {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.areas-cover-bg-map .leaflet-control-container {
+  display: none;
+}
+.london-map {
+  width: 100%;
+  height: 320px;
+  min-height: 280px;
+}
+@media (min-width: 640px) {
+  .london-map {
+    height: 400px;
+  }
+}
+.london-map-marker {
+  background: none !important;
+  border: none !important;
+}
+.london-map-dot {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fede00;
+  border: 3px solid #18181b;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  position: relative;
+  animation: map-dot-pulse 2s ease-in-out infinite;
+}
+.london-map-dot::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid #fede00;
+  opacity: 0.6;
+  animation: map-dot-ring 2s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes map-dot-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.9; }
+}
+@keyframes map-dot-ring {
+  0% { transform: scale(0.6); opacity: 0.6; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 0.5rem;
+  background: #27272a;
+  color: #e4e4e7;
+  border: 1px solid #52525b;
+}
+.leaflet-popup-tip {
+  background: #27272a;
+}
+.leaflet-container a.leaflet-popup-close-button {
+  color: #a1a1aa;
+}
+.leaflet-container a.leaflet-popup-close-button:hover {
+  color: #fff;
 }

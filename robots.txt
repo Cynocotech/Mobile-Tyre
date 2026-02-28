@@ -1,5 +1,4 @@
 User-agent: *
-Disallow:
+Allow: /
 
 Sitemap: https://no5tyreandmot.co.uk/mobile-tyre/sitemap.xml
-

@@ -5,15 +5,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Contact Us | Mobile Tyre Fitting London</title>
   <meta name="description" content="Contact Mobile Tyres for emergency mobile tyre fitting, puncture repair and same day tyre replacement across London. Call 07895 859505 or send a message.">
+  <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#18181b">
   <link rel="canonical" href="https://no5tyreandmot.co.uk/mobile-tyre/contact.html">
+  <link rel="icon" type="image/png" href="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png" sizes="any">
+  <link rel="apple-touch-icon" href="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png" sizes="180x180">
   <link rel="stylesheet" href="styles.css">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://no5tyreandmot.co.uk/mobile-tyre/contact.html">
+  <meta property="og:title" content="Contact Us | Mobile Tyre Fitting London">
+  <meta property="og:description" content="Contact Mobile Tyres for emergency mobile tyre fitting, puncture repair and same day tyre replacement across London. Call 07895 859505 or send a message.">
+  <meta property="og:image" content="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png">
+  <meta property="og:image:alt" content="No5 Tyre &amp; MOT – Contact">
+  <meta property="og:locale" content="en_GB">
+  <meta property="og:site_name" content="Mobile Tyres">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://no5tyreandmot.co.uk/mobile-tyre/contact.html">
+  <meta name="twitter:title" content="Contact Us | Mobile Tyre Fitting London">
+  <meta name="twitter:description" content="Contact Mobile Tyres for emergency mobile tyre fitting across London. Call 07895 859505 or send a message.">
+  <meta name="twitter:image" content="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png">
+
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"ContactPage","name":"Contact No5 Tyre & MOT","description":"Contact us for mobile tyre fitting, puncture repair and same day tyre replacement across London.","url":"https://no5tyreandmot.co.uk/mobile-tyre/contact.html","mainEntity":{"@type":"Organization","name":"No5 Tyre & MOT","telephone":"+447895859505","url":"https://no5tyreandmot.co.uk/mobile-tyre/","contactPoint":{"@type":"ContactPoint","telephone":"+447895859505","contactType":"customer service","areaServed":"GB","availableLanguage":"English"}}}
+  </script>
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://no5tyreandmot.co.uk/mobile-tyre/"},{"@type":"ListItem","position":2,"name":"Contact","item":"https://no5tyreandmot.co.uk/mobile-tyre/contact.html"}]}
+  </script>
   <script>
     (function(){var t=localStorage.getItem('theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');else document.documentElement.removeAttribute('data-theme');})();
   </script>
   <script src="analytics.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { theme: { extend: { colors: { safety: '#fede00' } } } };</script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <style>
+    #contact-map { z-index: 0; }
+    #contact-overlay { z-index: 1; }
+    #contact-map .leaflet-control-container { display: none; }
+  </style>
 </head>
 <body class="bg-zinc-900 text-zinc-200 antialiased min-h-screen">
   <header class="sticky top-0 z-50 bg-zinc-900 border-b border-zinc-700 shadow-lg">
@@ -24,6 +58,7 @@
       <nav class="nav-desktop" aria-label="Main">
         <a href="index.html" class="px-3 py-2 rounded-lg text-zinc-200 font-medium hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900">Home</a>
         <a href="services.html" class="px-3 py-2 rounded-lg text-zinc-200 font-medium hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900">Services</a>
+        <a href="blog.html" class="px-3 py-2 rounded-lg text-zinc-200 font-medium hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900">Blog</a>
         <a href="check-vehicle.html" class="px-3 py-2 rounded-lg text-zinc-200 font-medium hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900">Check vehicle</a>
         <a href="contact.html" class="px-3 py-2 rounded-lg text-safety font-medium bg-zinc-800">Contact</a>
       </nav>
@@ -46,6 +81,7 @@
       <nav class="flex flex-col p-4 gap-1" aria-label="Mobile">
         <a href="index.html" class="nav-mobile-link">Home</a>
         <a href="services.html" class="nav-mobile-link">Services</a>
+        <a href="blog.html" class="nav-mobile-link">Blog</a>
         <a href="check-vehicle.html" class="nav-mobile-link">Check vehicle</a>
         <a href="contact.html" class="nav-mobile-link">Contact</a>
         <div class="border-t border-zinc-700 my-3"></div>
@@ -57,9 +93,33 @@
     </div>
   </header>
 
-  <main class="max-w-xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-    <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2">Contact us</h1>
-    <p class="text-zinc-400 text-sm sm:text-base mb-8">Send a message and we’ll get back to you as soon as we can. For urgent mobile tyre fitting or puncture repair, call <a href="tel:07895859505" data-track="call" class="text-safety font-semibold hover:underline">07895 859505</a>.</p>
+  <main class="relative min-h-[calc(100vh-4rem)] sm:min-h-[calc(100vh-4rem)]">
+    <!-- OpenStreetMap background -->
+    <div id="contact-map" class="absolute inset-0 w-full h-full min-h-[600px]" aria-hidden="true"></div>
+
+    <!-- Overlay with contact content -->
+    <div id="contact-overlay" class="relative max-w-xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+      <div class="rounded-2xl border border-zinc-700 bg-zinc-900/95 backdrop-blur-sm shadow-xl p-6 sm:p-8">
+    <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2 flex items-center gap-3">
+      <span class="flex items-center justify-center w-10 h-10 rounded-lg bg-zinc-800 text-safety" aria-hidden="true">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+      </span>
+      Contact us
+    </h1>
+    <p class="text-zinc-400 text-sm sm:text-base mb-6">Send a message and we’ll get back to you as soon as we can. For urgent mobile tyre fitting or puncture repair, call or message us:</p>
+
+    <div class="flex flex-wrap gap-3 mb-8">
+      <a href="tel:07895859505" data-track="call" class="inline-flex items-center gap-2 px-4 py-3 rounded-lg bg-zinc-800 border-2 border-zinc-600 text-zinc-100 font-semibold hover:border-safety hover:bg-zinc-700 transition-colors">
+        <svg class="w-5 h-5 text-safety shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+        07895 859505
+      </a>
+      <a href="https://wa.me/447895859505" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-4 py-3 rounded-lg bg-zinc-800 border-2 border-zinc-600 text-zinc-100 font-semibold hover:border-green-500 hover:bg-zinc-700 transition-colors" aria-label="WhatsApp">
+        <svg class="w-5 h-5 text-green-400 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        WhatsApp
+      </a>
+    </div>
+
+    <p class="text-zinc-400 text-sm sm:text-base mb-8">Or use the form below:</p>
 
     <form id="contact-form" class="space-y-5">
       <div>
@@ -68,7 +128,13 @@
       </div>
       <div>
         <label for="contact-number" class="block text-sm font-medium text-zinc-300 mb-1">Phone number <span class="text-red-400">*</span></label>
-        <input id="contact-number" name="number" type="tel" required autocomplete="tel" placeholder="e.g. 07895 859505" class="w-full px-4 py-3.5 rounded-lg bg-zinc-800 border-2 border-zinc-600 text-zinc-100 placeholder-zinc-500 focus:border-safety focus:outline-none text-base">
+        <div class="flex rounded-lg border-2 border-zinc-600 bg-zinc-800 overflow-hidden focus-within:border-safety focus-within:ring-1 focus-within:ring-safety">
+          <span class="flex items-center gap-1.5 px-3 sm:px-4 py-3.5 bg-zinc-700/80 border-r border-zinc-600 text-zinc-300 text-base shrink-0" aria-hidden="true">
+            <span class="text-lg leading-none" aria-hidden="true">🇬🇧</span>
+            <span>+44</span>
+          </span>
+          <input id="contact-number" name="number" type="tel" required autocomplete="tel" inputmode="numeric" pattern="[0-9\s]{9,14}" placeholder="7895 859505" title="Enter UK number without +44" class="flex-1 min-w-0 px-4 py-3.5 bg-transparent border-0 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-0 text-base">
+        </div>
       </div>
       <div>
         <label for="contact-message" class="block text-sm font-medium text-zinc-300 mb-1">Message <span class="text-red-400">*</span></label>
@@ -91,6 +157,9 @@
         Send message
       </button>
     </form>
+
+      </div>
+    </div>
   </main>
 
   <footer class="bg-zinc-900 border-t border-zinc-700 py-10 sm:py-12 mt-auto">
@@ -120,6 +189,24 @@
 
   <div class="h-16 sm:hidden" aria-hidden="true"></div>
 
+  <script>
+    (function(){
+      var mapEl = document.getElementById('contact-map');
+      if (mapEl && typeof L !== 'undefined') {
+        var map = L.map('contact-map', { zoomControl: false }).setView([51.5074, -0.1278], 10);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+          maxZoom: 19
+        }).addTo(map);
+        map.dragging.disable();
+        map.touchZoom.disable();
+        map.doubleClickZoom.disable();
+        map.scrollWheelZoom.disable();
+        map.keyboard.disable();
+        map.getContainer().style.pointerEvents = 'none';
+      }
+    })();
+  </script>
   <script>document.getElementById('footer-year') && (document.getElementById('footer-year').textContent = new Date().getFullYear());</script>
   <script>
     (function(){
@@ -200,6 +287,8 @@
         }
         var fullName = document.getElementById('contact-full-name').value.trim();
         var number = document.getElementById('contact-number').value.trim();
+        number = number.replace(/\D/g, '').replace(/^0+/, '');
+        if (number) number = '+44' + number;
         var message = document.getElementById('contact-message').value.trim();
         var captchaAnswer = document.getElementById('contact-captcha').value.trim();
         if (!fullName || !number || !message) {

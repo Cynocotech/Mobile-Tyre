@@ -17,13 +17,19 @@
   <meta name="format-detection" content="telephone=yes">
   <meta name="application-name" content="No5 Tyre &amp; MOT">
   <link rel="canonical" href="https://no5tyreandmot.co.uk/mobile-tyre/">
+  <link rel="icon" type="image/png" href="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png" sizes="any">
+  <link rel="apple-touch-icon" href="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png" sizes="180x180">
+
+  <!-- Preconnect for faster loading -->
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://no5tyreandmot.co.uk/mobile-tyre/">
   <meta property="og:title" content="Emergency Mobile Tyre Fitting London | 24/7">
   <meta property="og:description" content="24/7 mobile tyre fitting across London with 30–60 minute response for punctures and same day tyre replacement at home, work or roadside.">
-  <meta property="og:image" content="https://yoursite.com/og-image.jpg">
+  <meta property="og:image" content="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Mobile Tyres – Emergency mobile tyre fitting and 24-hour tyre repair at your location">
@@ -35,7 +41,7 @@
   <meta name="twitter:url" content="https://no5tyreandmot.co.uk/mobile-tyre/">
   <meta name="twitter:title" content="Emergency Mobile Tyre Fitting London | 24/7">
   <meta name="twitter:description" content="24/7 mobile tyre fitting across London with 30–60 minute response. We come to you at home, work or roadside.">
-  <meta name="twitter:image" content="https://yoursite.com/og-image.jpg">
+  <meta name="twitter:image" content="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png">
   <meta name="twitter:image:alt" content="Mobile Tyres – Emergency mobile tyre fitting and 24-hour tyre repair at your location">
 
   <!-- JSON-LD Structured Data -->
@@ -103,7 +109,41 @@
     }
   }
   </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How fast is your response time?",
+        "acceptedAnswer": { "@type": "Answer", "text": "We aim to reach most breakdowns in London within 30–60 minutes, depending on traffic and your exact location." }
+      },
+      {
+        "@type": "Question",
+        "name": "Do you cover the M25 and motorways?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes – we cover the M25 London orbital and major routes in and out of London where it is safe to stop. Always pull over to a safe place before calling." }
+      },
+      {
+        "@type": "Question",
+        "name": "Which areas of London do you cover?",
+        "acceptedAnswer": { "@type": "Answer", "text": "We cover North, South, East, West and Central London, including boroughs such as Camden, Hackney, Croydon and Wembley." }
+      },
+      {
+        "@type": "Question",
+        "name": "Can you fit tyres at my home, work or roadside?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Yes – our vans are fully equipped for mobile tyre fitting at your home, workplace, car park or roadside, day or night." }
+      },
+      {
+        "@type": "Question",
+        "name": "What vehicles do you work on?",
+        "acceptedAnswer": { "@type": "Answer", "text": "We fit and repair tyres on most cars, vans, 4x4s and light commercial vehicles. Call us with your registration for an instant check." }
+      }
+    ]
+  }
+  </script>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <script>
     (function(){var t=localStorage.getItem('theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');else document.documentElement.removeAttribute('data-theme');})();
   </script>
@@ -133,6 +173,7 @@
       <nav class="nav-desktop" aria-label="Main">
         <a href="/" class="px-3 py-2 rounded-lg text-zinc-200 font-medium hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900">Home</a>
         <a href="services.html" class="px-3 py-2 rounded-lg text-zinc-200 font-medium hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900">Services</a>
+        <a href="blog.html" class="px-3 py-2 rounded-lg text-zinc-200 font-medium hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900">Blog</a>
         <a href="check-vehicle.html" class="px-3 py-2 rounded-lg text-zinc-200 font-medium hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900">Check vehicle</a>
         <a href="contact.html" class="px-3 py-2 rounded-lg text-zinc-200 font-medium hover:bg-zinc-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900">Contact</a>
       </nav>
@@ -177,6 +218,7 @@
       <nav class="flex flex-col p-4 gap-1" aria-label="Mobile">
         <a href="/" class="nav-mobile-link">Home</a>
         <a href="services.html" class="nav-mobile-link">Services</a>
+        <a href="blog.html" class="nav-mobile-link">Blog</a>
         <a href="check-vehicle.html" class="nav-mobile-link">Check vehicle</a>
         <a href="contact.html" class="nav-mobile-link">Contact</a>
         <div class="border-t border-zinc-700 my-3"></div>
@@ -209,7 +251,10 @@
         </p>
         <form id="quote-form" action="#" method="get" class="flex flex-col gap-4 max-w-md mx-auto">
           <div class="vrm-plate-wrap">
-            <span class="vrm-label">Vehicle registration (plate)</span>
+            <span class="vrm-label flex items-center justify-center gap-1.5">
+              <svg class="w-4 h-4 text-safety" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM5 11l1.5-4.5h11L19 11H5z"/></svg>
+              Vehicle registration (plate)
+            </span>
             <div class="vrm-plate-container">
               <div class="vrm-plate-gb" aria-hidden="true">
                 <svg class="vrm-gb-svg" viewBox="0 0 52 112" xmlns="http://www.w3.org/2000/svg">
@@ -227,62 +272,198 @@
                 name="vrm"
                 placeholder="AB12 CDE"
                 maxlength="8"
+                minlength="2"
+                pattern="[A-Za-z0-9 ]{2,8}"
+                title="UK plate: 2–8 characters, letters and numbers only (e.g. AB12 CDE)"
                 class="vrm-plate-input"
                 required
                 autocomplete="off"
+                inputmode="text"
               />
             </div>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <label for="car-make" class="sr-only">Car make</label>
-            <input
-              id="car-make"
-              type="text"
-              name="car_make"
-              placeholder="Make (e.g. Ford)"
-              class="px-4 py-3.5 rounded-lg bg-zinc-800 border-2 border-zinc-600 text-zinc-100 placeholder-zinc-400 focus:border-safety focus:outline-none focus:ring-0 text-base"
-              autocomplete="off"
-            />
+            <div class="form-field-icon-wrap">
+              <span class="form-field-icon" aria-hidden="true">
+                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>
+              </span>
+              <input
+                id="car-make"
+                type="text"
+                name="car_make"
+                placeholder="Make (e.g. Ford)"
+                class="px-4 py-3.5 text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-0 text-base"
+                autocomplete="off"
+              />
+            </div>
             <label for="car-model" class="sr-only">Car model</label>
-            <input
-              id="car-model"
-              type="text"
-              name="car_model"
-              placeholder="Model (e.g. Focus)"
-              class="px-4 py-3.5 rounded-lg bg-zinc-800 border-2 border-zinc-600 text-zinc-100 placeholder-zinc-400 focus:border-safety focus:outline-none focus:ring-0 text-base"
-              autocomplete="off"
-            />
-            <label for="tyre-size" class="sr-only">Tyre size</label>
-            <input
-              id="tyre-size"
-              type="text"
-              name="tyre_size"
-              placeholder="Tyre size (e.g. 205/55 R16)"
-              class="px-4 py-3.5 rounded-lg bg-zinc-800 border-2 border-zinc-600 text-zinc-100 placeholder-zinc-400 focus:border-safety focus:outline-none focus:ring-0 text-base"
-              autocomplete="off"
-            />
+            <div class="form-field-icon-wrap">
+              <span class="form-field-icon" aria-hidden="true">
+                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>
+              </span>
+              <input
+                id="car-model"
+                type="text"
+                name="car_model"
+                placeholder="Model (e.g. Focus)"
+                class="px-4 py-3.5 text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-0 text-base"
+                autocomplete="off"
+              />
+            </div>
+            <label for="wheels" class="sr-only">Number of wheels/tyres</label>
+            <div class="form-field-icon-wrap">
+              <span class="form-field-icon" aria-hidden="true">
+                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L9 8H3v2h5l2 5-2 5h2l1-3h4l1 3h2l-2-5 2-5h5V8h-6l-3-6zm-1.5 11L12 7l1.5 6h-3z"/></svg>
+              </span>
+              <select
+                id="wheels"
+                name="wheels"
+                class="px-4 py-3.5 text-zinc-100 focus:outline-none focus:ring-0 text-base"
+                aria-label="How many wheels (tyres) to fit"
+              >
+                <option value="">Wheels (tyres)</option>
+                <option value="1">1 tyre</option>
+                <option value="2" selected>2 tyres</option>
+                <option value="3">3 tyres</option>
+                <option value="4">4 tyres</option>
+              </select>
+            </div>
           </div>
-          <div class="flex flex-col sm:flex-row gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <label for="tyre-size" class="sr-only">Tyre size</label>
+            <div class="form-field-icon-wrap col-span-1 sm:col-span-3">
+              <span class="form-field-icon" aria-hidden="true">
+                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L9 8H3v2h5l2 5-2 5h2l1-3h4l1 3h2l-2-5 2-5h5V8h-6l-3-6zm-1.5 11L12 7l1.5 6h-3z"/></svg>
+              </span>
+              <select
+                id="tyre-size"
+                name="tyre_size"
+                class="px-4 py-3.5 text-zinc-100 focus:outline-none focus:ring-0 text-base"
+                aria-label="Tyre size"
+              >
+              <option value="">Tyre size (e.g. 205/55 R16)</option>
+              <option value="Not sure / Other">Not sure / Other</option>
+              <optgroup label="R14">
+                <option value="155/65 R14">155/65 R14</option>
+                <option value="165/70 R14">165/70 R14</option>
+                <option value="175/65 R14">175/65 R14</option>
+                <option value="185/60 R14">185/60 R14</option>
+                <option value="195/70 R14">195/70 R14</option>
+              </optgroup>
+              <optgroup label="R15">
+                <option value="155/80 R15">155/80 R15</option>
+                <option value="165/65 R15">165/65 R15</option>
+                <option value="175/65 R15">175/65 R15</option>
+                <option value="185/55 R15">185/55 R15</option>
+                <option value="185/60 R15">185/60 R15</option>
+                <option value="195/55 R15">195/55 R15</option>
+                <option value="195/65 R15">195/65 R15</option>
+                <option value="205/55 R15">205/55 R15</option>
+                <option value="205/65 R15">205/65 R15</option>
+                <option value="215/60 R15">215/60 R15</option>
+                <option value="225/45 R15">225/45 R15</option>
+              </optgroup>
+              <optgroup label="R16">
+                <option value="185/55 R16">185/55 R16</option>
+                <option value="195/55 R16">195/55 R16</option>
+                <option value="205/55 R16">205/55 R16</option>
+                <option value="205/60 R16">205/60 R16</option>
+                <option value="215/55 R16">215/55 R16</option>
+                <option value="215/60 R16">215/60 R16</option>
+                <option value="225/55 R16">225/55 R16</option>
+                <option value="225/60 R16">225/60 R16</option>
+                <option value="235/55 R16">235/55 R16</option>
+                <option value="245/45 R16">245/45 R16</option>
+                <option value="255/55 R16">255/55 R16</option>
+              </optgroup>
+              <optgroup label="R17">
+                <option value="205/45 R17">205/45 R17</option>
+                <option value="205/50 R17">205/50 R17</option>
+                <option value="215/45 R17">215/45 R17</option>
+                <option value="215/55 R17">215/55 R17</option>
+                <option value="225/45 R17">225/45 R17</option>
+                <option value="225/55 R17">225/55 R17</option>
+                <option value="235/45 R17">235/45 R17</option>
+                <option value="235/55 R17">235/55 R17</option>
+                <option value="245/45 R17">245/45 R17</option>
+                <option value="255/45 R17">255/45 R17</option>
+                <option value="265/40 R17">265/40 R17</option>
+              </optgroup>
+              <optgroup label="R18">
+                <option value="215/40 R18">215/40 R18</option>
+                <option value="225/40 R18">225/40 R18</option>
+                <option value="225/45 R18">225/45 R18</option>
+                <option value="235/40 R18">235/40 R18</option>
+                <option value="235/50 R18">235/50 R18</option>
+                <option value="245/40 R18">245/40 R18</option>
+                <option value="245/45 R18">245/45 R18</option>
+                <option value="255/40 R18">255/40 R18</option>
+                <option value="265/40 R18">265/40 R18</option>
+                <option value="275/40 R18">275/40 R18</option>
+              </optgroup>
+              <optgroup label="R19">
+                <option value="225/35 R19">225/35 R19</option>
+                <option value="235/35 R19">235/35 R19</option>
+                <option value="245/35 R19">245/35 R19</option>
+                <option value="245/40 R19">245/40 R19</option>
+                <option value="255/35 R19">255/35 R19</option>
+                <option value="255/40 R19">255/40 R19</option>
+                <option value="265/35 R19">265/35 R19</option>
+                <option value="275/35 R19">275/35 R19</option>
+                <option value="285/35 R19">285/35 R19</option>
+              </optgroup>
+              <optgroup label="R20">
+                <option value="245/30 R20">245/30 R20</option>
+                <option value="255/35 R20">255/35 R20</option>
+                <option value="265/35 R20">265/35 R20</option>
+                <option value="275/30 R20">275/30 R20</option>
+                <option value="275/35 R20">275/35 R20</option>
+                <option value="285/30 R20">285/30 R20</option>
+              </optgroup>
+            </select>
+            </div>
+          </div>
+          <div>
             <label for="location" class="sr-only">Your location or postcode</label>
-            <input
-              id="location"
-              type="text"
-              name="location"
-              placeholder="Location / Postcode"
-              class="flex-1 px-4 py-3.5 rounded-lg bg-zinc-800 border-2 border-zinc-600 text-zinc-100 placeholder-zinc-400 focus:border-safety focus:outline-none focus:ring-0 text-base"
-              required
-              autocomplete="off"
-            />
+            <div class="form-field-icon-wrap">
+              <span class="form-field-icon" aria-hidden="true">
+                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+              </span>
+              <input
+                id="location"
+                type="text"
+                name="location"
+                placeholder="Location / Postcode"
+                class="w-full px-4 py-3.5 text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-0 text-base"
+                required
+                autocomplete="off"
+              />
+            </div>
+          </div>
+          <div>
             <label for="mobile" class="sr-only">Mobile number</label>
-            <input
-              id="mobile"
-              type="tel"
-              name="mobile"
-              placeholder="Mobile number"
-              class="flex-1 px-4 py-3.5 rounded-lg bg-zinc-800 border-2 border-zinc-600 text-zinc-100 placeholder-zinc-400 focus:border-safety focus:outline-none focus:ring-0 text-base"
-              required
-              autocomplete="tel"
-            />
+            <div class="flex w-full rounded-lg border-2 border-zinc-600 bg-zinc-800 overflow-hidden focus-within:border-safety focus-within:ring-1 focus-within:ring-safety">
+              <span class="flex items-center gap-1.5 px-3 sm:px-4 py-3.5 bg-zinc-700/80 border-r border-zinc-600 text-zinc-300 text-base shrink-0" aria-hidden="true">
+                <span class="text-lg leading-none" aria-hidden="true">🇬🇧</span>
+                <span>+44</span>
+              </span>
+              <span class="form-field-icon flex items-center justify-center shrink-0 w-11 bg-zinc-700/80 border-r border-zinc-600 text-safety" aria-hidden="true">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+              </span>
+              <input
+                id="mobile"
+                type="tel"
+                name="mobile"
+                placeholder="7895 859505"
+                class="flex-1 min-w-0 px-4 py-3.5 bg-transparent border-0 text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-0 text-base"
+                required
+                autocomplete="tel"
+                inputmode="numeric"
+                pattern="[0-9\s]{9,14}"
+                title="Enter UK number without +44 (e.g. 7895 859505)"
+              />
+            </div>
           </div>
           <button
             type="submit"
@@ -313,7 +494,10 @@
     <!-- Intro / Value prop -->
     <section class="px-4 sm:px-6 py-8 sm:py-12 bg-zinc-800 border-y border-zinc-700">
       <div class="max-w-3xl mx-auto text-center">
-        <h2 class="text-lg sm:text-xl font-bold text-white mb-4">Cheap Tyres Fitted at Home – Mobile Tyre Fitting at Home, Work or Roadside</h2>
+        <h2 class="text-lg sm:text-xl font-bold text-white mb-4 section-title-icon">
+          <svg class="text-safety w-6 h-6 sm:w-7 sm:h-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2L9 8H3v2h5l2 5-2 5h2l1-3h4l1 3h2l-2-5 2-5h5V8h-6l-3-6zm-1.5 11L12 7l1.5 6h-3z"/></svg>
+          Cheap Tyres Fitted at Home – Mobile Tyre Fitting at Home, Work or Roadside
+        </h2>
         <p class="text-zinc-400 text-sm sm:text-base leading-relaxed mb-4">
           Need a tyre fitted without the hassle of visiting a garage? Our mobile tyre fitters come to your location and carry out professional fitting on the spot. Whether you're stuck roadside or just need a quick change at home, we've got the tools, tyres and expertise to get it done quickly and safely.
         </p>
@@ -326,7 +510,8 @@
     <!-- Core Services -->
     <section class="px-4 sm:px-6 py-10 sm:py-14">
       <div class="max-w-6xl mx-auto">
-        <h2 class="text-xl sm:text-2xl font-bold text-white text-center mb-4">
+        <h2 class="text-xl sm:text-2xl font-bold text-white text-center mb-4 section-title-icon">
+          <svg class="text-safety" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/></svg>
           Mobile Tyre Services in London
         </h2>
         <p class="text-zinc-400 text-center text-sm sm:text-base max-w-2xl mx-auto mb-8 sm:mb-10">
@@ -412,7 +597,8 @@
     <!-- Why Choose Us -->
     <section class="px-4 sm:px-6 py-10 sm:py-14 bg-zinc-800 border-y border-zinc-700">
       <div class="max-w-4xl mx-auto">
-        <h2 class="text-xl sm:text-2xl font-bold text-white text-center mb-8">
+        <h2 class="text-xl sm:text-2xl font-bold text-white text-center mb-8 section-title-icon">
+          <svg class="text-safety" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
           Why Choose Our Mobile Tyre Fitters?
         </h2>
         <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 text-zinc-300 text-sm sm:text-base">
@@ -440,69 +626,241 @@
       </div>
     </section>
 
-    <!-- Areas We Cover -->
-    <section class="px-4 sm:px-6 py-10 sm:py-14">
-      <div class="max-w-5xl mx-auto">
-        <h2 class="text-xl sm:text-2xl font-bold text-white text-center mb-6">
-          Areas We Cover in London
+    <!-- Price list – attract with transparent pricing -->
+    <section id="prices" class="px-4 sm:px-6 py-10 sm:py-14 bg-zinc-800/50 border-y border-zinc-700">
+      <div class="max-w-3xl mx-auto">
+        <h2 class="text-xl sm:text-2xl font-bold text-white text-center mb-2 section-title-icon">
+          <span class="inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-zinc-800 text-safety font-bold text-lg sm:text-xl" aria-hidden="true">£</span>
+          Clear, Upfront Pricing
         </h2>
-        <p class="text-zinc-400 text-sm sm:text-base text-center max-w-3xl mx-auto mb-6">
-          We provide 24/7 mobile tyre fitting, puncture repair and roadside tyre replacement across London and the surrounding areas.
+        <p class="text-zinc-400 text-sm sm:text-base text-center mb-8">
+          No hidden fees. Transparent prices so you know what to expect. Final cost depends on your vehicle and tyre size – call for an exact quote.
         </p>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 text-sm sm:text-base text-zinc-300">
-          <div>
-            <h3 class="font-semibold text-white mb-2">London Regions</h3>
-            <ul class="space-y-1">
-              <li>North London</li>
-              <li>South London</li>
-              <li>East London</li>
-              <li>West London</li>
-              <li>Central London</li>
-            </ul>
+        <div class="rounded-xl border-2 border-safety bg-zinc-900 overflow-hidden shadow-lg">
+          <table class="w-full text-left text-sm sm:text-base">
+            <thead>
+              <tr class="bg-safety/10 border-b border-zinc-600">
+                <th scope="col" class="py-4 px-4 sm:px-6 font-bold text-white">Service</th>
+                <th scope="col" class="py-4 px-4 sm:px-6 font-bold text-white text-right">From</th>
+              </tr>
+            </thead>
+            <tbody class="text-zinc-300">
+              <tr class="border-b border-zinc-700 hover:bg-zinc-800/80 transition-colors">
+                <td class="py-4 px-4 sm:px-6">Puncture repair</td>
+                <td class="py-4 px-4 sm:px-6 text-right"><span class="text-safety font-bold">£25</span></td>
+              </tr>
+              <tr class="border-b border-zinc-700 hover:bg-zinc-800/80 transition-colors">
+                <td class="py-4 px-4 sm:px-6">Tyre fitting (per tyre, you supply)</td>
+                <td class="py-4 px-4 sm:px-6 text-right"><span class="text-safety font-bold" data-price-per-tyre>£15</span></td>
+              </tr>
+              <tr class="border-b border-zinc-700 hover:bg-zinc-800/80 transition-colors">
+                <td class="py-4 px-4 sm:px-6">Wheel balancing (per wheel)</td>
+                <td class="py-4 px-4 sm:px-6 text-right"><span class="text-safety font-bold" data-price-balance>£12</span></td>
+              </tr>
+              <tr class="border-b border-zinc-700 hover:bg-zinc-800/80 transition-colors">
+                <td class="py-4 px-4 sm:px-6">Locking wheel nut removal</td>
+                <td class="py-4 px-4 sm:px-6 text-right"><span class="text-safety font-bold">£30</span></td>
+              </tr>
+              <tr class="border-b border-zinc-700 hover:bg-zinc-800/80 transition-colors">
+                <td class="py-4 px-4 sm:px-6">Jump start</td>
+                <td class="py-4 px-4 sm:px-6 text-right"><span class="text-safety font-bold">£35</span></td>
+              </tr>
+              <tr class="hover:bg-zinc-800/80 transition-colors">
+                <td class="py-4 px-4 sm:px-6">Same day tyre supply &amp; fit</td>
+                <td class="py-4 px-4 sm:px-6 text-right"><span class="text-safety font-bold">Quote</span><br><span class="text-zinc-500 text-xs">depends on location &amp; distance</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Price calculator: per tyre + fixed labor -->
+        <div id="price-calculator" class="mt-8 rounded-xl border-2 border-zinc-600 bg-zinc-900 overflow-hidden shadow-lg">
+          <div class="bg-safety/10 border-b border-zinc-600 px-4 sm:px-6 py-3">
+            <h3 class="text-lg font-bold text-white section-title-icon">
+              <svg class="text-safety w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+              Cost estimator
+            </h3>
+            <p class="text-zinc-400 text-sm">Fitting per tyre + labour (included). Final quote may vary by location.</p>
           </div>
-          <div>
-            <h3 class="font-semibold text-white mb-2">Key Boroughs</h3>
-            <ul class="space-y-1">
-              <li>Camden</li>
-              <li>Hackney</li>
-              <li>Croydon</li>
-              <li>Wembley</li>
-              <li>Brent &amp; Harrow</li>
-            </ul>
+          <div class="p-4 sm:p-6 space-y-4">
+            <div>
+              <label for="calc-tyres" class="block text-sm font-medium text-zinc-300 mb-2">How many tyres are we fitting?</label>
+              <div class="flex items-center gap-3">
+                <button type="button" id="calc-tyres-minus" aria-label="One less tyre" class="flex-shrink-0 w-10 h-10 rounded-lg border-2 border-zinc-600 bg-zinc-800 text-white font-bold text-lg hover:bg-zinc-700 hover:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-safety disabled:opacity-40 disabled:pointer-events-none transition-colors">−</button>
+                <input type="number" id="calc-tyres" min="1" max="8" value="2" class="flex-1 max-w-24 rounded-lg border-2 border-zinc-600 bg-zinc-800 px-4 py-3 text-white text-center text-lg font-semibold focus:border-safety focus:outline-none focus:ring-1 focus:ring-safety">
+                <button type="button" id="calc-tyres-plus" aria-label="One more tyre" class="flex-shrink-0 w-10 h-10 rounded-lg border-2 border-zinc-600 bg-zinc-800 text-white font-bold text-lg hover:bg-zinc-700 hover:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-safety disabled:opacity-40 disabled:pointer-events-none transition-colors">+</button>
+              </div>
+              <p class="text-zinc-500 text-xs mt-1">£15 per tyre (you supply the tyres)</p>
+            </div>
+            <div class="flex items-center gap-3 py-2">
+              <input type="checkbox" id="calc-balance" class="h-5 w-5 rounded border-zinc-600 bg-zinc-800 text-safety focus:ring-safety focus:ring-offset-0">
+              <label for="calc-balance" class="text-zinc-300">Add wheel balancing — £12 per wheel</label>
+            </div>
+            <div class="rounded-lg bg-zinc-800/80 border border-zinc-700 p-4 space-y-2">
+              <div class="flex justify-between text-sm">
+                <span class="text-zinc-400">Fitting (<span id="calc-tyres-label">2</span> tyre<span id="calc-tyres-plural">s</span>)</span>
+                <span id="calc-fitting-line" class="text-zinc-200 font-medium">£30</span>
+              </div>
+              <div id="calc-balance-row" class="flex justify-between text-sm hidden">
+                <span class="text-zinc-400">Wheel balancing</span>
+                <span id="calc-balance-line" class="text-zinc-200 font-medium">£0</span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <span class="text-zinc-400">Labour (call-out)</span>
+                <span id="calc-labor-line" class="text-zinc-200 font-medium">£20</span>
+              </div>
+              <div class="flex justify-between text-base font-bold text-white pt-2 border-t border-zinc-600">
+                <span>Estimated total</span>
+                <span id="calc-total" class="text-safety">£50</span>
+              </div>
+            </div>
           </div>
-          <div>
-            <h3 class="font-semibold text-white mb-2">High-Intent Postcodes</h3>
-            <p class="text-zinc-400 mb-3">
-              We regularly attend urgent call-outs in these key London postcodes:
+        </div>
+        <script>
+          (function(){
+            var PER_TYRE = 15;
+            var PER_BALANCE = 12;
+            var LABOR = 20;
+            var calcTyres = document.getElementById('calc-tyres');
+            var calcTyresMinus = document.getElementById('calc-tyres-minus');
+            var calcTyresPlus = document.getElementById('calc-tyres-plus');
+            var calcBalance = document.getElementById('calc-balance');
+            var calcTotal = document.getElementById('calc-total');
+            var calcTyresLabel = document.getElementById('calc-tyres-label');
+            var calcTyresPlural = document.getElementById('calc-tyres-plural');
+            var calcFittingLine = document.getElementById('calc-fitting-line');
+            var calcBalanceRow = document.getElementById('calc-balance-row');
+            var calcBalanceLine = document.getElementById('calc-balance-line');
+            var calcLaborLine = document.getElementById('calc-labor-line');
+            function updateCalc(){
+              if (!calcTotal) return;
+              var tyres = Math.max(1, Math.min(8, parseInt(calcTyres.value, 10) || 1));
+              calcTyres.value = tyres;
+              var balance = calcBalance && calcBalance.checked;
+              var balanceQty = balance ? tyres : 0;
+              var fitting = tyres * PER_TYRE;
+              var balancing = balanceQty * PER_BALANCE;
+              var total = fitting + balancing + LABOR;
+              calcTotal.textContent = '£' + total;
+              if (calcTyresLabel) calcTyresLabel.textContent = tyres;
+              if (calcTyresPlural) calcTyresPlural.textContent = tyres === 1 ? '' : 's';
+              if (calcFittingLine) calcFittingLine.textContent = '£' + fitting;
+              if (calcBalanceRow) {
+                calcBalanceRow.classList.toggle('hidden', !balance);
+                if (calcBalanceLine) calcBalanceLine.textContent = '£' + balancing;
+              }
+              if (calcLaborLine) calcLaborLine.textContent = '£' + LABOR;
+              if (calcTyresMinus) calcTyresMinus.disabled = tyres <= 1;
+              if (calcTyresPlus) calcTyresPlus.disabled = tyres >= 8;
+            }
+            function initCalculator(config){
+              LABOR = (config && (config.laborPrice != null)) ? Number(config.laborPrice) : 20;
+              if (calcLaborLine) calcLaborLine.textContent = '£' + LABOR;
+              if (calcTyres) calcTyres.addEventListener('input', updateCalc);
+              if (calcBalance) calcBalance.addEventListener('change', updateCalc);
+              if (calcTyresMinus) calcTyresMinus.addEventListener('click', function(){ calcTyres.value = Math.max(1, (parseInt(calcTyres.value,10)||1) - 1); updateCalc(); });
+              if (calcTyresPlus) calcTyresPlus.addEventListener('click', function(){ calcTyres.value = Math.min(8, (parseInt(calcTyres.value,10)||1) + 1); updateCalc(); });
+              updateCalc();
+            }
+            fetch('dynamic.json').then(function(r){ return r.json(); }).then(initCalculator).catch(function(){ initCalculator({}); });
+          })();
+        </script>
+
+        <p class="text-zinc-500 text-xs sm:text-sm text-center mt-8">
+          Prices vary by vehicle and location. Call for a firm quote – we’ll give you a price before we set off.
+        </p>
+        <div class="text-center mt-6">
+          <a
+            href="tel:07895859505"
+            data-track="call"
+            data-track-label="price_list"
+            class="inline-flex items-center justify-center gap-2 bg-safety text-zinc-900 font-bold px-6 py-3 rounded-lg hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900 transition-colors tap-highlight-none"
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+            Get a quote: 07895 859505
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Areas We Cover – dark map background -->
+    <section class="areas-cover-with-map relative overflow-hidden">
+      <div id="areas-cover-bg-map" class="areas-cover-bg-map" aria-hidden="true"></div>
+      <div class="relative z-10 px-4 sm:px-6 py-10 sm:py-14">
+        <div class="max-w-5xl mx-auto">
+          <div class="rounded-xl bg-zinc-900/95 border-2 border-zinc-600 p-4 sm:p-6 shadow-lg backdrop-blur-sm">
+            <h2 class="text-xl sm:text-2xl font-bold text-white text-center mb-6 section-title-icon">
+              <svg class="text-safety" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+              Areas We Cover in London
+            </h2>
+            <p class="text-zinc-400 text-sm sm:text-base text-center max-w-3xl mx-auto mb-6">
+              We provide 24/7 mobile tyre fitting, puncture repair and roadside tyre replacement across London and the surrounding areas.
             </p>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 text-sm sm:text-base text-zinc-300">
               <div>
-                <p class="font-semibold text-zinc-100">NW1</p>
-                <p class="text-xs text-zinc-400">Camden</p>
+                <h3 class="font-semibold text-white mb-2 section-title-icon">
+                  <svg class="text-safety w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                  London Regions
+                </h3>
+                <ul class="space-y-1">
+                  <li>North London</li>
+                  <li>South London</li>
+                  <li>East London</li>
+                  <li>West London</li>
+                  <li>Central London</li>
+                </ul>
               </div>
               <div>
-                <p class="font-semibold text-zinc-100">N1</p>
-                <p class="text-xs text-zinc-400">Islington</p>
+                <h3 class="font-semibold text-white mb-2 section-title-icon">
+                  <svg class="text-safety w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>
+                  Key Boroughs
+                </h3>
+                <ul class="space-y-1">
+                  <li>Camden</li>
+                  <li>Hackney</li>
+                  <li>Croydon</li>
+                  <li>Wembley</li>
+                  <li>Brent &amp; Harrow</li>
+                </ul>
               </div>
               <div>
-                <p class="font-semibold text-zinc-100">E15</p>
-                <p class="text-xs text-zinc-400">Stratford</p>
-              </div>
-              <div>
-                <p class="font-semibold text-zinc-100">CR0</p>
-                <p class="text-xs text-zinc-400">Croydon</p>
-              </div>
-              <div>
-                <p class="font-semibold text-zinc-100">SW19</p>
-                <p class="text-xs text-zinc-400">Wimbledon</p>
-              </div>
-              <div>
-                <p class="font-semibold text-zinc-100">W5</p>
-                <p class="text-xs text-zinc-400">Ealing</p>
-              </div>
-              <div>
-                <p class="font-semibold text-zinc-100">TW3</p>
-                <p class="text-xs text-zinc-400">Hounslow</p>
+                <h3 class="font-semibold text-white mb-2 section-title-icon">
+                  <svg class="text-safety w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                  High-Intent Postcodes
+                </h3>
+                <p class="text-zinc-400 mb-3">
+                  We regularly attend urgent call-outs in these key London postcodes:
+                </p>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2">
+                  <div>
+                    <p class="font-semibold text-zinc-100">NW1</p>
+                    <p class="text-xs text-zinc-400">Camden</p>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-zinc-100">N1</p>
+                    <p class="text-xs text-zinc-400">Islington</p>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-zinc-100">E15</p>
+                    <p class="text-xs text-zinc-400">Stratford</p>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-zinc-100">CR0</p>
+                    <p class="text-xs text-zinc-400">Croydon</p>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-zinc-100">SW19</p>
+                    <p class="text-xs text-zinc-400">Wimbledon</p>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-zinc-100">W5</p>
+                    <p class="text-xs text-zinc-400">Ealing</p>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-zinc-100">TW3</p>
+                    <p class="text-xs text-zinc-400">Hounslow</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -510,26 +868,109 @@
       </div>
     </section>
 
+    <!-- London map – areas we cover -->
+    <section class="px-4 sm:px-6 py-10 sm:py-14 bg-zinc-800/50 border-y border-zinc-700">
+      <div class="max-w-5xl mx-auto">
+        <div class="rounded-xl bg-zinc-800 border-2 border-zinc-600 p-4 sm:p-6 shadow-lg">
+          <h2 class="text-xl sm:text-2xl font-bold text-white text-center mb-2 section-title-icon">
+            <svg class="text-safety" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+            Where We Cover
+          </h2>
+          <p class="text-zinc-400 text-sm sm:text-base text-center mb-6">
+            Mobile tyre fitting across London – tap a dot to see the area.
+          </p>
+          <div id="london-map" class="london-map rounded-xl overflow-hidden border-2 border-zinc-600 bg-zinc-900" aria-label="Map of London showing service areas"></div>
+        </div>
+      </div>
+    </section>
+
+    <script>
+      (function(){
+        var mapEl = document.getElementById('london-map');
+        var bgMapEl = document.getElementById('areas-cover-bg-map');
+        function initMaps(){
+          if (typeof L === 'undefined') return;
+          if (bgMapEl) {
+            var bgMap = L.map('areas-cover-bg-map', { zoomControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false }).setView([51.5074, -0.1278], 10);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '' }).addTo(bgMap);
+          }
+          if (!mapEl) return;
+          var map = L.map('london-map', { zoomControl: true }).setView([51.5074, -0.1278], 10);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+          var areas = [
+            { lat: 51.5074, lng: -0.1278, name: 'Central London' },
+            { lat: 51.5392, lng: -0.1426, name: 'Camden (NW1)' },
+            { lat: 51.5345, lng: -0.1010, name: 'Islington (N1)' },
+            { lat: 51.5416, lng: -0.0056, name: 'Stratford (E15)' },
+            { lat: 51.3724, lng: -0.0942, name: 'Croydon (CR0)' },
+            { lat: 51.4214, lng: -0.2062, name: 'Wimbledon (SW19)' },
+            { lat: 51.5132, lng: -0.3042, name: 'Ealing (W5)' },
+            { lat: 51.4685, lng: -0.3612, name: 'Hounslow (TW3)' },
+            { lat: 51.5560, lng: -0.2795, name: 'Wembley' },
+            { lat: 51.5520, lng: -0.1956, name: 'Brent' }
+          ];
+          var yellowIcon = L.divIcon({
+            className: 'london-map-marker',
+            html: '<span class="london-map-dot"></span>',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+          });
+          var radiusMiles = 3;
+          var radiusMeters = radiusMiles * 1609.344;
+          areas.forEach(function(a){
+            L.circle([a.lat, a.lng], {
+              radius: radiusMeters,
+              color: '#dc2626',
+              fillColor: '#dc2626',
+              fillOpacity: 0.12,
+              weight: 2
+            }).addTo(map);
+            L.marker([a.lat, a.lng], { icon: yellowIcon }).bindPopup('<strong>' + a.name + '</strong><br>We cover this area').addTo(map);
+          });
+        }
+        if (typeof L !== 'undefined') {
+          initMaps();
+        } else {
+          var s = document.createElement('script');
+          s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+          s.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+          s.crossOrigin = '';
+          s.onload = initMaps;
+          document.head.appendChild(s);
+        }
+      })();
+    </script>
+
     <!-- How It Works -->
     <section class="px-4 sm:px-6 py-10 sm:py-14">
       <div class="max-w-4xl mx-auto">
-        <h2 class="text-xl sm:text-2xl font-bold text-white text-center mb-8">
+        <h2 class="text-xl sm:text-2xl font-bold text-white text-center mb-8 section-title-icon">
+          <svg class="text-safety" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0 4h2v-2H3v2zm4 4h2v-2H7v2zm0-4h2v-2H7v2zm0-4h2v-2H7v2zm0-4h2V7H7v2zm0-4H7V5h2v2zm4 4h2v-2h-2v2zm0 4h2v-2h-2v2zm0 4h2v-2h-2v2zm0 4h2v-2h-2v2zm4-16v2h2V5h-2zm0 4h2V7h-2v2zm0 4h2v-2h-2v2zm0 4h2v-2h-2v2z"/></svg>
           How It Works
         </h2>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-6">
           <div class="text-center">
             <span class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-safety text-zinc-900 font-bold text-lg mb-4">1</span>
-            <h3 class="text-white font-bold mb-2">Call Us</h3>
+            <h3 class="text-white font-bold mb-2 section-title-icon">
+              <svg class="text-safety w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+              Call Us
+            </h3>
             <p class="text-zinc-400 text-sm">Give us a call. We'll talk through your tyre needs and get your location.</p>
           </div>
           <div class="text-center">
             <span class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-safety text-zinc-900 font-bold text-lg mb-4">2</span>
-            <h3 class="text-white font-bold mb-2">Instant Quote</h3>
+            <h3 class="text-white font-bold mb-2 section-title-icon">
+              <svg class="text-safety w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+              Instant Quote
+            </h3>
             <p class="text-zinc-400 text-sm">We give you a clear, upfront quote – tyres, fitting and any extras. No hidden costs.</p>
           </div>
           <div class="text-center">
             <span class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-safety text-zinc-900 font-bold text-lg mb-4">3</span>
-            <h3 class="text-white font-bold mb-2">We Come to You</h3>
+            <h3 class="text-white font-bold mb-2 section-title-icon">
+              <svg class="text-safety w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>
+              We Come to You
+            </h3>
             <p class="text-zinc-400 text-sm">Our technician arrives, fits your tyres safely, and gets you back on the road.</p>
           </div>
         </div>
@@ -539,7 +980,10 @@
     <!-- Trust / FAQ / CTA strip -->
     <section class="px-4 sm:px-6 py-8 sm:py-10 bg-zinc-800 border-y border-zinc-700">
       <div class="max-w-3xl mx-auto">
-        <h2 class="text-lg sm:text-xl font-bold text-white text-center mb-6">Frequently Asked Questions</h2>
+        <h2 class="text-lg sm:text-xl font-bold text-white text-center mb-6 section-title-icon">
+          <svg class="text-safety" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>
+          Frequently Asked Questions
+        </h2>
         <div class="space-y-4 mb-8 text-sm sm:text-base">
           <div>
             <h3 class="text-safety font-semibold mb-1">How fast is your response time?</h3>
@@ -563,7 +1007,10 @@
           </div>
         </div>
         <div id="faq-gallery" class="gallery-slideshow" aria-label="Gallery"></div>
-        <h2 class="text-lg sm:text-xl font-bold text-white text-center mb-3">Need Tyres Fast?</h2>
+        <h2 class="text-lg sm:text-xl font-bold text-white text-center mb-3 section-title-icon">
+          <svg class="text-safety" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+          Need Tyres Fast?
+        </h2>
         <p class="text-zinc-300 text-sm sm:text-base mb-2 text-center">
           Get a quick quote – our mobile fitters come to you fully equipped and have you back on the road in under an hour.
         </p>
@@ -679,7 +1126,7 @@
     (function(){
       var el = document.getElementById('faq-gallery');
       if (!el) return;
-      var url = new URL('gallery.json', window.location.href).href;
+      var url = new URL('dynamic.json', window.location.href).href;
       fetch(url)
         .then(function(r){ return r.ok ? r.json() : Promise.reject(new Error('fetch')); })
         .then(function(data){
@@ -778,6 +1225,16 @@
 
       if (!form) return;
 
+      (function () {
+        var vrmInput = document.getElementById('vrm');
+        if (vrmInput) {
+          vrmInput.addEventListener('input', function () {
+            var raw = this.value.replace(/[^A-Za-z0-9 ]/g, '').replace(/\s+/g, ' ').slice(0, 8);
+            this.value = raw.toUpperCase();
+          });
+        }
+      })();
+
       function setStatus(msg, isError) {
         if (!statusEl) return;
         statusEl.textContent = msg;
@@ -797,9 +1254,14 @@
         var vrm = (document.getElementById('vrm') && document.getElementById('vrm').value) || '';
         var location = (document.getElementById('location') && document.getElementById('location').value) || '';
         var mobile = (document.getElementById('mobile') && document.getElementById('mobile').value) || '';
+        // Normalise: strip non-digits and leading 0, prefix +44
+        mobile = mobile.replace(/\D/g, '').replace(/^0+/, '');
+        if (mobile) mobile = '+44' + mobile;
         var carMake = (document.getElementById('car-make') && document.getElementById('car-make').value) || '';
         var carModel = (document.getElementById('car-model') && document.getElementById('car-model').value) || '';
         var tyreSize = (document.getElementById('tyre-size') && document.getElementById('tyre-size').value) || '';
+        var wheelsEl = document.getElementById('wheels');
+        var wheels = (wheelsEl && wheelsEl.value) ? wheelsEl.value : '';
 
         setLoading(true);
         if (statusEl) statusEl.classList.add('hidden');
@@ -814,6 +1276,7 @@
             car_make: carMake.trim(),
             car_model: carModel.trim(),
             tyre_size: tyreSize.trim(),
+            wheels: wheels,
           }),
         })
           .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })

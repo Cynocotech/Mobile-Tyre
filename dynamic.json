@@ -1,0 +1,22 @@
+{
+  "_comments": {
+    "images": "Gallery slideshow: array of image URLs shown on the FAQ section (strings).",
+    "laborPrice": "Cost estimator: fixed labour / call-out fee in GBP (number). Shown as 'Labour (call-out)' and used in the total.",
+    "telegramBotToken": "SERVER-ONLY: Telegram bot token from @BotFather. Do not expose this file to the client if it contains the token.",
+    "telegramChatIds": "SERVER-ONLY: Array of up to 5 Telegram chat IDs to receive quote notifications (get ID from @userinfobot). Empty strings are skipped."
+  },
+  "images": [
+    "https://images.ctfassets.net/5kq8dse7hipf/3fpNXTA3CY5MsPBO04fddu/c03998cab2d6af93de2520f2883029fb/Featured-tyre-change-cost.webp",
+    "https://polishworkers.pl/wp-content/uploads/2023/09/tyre-fitting-polish-workers.jpg",
+    "https://mrtyre.com/wp-content/uploads/2019/07/Mr-Tyre-Warwick-Branch-3-1.jpg"
+  ],
+  "laborPrice": 20,
+  "telegramBotToken": "8798625642:AAHaq1No3a4lcO3tdHDz2jrmWC24VUF_N3s",
+  "telegramChatIds": [
+    "1819809453",
+    "",
+    "",
+    "",
+    ""
+  ]
+}
