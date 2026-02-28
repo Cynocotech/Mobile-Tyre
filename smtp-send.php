@@ -1,7 +1,7 @@
 <?php
 /**
- * Send email via Zoho SMTP. Tries SSL port 465 first, then TLS port 587.
- * Config: host, port, user, pass in dynamic.json "smtp" object.
+ * Send email via Zoho SMTP. Uses encryption (ssl/tls) from config.
+ * Config: host, port, encryption (ssl|tls), user, pass in dynamic.json "smtp" object.
  *
  * @param string $to Recipient email
  * @param string $subject Subject line
@@ -18,7 +18,9 @@ function sendSmtpMail($to, $subject, $bodyHtml, $fromEmail = null, $fromName = n
     $cfg = @json_decode(file_get_contents($configPath), true);
     $config = isset($cfg['smtp']) ? $cfg['smtp'] : [];
   }
-  $host = $config['host'] ?? 'smtppro.zoho.com';
+  $host = $config['host'] ?? 'smtppro.zoho.eu';
+  $port = (int) ($config['port'] ?? 465);
+  $encryption = strtolower($config['encryption'] ?? 'ssl');
   $user = $config['user'] ?? '';
   $pass = $config['pass'] ?? '';
   if ($user === '' || $pass === '') return false;
@@ -26,16 +28,20 @@ function sendSmtpMail($to, $subject, $bodyHtml, $fromEmail = null, $fromName = n
   $fromEmail = $fromEmail ?? $user;
   $fromName = $fromName ?? 'No 5 Tyre & MOT';
 
-  $tryPorts = [(int) ($config['port'] ?? 465), 587, 465];
-  $tryPorts = array_unique($tryPorts);
+  $tryConnections = [['port' => $port, 'enc' => $encryption], ['port' => 465, 'enc' => 'ssl'], ['port' => 587, 'enc' => 'tls']];
+  $seen = [];
+  foreach ($tryConnections as $conn) {
+    $p = $conn['port'];
+    $enc = $conn['enc'];
+    if (isset($seen[$p . $enc])) continue;
+    $seen[$p . $enc] = true;
 
-  foreach ($tryPorts as $port) {
     $fp = null;
-    if ($port === 465) {
+    if ($enc === 'ssl' || $p === 465) {
       $context = stream_context_create(['ssl' => ['verify_peer' => false, 'verify_peer_name' => false]]);
-      $fp = @stream_socket_client("ssl://{$host}:{$port}", $errno, $errstr, 15, STREAM_CLIENT_CONNECT, $context);
+      $fp = @stream_socket_client("ssl://{$host}:{$p}", $errno, $errstr, 15, STREAM_CLIENT_CONNECT, $context);
     } else {
-      $fp = @stream_socket_client("tcp://{$host}:{$port}", $errno, $errstr, 15, STREAM_CLIENT_CONNECT);
+      $fp = @stream_socket_client("tcp://{$host}:{$p}", $errno, $errstr, 15, STREAM_CLIENT_CONNECT);
       if ($fp && stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT) !== true) {
         fclose($fp);
         $fp = false;
