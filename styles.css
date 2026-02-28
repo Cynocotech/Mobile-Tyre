@@ -180,6 +180,24 @@ body.page-leaving {
   background: #f4f4f5;
   color: #18181b;
 }
+[data-theme="light"] .service-card {
+  background: #fff;
+  border-color: #e4e4e7;
+  color: #18181b;
+}
+[data-theme="light"] .service-card:hover {
+  background: #fafafa;
+  border-color: #fede00;
+}
+[data-theme="light"] .service-card-title {
+  color: #18181b;
+}
+[data-theme="light"] .service-card-desc {
+  color: #71717a;
+}
+[data-theme="light"] .service-detail {
+  border-color: #e4e4e7;
+}
 
 /* Remove tap highlight on touch devices for call buttons */
 .tap-highlight-none {
@@ -419,4 +437,124 @@ body.nav-open {
 /* Safe area padding helper for iOS bottom bar */
 .safe-area-pb {
   padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Services page: 200x200 icon cards */
+.service-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  height: 200px;
+  padding: 1rem;
+  background: #27272a;
+  border: 2px solid #52525b;
+  border-radius: 1rem;
+  text-align: center;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.service-card:hover {
+  border-color: #fede00;
+  background: rgba(63, 63, 70, 0.6);
+}
+.service-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 0.75rem;
+  background: rgba(254, 222, 0, 0.2);
+  color: #fede00;
+  margin-bottom: 0.75rem;
+}
+.service-card-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.25rem 0;
+  line-height: 1.2;
+}
+.service-card-desc {
+  font-size: 0.75rem;
+  color: #a1a1aa;
+  margin: 0;
+}
+.service-detail {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #3f3f46;
+}
+.service-detail:last-of-type {
+  border-bottom: none;
+}
+
+/* FAQ gallery slideshow */
+.gallery-slideshow {
+  position: relative;
+  max-width: 100%;
+  margin: 1.5rem auto;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #27272a;
+  aspect-ratio: 16/9;
+  min-height: 180px;
+}
+.gallery-slideshow-inner {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.gallery-slideshow img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.gallery-slideshow-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: background 0.2s;
+}
+.gallery-slideshow-btn:hover {
+  background: rgba(0,0,0,0.7);
+}
+.gallery-slideshow-btn.prev { left: 0.5rem; }
+.gallery-slideshow-btn.next { right: 0.5rem; }
+.gallery-slideshow-dots {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  z-index: 2;
+}
+.gallery-slideshow-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.5);
+  cursor: pointer;
+  padding: 0;
+}
+.gallery-slideshow-dot.active {
+  background: #fede00;
 }

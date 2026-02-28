@@ -107,6 +107,7 @@
   <script>
     (function(){var t=localStorage.getItem('theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');else document.documentElement.removeAttribute('data-theme');})();
   </script>
+  <script src="analytics.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -144,6 +145,8 @@
         </button>
         <a
           href="tel:07895859505"
+          data-track="call"
+          data-track-label="header"
           class="inline-flex items-center justify-center gap-2 bg-safety text-zinc-900 font-bold text-sm sm:text-base px-3 sm:px-6 py-2.5 sm:py-3 rounded-lg animate-pulse-strong hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900 tap-highlight-none transition-colors"
         >
           <svg class="w-5 h-5 shrink-0 hidden sm:block" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -177,7 +180,7 @@
         <a href="check-vehicle.html" class="nav-mobile-link">Check vehicle</a>
         <a href="contact.html" class="nav-mobile-link">Contact</a>
         <div class="border-t border-zinc-700 my-3"></div>
-        <a href="tel:07895859505" class="nav-mobile-link inline-flex items-center gap-2">
+        <a href="tel:07895859505" data-track="call" class="nav-mobile-link inline-flex items-center gap-2">
           <svg class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
           Call 07895 859505
         </a>
@@ -284,6 +287,8 @@
           <button
             type="submit"
             id="quote-submit-btn"
+            data-track="quote"
+            data-track-label="hero_form"
             class="w-full sm:w-auto px-6 py-3.5 bg-safety text-zinc-900 font-bold rounded-lg hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900 transition-colors tap-highlight-none uppercase tracking-wide disabled:opacity-70 disabled:pointer-events-none"
           >
             Get a Quote
@@ -557,6 +562,7 @@
             <p class="text-zinc-400">We fit and repair tyres on most cars, vans, 4x4s and light commercial vehicles. Call us with your registration for an instant check.</p>
           </div>
         </div>
+        <div id="faq-gallery" class="gallery-slideshow" aria-label="Gallery"></div>
         <h2 class="text-lg sm:text-xl font-bold text-white text-center mb-3">Need Tyres Fast?</h2>
         <p class="text-zinc-300 text-sm sm:text-base mb-2 text-center">
           Get a quick quote – our mobile fitters come to you fully equipped and have you back on the road in under an hour.
@@ -567,6 +573,8 @@
         <div class="text-center">
         <a
           href="tel:07895859505"
+          data-track="call"
+          data-track-label="faq_section"
           class="inline-flex items-center justify-center gap-2 bg-safety text-zinc-900 font-bold px-6 py-3 rounded-lg hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900 transition-colors tap-highlight-none"
         >
           <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -602,7 +610,7 @@
           <p class="text-zinc-400 text-sm mt-1">Emergency mobile tyre fitting – we come to you.</p>
         </div>
         <div class="flex flex-wrap items-center gap-4">
-          <a href="tel:07895859505" class="inline-flex items-center gap-2 text-safety font-semibold hover:text-[#e5c900] transition-colors tap-highlight-none">
+          <a href="tel:07895859505" data-track="call" class="inline-flex items-center gap-2 text-safety font-semibold hover:text-[#e5c900] transition-colors tap-highlight-none">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
             </svg>
@@ -667,11 +675,72 @@
       toggle.setAttribute('aria-label', isLight ? 'Switch to dark theme' : 'Switch to light theme');
     })();
   </script>
+  <script>
+    (function(){
+      var el = document.getElementById('faq-gallery');
+      if (!el) return;
+      var url = new URL('gallery.json', window.location.href).href;
+      fetch(url)
+        .then(function(r){ return r.ok ? r.json() : Promise.reject(new Error('fetch')); })
+        .then(function(data){
+          var images = data.images || [];
+          if (images.length === 0) { el.style.display = 'none'; return; }
+          var idx = 0;
+          var container = document.createElement('div');
+          container.className = 'gallery-slideshow-inner';
+          var img = document.createElement('img');
+          img.src = images[0];
+          img.alt = 'Gallery';
+          img.style.display = 'block';
+          img.onerror = function(){ this.style.background = '#27272a'; }
+          container.appendChild(img);
+          var prev = document.createElement('button');
+          prev.type = 'button';
+          prev.className = 'gallery-slideshow-btn prev';
+          prev.innerHTML = '&#10094;';
+          prev.setAttribute('aria-label', 'Previous image');
+          var next = document.createElement('button');
+          next.type = 'button';
+          next.className = 'gallery-slideshow-btn next';
+          next.innerHTML = '&#10095;';
+          next.setAttribute('aria-label', 'Next image');
+          var dots = document.createElement('div');
+          dots.className = 'gallery-slideshow-dots';
+          for (var i = 0; i < images.length; i++) {
+            var d = document.createElement('button');
+            d.type = 'button';
+            d.className = 'gallery-slideshow-dot' + (i === 0 ? ' active' : '');
+            d.setAttribute('aria-label', 'Go to image ' + (i + 1));
+            d.dataset.idx = i;
+            dots.appendChild(d);
+          }
+          function goTo(i) {
+            idx = (i + images.length) % images.length;
+            img.src = images[idx];
+            img.alt = 'Gallery image ' + (idx + 1);
+            dots.querySelectorAll('.gallery-slideshow-dot').forEach(function(d, j){ d.classList.toggle('active', j === idx); });
+          }
+          prev.addEventListener('click', function(){ goTo(idx - 1); });
+          next.addEventListener('click', function(){ goTo(idx + 1); });
+          dots.querySelectorAll('.gallery-slideshow-dot').forEach(function(d){ d.addEventListener('click', function(){ goTo(parseInt(d.dataset.idx, 10)); }); });
+          var timer = setInterval(function(){ goTo(idx + 1); }, 5000);
+          el.addEventListener('mouseenter', function(){ clearInterval(timer); });
+          el.addEventListener('mouseleave', function(){ timer = setInterval(function(){ goTo(idx + 1); }, 5000); });
+          el.appendChild(container);
+          el.appendChild(prev);
+          el.appendChild(next);
+          el.appendChild(dots);
+        })
+        .catch(function(){ el.style.display = 'none'; });
+    })();
+  </script>
 
   <!-- Mobile Bottom Nav - Tap to Call & WhatsApp -->
   <div class="fixed bottom-0 left-0 right-0 z-50 sm:hidden safe-area-pb flex">
     <a
       href="tel:07895859505"
+      data-track="call"
+      data-track-label="bottom_bar"
       class="flex-1 flex items-center justify-center gap-2 bg-safety text-zinc-900 font-bold text-base py-4 px-3 tap-highlight-none hover:bg-[#e5c900] active:bg-[#ccb300] transition-colors"
       aria-label="Tap to call 07895 859505"
     >
@@ -753,6 +822,7 @@
             if (result.ok && result.data && result.data.ok) {
               setStatus('Thanks! We\'ll contact you shortly with a quote.', false);
               form.reset();
+              if (window.trackEvent) window.trackEvent('quote_submit', 'lead', 'hero_form');
             } else {
               setStatus(result.data && result.data.error ? result.data.error : 'Something went wrong. Please call us.', true);
             }
