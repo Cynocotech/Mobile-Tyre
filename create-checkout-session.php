@@ -124,13 +124,16 @@ if (!empty($input['vehicle_wheels'])) {
   $payload['metadata']['vehicle_wheels'] = substr((string) $input['vehicle_wheels'], 0, 10);
 }
 
+// Stripe v1 API expects application/x-www-form-urlencoded, not JSON
+$postFields = http_build_query($payload);
+
 $ch = curl_init('https://api.stripe.com/v1/checkout/sessions');
 curl_setopt_array($ch, [
   CURLOPT_POST => true,
-  CURLOPT_POSTFIELDS => json_encode($payload),
+  CURLOPT_POSTFIELDS => $postFields,
   CURLOPT_HTTPHEADER => [
     'Authorization: Bearer ' . $stripeSecretKey,
-    'Content-Type: application/json',
+    'Content-Type: application/x-www-form-urlencoded',
     'Stripe-Version: 2024-11-20.acacia',
   ],
   CURLOPT_RETURNTRANSFER => true,
