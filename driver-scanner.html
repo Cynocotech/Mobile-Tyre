@@ -109,7 +109,13 @@
       function startScanner() {
         if (typeof Html5QrcodeScanner !== 'undefined') {
           try {
-            var config = { fps: 10, qrbox: 250 };
+            var config = {
+              fps: 20,
+              qrbox: { width: 220, height: 220 },
+              disableFlip: true,
+              formatsToSupport: [0],
+              experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+            };
             var html5QrcodeScanner = new Html5QrcodeScanner('reader', config, false);
             html5QrcodeScanner.render(
               function(decodedText, decodedResult) {
@@ -130,7 +136,13 @@
             if (!cameras || cameras.length === 0) throw new Error('No camera');
             var cam = cameras.find(function(c) { return /back|rear/i.test(c.label); }) || cameras[0];
             var scanner = new Html5Qrcode('reader');
-            scanner.start(cam.id, { fps: 10, qrbox: 250 }, function(decodedText) {
+            var scanConfig = {
+              fps: 20,
+              qrbox: 220,
+              disableFlip: true,
+              experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+            };
+            scanner.start(cam.id, scanConfig, function(decodedText) {
               if (decodedText && decodedText !== lastScanned) {
                 lastScanned = decodedText;
                 showStatus('Found! Loading job…', 'success');
