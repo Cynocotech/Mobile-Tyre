@@ -1,0 +1,2 @@
+# SMTP error log (may contain debug info)
+.smtp-error.log

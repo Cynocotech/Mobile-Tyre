@@ -1,0 +1,7 @@
+{
+  "name": "mobile-tyre/mobile-tyre",
+  "description": "Mobile Tyre website",
+  "require": {
+    "phpmailer/phpmailer": "^6.9"
+  }
+}

@@ -1,6 +1,6 @@
 <?php
 /**
- * Send email via Zoho SMTP. Uses encryption (ssl/tls) from config.
+ * Send email via Zoho SMTP using PHPMailer.
  * Config: host, port, encryption (ssl|tls), user, pass in dynamic.json "smtp" object.
  *
  * @param string $to Recipient email
@@ -11,7 +11,17 @@
  * @param array|null $config Override config (host, port, user, pass)
  * @return bool True on success
  */
+
+require_once __DIR__ . '/vendor/PHPMailer/src/Exception.php';
+require_once __DIR__ . '/vendor/PHPMailer/src/PHPMailer.php';
+require_once __DIR__ . '/vendor/PHPMailer/src/SMTP.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
+
 function sendSmtpMail($to, $subject, $bodyHtml, $fromEmail = null, $fromName = null, $config = null) {
+
   if ($config === null) {
     $configPath = __DIR__ . '/dynamic.json';
     if (!is_file($configPath)) return false;
@@ -28,58 +38,28 @@ function sendSmtpMail($to, $subject, $bodyHtml, $fromEmail = null, $fromName = n
   $fromEmail = $fromEmail ?? $user;
   $fromName = $fromName ?? 'No 5 Tyre & MOT';
 
-  $tryConnections = [['port' => $port, 'enc' => $encryption], ['port' => 465, 'enc' => 'ssl'], ['port' => 587, 'enc' => 'tls']];
-  $seen = [];
-  foreach ($tryConnections as $conn) {
-    $p = $conn['port'];
-    $enc = $conn['enc'];
-    if (isset($seen[$p . $enc])) continue;
-    $seen[$p . $enc] = true;
+  $mail = new PHPMailer(true);
+  try {
+    $mail->isSMTP();
+    $mail->Host = $host;
+    $mail->Port = $port;
+    $mail->SMTPAuth = true;
+    $mail->Username = $user;
+    $mail->Password = $pass;
+    $mail->SMTPSecure = ($encryption === 'tls') ? PHPMailer::ENCRYPTION_STARTTLS : PHPMailer::ENCRYPTION_SMTPS;
 
-    $fp = null;
-    if ($enc === 'ssl' || $p === 465) {
-      $context = stream_context_create(['ssl' => ['verify_peer' => false, 'verify_peer_name' => false]]);
-      $fp = @stream_socket_client("ssl://{$host}:{$p}", $errno, $errstr, 15, STREAM_CLIENT_CONNECT, $context);
-    } else {
-      $fp = @stream_socket_client("tcp://{$host}:{$p}", $errno, $errstr, 15, STREAM_CLIENT_CONNECT);
-      if ($fp && stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT) !== true) {
-        fclose($fp);
-        $fp = false;
-      }
-    }
-    if (!$fp) continue;
+    $mail->CharSet = 'UTF-8';
+    $mail->setFrom($fromEmail, $fromName);
+    $mail->addAddress($to);
+    $mail->Subject = $subject;
+    $mail->isHTML(true);
+    $mail->Body = $bodyHtml;
 
-    $read = function () use ($fp) { return fgets($fp, 515); };
-    $send = function ($cmd) use ($fp) { fwrite($fp, $cmd . "\r\n"); };
-
-    $read();
-    $send('EHLO ' . ($_SERVER['SERVER_NAME'] ?? 'localhost'));
-    while ($line = $read()) {
-      if (strlen($line) < 4 || substr($line, 3, 1) === ' ') break;
-    }
-    $send('AUTH LOGIN');
-    $read();
-    $send(base64_encode($user));
-    $read();
-    $send(base64_encode($pass));
-    $auth = $read();
-    if (strpos($auth, '235') === false) {
-      fclose($fp);
-      continue;
-    }
-    $send("MAIL FROM:<{$fromEmail}>");
-    $read();
-    $send("RCPT TO:<{$to}>");
-    $read();
-    $send('DATA');
-    $read();
-    $subjEnc = '=?UTF-8?B?' . base64_encode($subject) . '?=';
-    $headers = "From: {$fromName} <{$fromEmail}>\r\nTo: {$to}\r\nSubject: {$subjEnc}\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n";
-    $send($headers . $bodyHtml);
-    $send('.');
-    $dataResp = $read();
-    fclose($fp);
-    if (strpos($dataResp, '250') !== false) return true;
+    $mail->send();
+    return true;
+  } catch (Exception $e) {
+    $logPath = __DIR__ . '/.smtp-error.log';
+    @file_put_contents($logPath, date('Y-m-d H:i:s') . ' ' . $e->getMessage() . "\n", FILE_APPEND | LOCK_EX);
+    return false;
   }
-  return false;
 }
