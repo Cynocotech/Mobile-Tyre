@@ -1,19 +1,16 @@
 <?php
-$pageTitle = 'Drivers & Vans';
+$pageTitle = 'Drivers';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/header.php';
 ?>
 <h1 class="text-2xl font-bold text-white mb-8">Drivers & Vans</h1>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-  <div>
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-lg font-semibold text-white">Drivers</h2>
-      <button type="button" id="btn-add-driver" class="px-3 py-1.5 bg-safety text-zinc-900 font-bold rounded-lg hover:bg-[#e5c900] text-sm">+ Add driver</button>
-    </div>
-    <div id="drivers-list" class="space-y-3">
-      <p class="text-zinc-500">Loading…</p>
-    </div>
+<div class="flex justify-between items-center mb-6">
+  <p class="text-zinc-500">Manage drivers and their vehicles. Click Edit to update details.</p>
+  <button type="button" id="btn-add-driver" class="px-4 py-2 bg-safety text-zinc-900 font-bold rounded-lg hover:bg-[#e5c900] text-sm">+ Add driver</button>
+</div>
+<div id="drivers-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+  <p class="text-zinc-500 col-span-full">Loading…</p>
 
     <!-- Driver modal -->
     <div id="driver-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 overflow-y-auto" style="display: none;">
@@ -131,46 +128,11 @@ require_once __DIR__ . '/header.php';
         </div>
       </div>
     </div>
-  </div>
-
-  <div>
-    <h2 class="text-lg font-semibold text-white mb-4">Jobs <span class="text-zinc-500 text-sm font-normal">(click for details)</span></h2>
-    <div id="jobs-list" class="rounded-xl border border-zinc-700 bg-zinc-800/50 overflow-hidden">
-      <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
-        <table class="w-full text-sm">
-          <thead class="sticky top-0 bg-zinc-800">
-            <tr class="border-b border-zinc-700">
-              <th class="text-left py-3 px-4 text-zinc-400 font-medium">Ref</th>
-              <th class="text-left py-3 px-4 text-zinc-400 font-medium">Vehicle</th>
-              <th class="text-left py-3 px-4 text-zinc-400 font-medium">Postcode</th>
-              <th class="text-right py-3 px-4 text-zinc-400 font-medium">Amount</th>
-            </tr>
-          </thead>
-          <tbody id="jobs-tbody">
-            <tr><td colspan="4" class="py-8 text-center text-zinc-500">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Job detail modal -->
-<div id="job-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 overflow-y-auto" style="display: none;">
-  <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-800 p-6 my-8">
-    <div class="flex justify-between items-start mb-6">
-      <h2 class="text-xl font-bold text-white">Job #<span id="job-modal-ref">—</span></h2>
-      <button type="button" id="job-modal-close" class="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-700 text-2xl leading-none">×</button>
-    </div>
-    <div id="job-modal-loading" class="text-zinc-500 py-8 text-center">Loading…</div>
-    <div id="job-modal-content" class="hidden space-y-4"></div>
-  </div>
 </div>
 
 <script>
 (function() {
   var driversList = document.getElementById('drivers-list');
-  var jobsTbody = document.getElementById('jobs-tbody');
   var modal = document.getElementById('driver-modal');
   var form = document.getElementById('driver-form');
 
@@ -259,7 +221,7 @@ require_once __DIR__ . '/header.php';
                 rateBadge +
               '</div>' +
               '<div class="flex gap-1 shrink-0">' +
-                (source === 'admin' ? '<button type="button" class="btn-edit-driver px-2 py-1 rounded bg-zinc-700 text-zinc-300 text-xs" data-id="' + (d.id||'') + '">Edit</button>' : '') +
+                '<button type="button" class="btn-edit-driver px-2 py-1 rounded bg-zinc-700 text-zinc-300 text-xs" data-id="' + (d.id||'') + '">Edit</button>' +
                 (source === 'admin' ? '<button type="button" class="btn-delete-driver px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + (d.id||'') + '">Delete</button>' : '') +
               '</div>' +
             '</div>' +
@@ -294,101 +256,6 @@ require_once __DIR__ . '/header.php';
         driversList.querySelectorAll('.btn-unblock').forEach(function(b) {
           b.addEventListener('click', function() { setDriverStatus(b.getAttribute('data-id'), 'unblock'); });
         });
-      });
-  }
-
-  function loadJobs() {
-    fetch('api/drivers.php?action=jobs')
-      .then(function(r) { return r.json(); })
-      .then(function(jobs) {
-        if (!Array.isArray(jobs)) { jobsTbody.innerHTML = '<tr><td colspan="4" class="py-4 text-zinc-500">No jobs</td></tr>'; return; }
-        if (jobs.length === 0) {
-          jobsTbody.innerHTML = '<tr><td colspan="4" class="py-8 text-center text-zinc-500">No jobs yet</td></tr>';
-          return;
-        }
-        jobsTbody.innerHTML = jobs.map(function(j) {
-          var v = (j.make||'') + ' ' + (j.model||''); if (!v.trim()) v = j.vrm || '—'; else if (j.vrm) v += ' (' + j.vrm + ')';
-          var ref = (j.reference||'').toString();
-          return '<tr class="job-row border-b border-zinc-700/50 hover:bg-zinc-800/50 cursor-pointer" data-ref="' + ref + '" role="button" tabindex="0">' +
-            '<td class="py-3 px-4 font-mono text-safety">' + (j.reference||'—') + '</td>' +
-            '<td class="py-3 px-4 text-zinc-300">' + v + '</td>' +
-            '<td class="py-3 px-4 text-zinc-400">' + (j.postcode||'—') + '</td>' +
-            '<td class="py-3 px-4 text-right font-semibold text-white">' + (j.amount_paid||j.estimate_total||'—') + '</td>' +
-          '</tr>';
-        }).join('');
-        jobsTbody.querySelectorAll('.job-row').forEach(function(row) {
-          row.addEventListener('click', function() { showJobDetail(row.getAttribute('data-ref')); });
-          row.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showJobDetail(row.getAttribute('data-ref')); } });
-        });
-      });
-  }
-
-  function showJobDetail(ref) {
-    if (!ref) return;
-    var modal = document.getElementById('job-modal');
-    var content = document.getElementById('job-modal-content');
-    var loading = document.getElementById('job-modal-loading');
-    document.getElementById('job-modal-ref').textContent = ref;
-    modal.classList.remove('hidden');
-    modal.style.display = 'flex';
-    content.classList.add('hidden');
-    loading.classList.remove('hidden');
-    fetch('api/order.php?ref=' + encodeURIComponent(ref))
-      .then(function(r) { return r.json(); })
-      .then(function(o) {
-        loading.classList.add('hidden');
-        content.classList.remove('hidden');
-        var esc = function(s) { if (s == null || s === '') return '—'; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
-        var proofHtml = o.proof_url
-          ? '<div class="rounded-lg border border-zinc-600 overflow-hidden"><a href="api/proof.php?ref=' + encodeURIComponent(ref) + '" target="_blank" class="block"><img src="api/proof.php?ref=' + encodeURIComponent(ref) + '" alt="Proof" class="w-full max-h-64 object-contain bg-zinc-900"></a><p class="text-zinc-500 text-xs p-2">Completion proof' + (o.proof_uploaded_at ? ' – ' + esc(o.proof_uploaded_at) : '') + '</p></div>'
-          : '<p class="text-zinc-500 text-sm">No proof uploaded yet</p>';
-        var times = [];
-        times.push('<div class="flex justify-between py-1"><dt class="text-zinc-500">Assigned driver</dt><dd class="text-white">' + esc(o.assigned_driver_name || 'Not assigned') + (o.assigned_at ? ' <span class="text-zinc-500 text-xs">(' + esc(o.assigned_at) + ')</span>' : '') + '</dd></div>');
-        if (o.job_started_at) times.push('<div class="flex justify-between py-1"><dt class="text-zinc-500">Start time</dt><dd class="text-white">' + esc(o.job_started_at) + '</dd></div>');
-        if (o.proof_uploaded_at || o.cash_paid_at || o.job_completed_at) times.push('<div class="flex justify-between py-1"><dt class="text-zinc-500">End time</dt><dd class="text-white">' + esc(o.proof_uploaded_at || o.cash_paid_at || o.job_completed_at) + '</dd></div>');
-        content.innerHTML =
-          '<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">' +
-            '<div class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">' +
-              '<h3 class="text-sm font-semibold text-zinc-400 mb-3">Customer</h3>' +
-              '<dl class="space-y-1 text-sm">' +
-                '<div class="flex justify-between"><dt class="text-zinc-500">Name</dt><dd class="text-white">' + esc(o.name) + '</dd></div>' +
-                '<div class="flex justify-between"><dt class="text-zinc-500">Email</dt><dd class="text-white break-all">' + esc(o.email) + '</dd></div>' +
-                '<div class="flex justify-between"><dt class="text-zinc-500">Phone</dt><dd class="text-white"><a href="tel:' + (o.phone||'').replace(/\D/g,'') + '" class="text-safety hover:underline">' + esc(o.phone) + '</a></dd></div>' +
-                '<div class="flex justify-between"><dt class="text-zinc-500">Postcode</dt><dd class="text-white">' + esc(o.postcode) + '</dd></div>' +
-              '</dl>' +
-            '</div>' +
-            '<div class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">' +
-              '<h3 class="text-sm font-semibold text-zinc-400 mb-3">Payment</h3>' +
-              '<dl class="space-y-1 text-sm">' +
-                '<div class="flex justify-between"><dt class="text-zinc-500">Deposit</dt><dd class="font-semibold text-safety">' + esc(o.amount_paid) + '</dd></div>' +
-                '<div class="flex justify-between"><dt class="text-zinc-500">Est. total</dt><dd class="text-white">' + esc(o.estimate_total) + '</dd></div>' +
-                (o.payment_method === 'cash' ? '<div class="flex justify-between"><dt class="text-zinc-500">Payment</dt><dd class="text-amber-400">Cash' + (o.cash_paid_at ? ' at ' + esc(o.cash_paid_at) : '') + '</dd></div>' : '') +
-              '</dl>' +
-            '</div>' +
-          '</div>' +
-          '<div class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">' +
-            '<h3 class="text-sm font-semibold text-zinc-400 mb-3">Vehicle</h3>' +
-            '<dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">' +
-              '<dt class="text-zinc-500">VRM</dt><dd class="text-white font-mono">' + esc(o.vrm) + '</dd>' +
-              '<dt class="text-zinc-500">Make</dt><dd class="text-white">' + esc(o.make) + '</dd>' +
-              '<dt class="text-zinc-500">Model</dt><dd class="text-white">' + esc(o.model) + '</dd>' +
-              '<dt class="text-zinc-500">Tyre size</dt><dd class="text-white">' + esc(o.tyre_size) + '</dd>' +
-              '<dt class="text-zinc-500">Wheels</dt><dd class="text-white">' + esc(o.wheels) + '</dd>' +
-            '</dl>' +
-          '</div>' +
-          '<div class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">' +
-            '<h3 class="text-sm font-semibold text-zinc-400 mb-3">Driver & times</h3>' +
-            '<div class="space-y-1 text-sm">' + times.join('') + '</div>' +
-          '</div>' +
-          '<div class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">' +
-            '<h3 class="text-sm font-semibold text-zinc-400 mb-3">Proof</h3>' +
-            proofHtml +
-          '</div>';
-      })
-      .catch(function() {
-        loading.classList.add('hidden');
-        content.classList.remove('hidden');
-        content.innerHTML = '<p class="text-red-400">Failed to load job details.</p>';
       });
   }
 
@@ -505,14 +372,6 @@ require_once __DIR__ . '/header.php';
   document.getElementById('btn-add-driver').addEventListener('click', function() { openDriverModal(); });
   document.getElementById('driver-modal-cancel').addEventListener('click', closeDriverModal);
   modal.addEventListener('click', function(e) { if (e.target === modal) closeDriverModal(); });
-
-  function closeJobModal() {
-    var jobModal = document.getElementById('job-modal');
-    jobModal.classList.add('hidden');
-    jobModal.style.display = 'none';
-  }
-  document.getElementById('job-modal-close').addEventListener('click', closeJobModal);
-  document.getElementById('job-modal').addEventListener('click', function(e) { if (e.target.id === 'job-modal') closeJobModal(); });
 
   function parseDate(dateStr) {
     if (!dateStr) return null;
@@ -683,7 +542,6 @@ require_once __DIR__ . '/header.php';
   });
 
   loadDrivers();
-  loadJobs();
 })();
 </script>
 

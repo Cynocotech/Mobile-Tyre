@@ -60,7 +60,21 @@ function loadJobs() {
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
   $action = $_GET['action'] ?? 'list';
   if ($action === 'jobs') {
-    echo json_encode(loadJobs());
+    $jobs = loadJobs();
+    $dbPath = $base . '/database/drivers.json';
+    $drivers = [];
+    if (is_file($dbPath)) $drivers = json_decode(file_get_contents($dbPath), true) ?: [];
+    $adminDrivers = loadDrivers($driversPath);
+    foreach ($jobs as &$j) {
+      $aid = $j['assigned_driver_id'] ?? '';
+      if ($aid && isset($drivers[$aid])) $j['assigned_driver_name'] = $drivers[$aid]['name'] ?? '';
+      elseif ($aid) {
+        foreach (is_array($adminDrivers) ? $adminDrivers : [] as $d) {
+          if (($d['id'] ?? '') === $aid) { $j['assigned_driver_name'] = $d['name'] ?? ''; break; }
+        }
+      }
+    }
+    echo json_encode($jobs);
   } elseif ($action === 'drivers') {
     echo json_encode(loadDrivers($driversPath));
   } elseif ($action === 'all') {

@@ -27,13 +27,31 @@ $insuranceUploadedAt = $driver['insurance_uploaded_at'] ?? null;
     <h1 class="text-2xl font-bold text-white mb-6">My profile</h1>
 
     <div class="rounded-2xl border border-zinc-700 bg-zinc-800/50 overflow-hidden mb-6">
-      <h2 class="px-4 py-3 text-sm font-semibold text-zinc-400 border-b border-zinc-700">Personal</h2>
-      <dl class="divide-y divide-zinc-700">
-        <div class="px-4 py-4 flex justify-between"><dt class="text-zinc-500">Name</dt><dd class="text-white font-medium"><?php echo htmlspecialchars($driver['name'] ?? '—'); ?></dd></div>
+      <h2 class="px-4 py-3 text-sm font-semibold text-zinc-400 border-b border-zinc-700 flex justify-between items-center">
+        <span>Personal</span>
+        <button type="button" id="btn-edit-details" class="text-safety text-xs font-medium hover:underline">Edit details</button>
+      </h2>
+      <div id="personal-view" class="divide-y divide-zinc-700">
+        <div class="px-4 py-4 flex justify-between"><dt class="text-zinc-500">Name</dt><dd id="disp-name" class="text-white font-medium"><?php echo htmlspecialchars($driver['name'] ?? '—'); ?></dd></div>
         <div class="px-4 py-4 flex justify-between"><dt class="text-zinc-500">Email</dt><dd class="text-white"><?php echo htmlspecialchars($driver['email'] ?? '—'); ?></dd></div>
-        <div class="px-4 py-4 flex justify-between"><dt class="text-zinc-500">Phone</dt><dd class="text-white"><a href="tel:<?php echo htmlspecialchars(preg_replace('/\D/', '', $driver['phone'] ?? '')); ?>" class="text-safety"><?php echo htmlspecialchars($driver['phone'] ?? '—'); ?></a></dd></div>
+        <div class="px-4 py-4 flex justify-between"><dt class="text-zinc-500">Phone</dt><dd id="disp-phone" class="text-white"><a href="tel:<?php echo htmlspecialchars(preg_replace('/\D/', '', $driver['phone'] ?? '')); ?>" class="text-safety"><?php echo htmlspecialchars($driver['phone'] ?? '—'); ?></a></dd></div>
         <div class="px-4 py-4 flex justify-between"><dt class="text-zinc-500">Licence</dt><dd class="text-white font-mono"><?php echo htmlspecialchars($licenseNum ?: '—'); ?></dd></div>
-      </dl>
+      </div>
+      <form id="personal-edit-form" class="hidden p-4 space-y-4">
+        <div>
+          <label for="edit-name" class="block text-sm text-zinc-500 mb-1">Name</label>
+          <input type="text" id="edit-name" required value="<?php echo htmlspecialchars($driver['name'] ?? ''); ?>" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none">
+        </div>
+        <div>
+          <label for="edit-phone" class="block text-sm text-zinc-500 mb-1">Phone</label>
+          <input type="tel" id="edit-phone" value="<?php echo htmlspecialchars($driver['phone'] ?? ''); ?>" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none">
+        </div>
+        <p class="text-zinc-500 text-xs">Email cannot be changed. Contact the office if it needs updating.</p>
+        <div class="flex gap-2">
+          <button type="submit" class="px-4 py-2 bg-safety text-zinc-900 font-bold rounded-lg text-sm">Save</button>
+          <button type="button" id="edit-cancel" class="px-4 py-2 border border-zinc-600 text-zinc-400 rounded-lg text-sm hover:bg-zinc-700">Cancel</button>
+        </div>
+      </form>
     </div>
 
     <div class="rounded-2xl border border-zinc-700 bg-zinc-800/50 overflow-hidden mb-6">
@@ -94,6 +112,42 @@ $insuranceUploadedAt = $driver['insurance_uploaded_at'] ?? null;
 
   <script>
   (function() {
+    var btnEdit = document.getElementById('btn-edit-details');
+    var personalView = document.getElementById('personal-view');
+    var personalForm = document.getElementById('personal-edit-form');
+    var editCancel = document.getElementById('edit-cancel');
+    if (btnEdit && personalView && personalForm) {
+      btnEdit.addEventListener('click', function() {
+        personalView.classList.add('hidden');
+        personalForm.classList.remove('hidden');
+      });
+      editCancel.addEventListener('click', function() {
+        personalForm.classList.add('hidden');
+        personalView.classList.remove('hidden');
+      });
+      personalForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var name = document.getElementById('edit-name').value.trim();
+        var phone = document.getElementById('edit-phone').value.trim();
+        if (!name) { alert('Name is required'); return; }
+        var fd = new FormData();
+        fd.append('name', name);
+        fd.append('phone', phone);
+        fetch('api/profile.php', { method: 'POST', body: fd })
+          .then(function(r) { return r.json(); })
+          .then(function(d) {
+            if (d.ok) {
+              document.getElementById('disp-name').textContent = name;
+              var phoneEl = document.getElementById('disp-phone');
+              phoneEl.innerHTML = phone ? '<a href="tel:' + phone.replace(/\D/g,'') + '" class="text-safety">' + phone + '</a>' : '—';
+              personalForm.classList.add('hidden');
+              personalView.classList.remove('hidden');
+            } else alert(d.error || 'Failed');
+          })
+          .catch(function() { alert('Update failed.'); });
+      });
+    }
+
     var input = document.getElementById('insurance-input');
     if (input) {
       input.addEventListener('change', function() {

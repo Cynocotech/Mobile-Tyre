@@ -77,9 +77,10 @@ $balance = $est > 0 ? max(0, $est - $paid) : 0;
     .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #e4e4e7; font-size: 12px; color: #71717a; }
     @media print { body { padding: 0; } .no-print { display: none !important; } }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
-  <div class="invoice">
+  <div id="invoice-content" class="invoice">
     <div class="header">
       <div>
         <div class="logo">No 5 Tyre &amp; MOT</div>
@@ -139,7 +140,29 @@ $balance = $est > 0 ? max(0, $est - $paid) : 0;
 
   <p class="no-print" style="text-align: center; margin-top: 24px;">
     <button type="button" onclick="window.print()" style="padding: 12px 24px; background: #fede00; color: #18181b; font-weight: bold; border: none; border-radius: 8px; cursor: pointer;">Print invoice</button>
+    <button type="button" id="save-pdf-btn" style="padding: 12px 24px; background: #18181b; color: #fede00; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; margin-left: 8px;">Save as PDF</button>
     <a href="dashboard.php" style="margin-left: 12px; color: #71717a;">← Back to dashboard</a>
   </p>
+  <script>
+    document.getElementById('save-pdf-btn').onclick = function() {
+      var btn = this;
+      btn.disabled = true;
+      btn.textContent = 'Generating…';
+      var opt = {
+        margin: [10, 10],
+        filename: 'invoice-<?php echo htmlspecialchars($ref); ?>.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(document.getElementById('invoice-content')).save().then(function() {
+        btn.disabled = false;
+        btn.textContent = 'Save as PDF';
+      }).catch(function() {
+        btn.disabled = false;
+        btn.textContent = 'Save as PDF';
+      });
+    };
+  </script>
 </body>
 </html>

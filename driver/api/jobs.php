@@ -85,8 +85,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
   exit;
 }
 
-$input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
-$action = $input['action'] ?? '';
+$input = $_POST;
+if (empty($input) || !isset($input['action'])) {
+  $raw = file_get_contents('php://input');
+  $input = json_decode($raw, true) ?: [];
+}
+$action = trim($input['action'] ?? '');
 
 switch ($action) {
   case 'location':

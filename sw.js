@@ -1,4 +1,4 @@
-const CACHE = 'no5-driver-v2';
+const CACHE = 'no5-driver-v3';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(

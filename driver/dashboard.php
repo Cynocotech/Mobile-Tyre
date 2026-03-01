@@ -85,10 +85,13 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
   </main>
 
   <!-- Floating Go online button -->
-  <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
-    <button type="button" id="btn-online" class="w-16 h-16 rounded-full bg-safety text-zinc-900 font-bold text-sm shadow-lg shadow-black/30 hover:bg-[#e5c900] active:scale-95 transition-all flex items-center justify-center" title="Go online">
-      <span id="online-label" class="text-center text-xs font-bold leading-tight">Go<br>online</span>
-    </button>
+  <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center justify-center">
+    <div class="relative">
+      <div class="absolute inset-0 rounded-full bg-safety animate-ping opacity-40"></div>
+      <button type="button" id="btn-online" class="relative w-24 h-24 rounded-full bg-safety text-zinc-900 font-bold text-sm shadow-xl shadow-black/40 hover:bg-[#e5c900] active:scale-95 transition-all flex items-center justify-center ring-4 ring-safety/30" title="Go online">
+        <span id="online-label" class="text-center text-sm font-bold leading-tight">Go<br>online</span>
+      </button>
+    </div>
   </div>
 
   <!-- QR Scanner modal (same template as driver-scanner) -->
@@ -181,20 +184,32 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
     function setOnlineBtn(online) {
       var btn = document.getElementById('btn-online');
       var lbl = document.getElementById('online-label');
+      var pingEl = btn && btn.previousElementSibling;
+      var baseClass = 'relative w-24 h-24 rounded-full font-bold text-sm shadow-xl shadow-black/40 active:scale-95 transition-all flex items-center justify-center';
       if (online) {
-        btn.className = 'w-16 h-16 rounded-full bg-safety text-zinc-900 font-bold text-sm shadow-lg shadow-black/30 hover:bg-[#e5c900] active:scale-95 transition-all flex items-center justify-center';
+        btn.className = baseClass + ' bg-green-500 text-white hover:bg-green-400 ring-4 ring-green-500/30';
         lbl.innerHTML = 'Online';
         btn.title = 'You are online';
+        if (pingEl) pingEl.classList.add('hidden');
       } else {
-        btn.className = 'w-16 h-16 rounded-full bg-safety text-zinc-900 font-bold text-sm shadow-lg shadow-black/30 hover:bg-[#e5c900] active:scale-95 transition-all flex items-center justify-center';
+        btn.className = baseClass + ' bg-safety text-zinc-900 hover:bg-[#e5c900] ring-4 ring-safety/30';
         lbl.innerHTML = 'Go<br>online';
         btn.title = 'Go online';
+        if (pingEl) pingEl.classList.remove('hidden');
       }
     }
 
+    var API_BASE = (function() {
+      var p = window.location.pathname;
+      return p.replace(/[^/]+$/, '');
+    })();
+
     function loadJobs() {
-      fetch('api/jobs.php')
-        .then(function(r) { return r.json(); })
+      fetch(API_BASE + 'api/jobs.php', { credentials: 'same-origin' })
+        .then(function(r) {
+          if (!r.ok) throw new Error('Server error ' + r.status);
+          return r.json();
+        })
         .then(function(d) {
           document.getElementById('jobs-loading').classList.add('hidden');
           driverData = d.driver || {};
@@ -239,11 +254,10 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
           list.querySelectorAll('.start-btn').forEach(function(b) {
             b.addEventListener('click', function() {
               var ref = b.getAttribute('data-ref');
-              fetch('api/jobs.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'job_start', reference: ref })
-              }).then(function(r) { return r.json(); }).then(function(d) {
+              var fd = new FormData();
+              fd.append('action', 'job_start');
+              fd.append('reference', ref);
+              fetch(API_BASE + 'api/jobs.php', { method: 'POST', credentials: 'same-origin', body: fd }).then(function(r) { return r.json(); }).then(function(d) {
                 if (d.ok) loadJobs(); else alert(d.error || 'Failed');
               });
             });
@@ -262,8 +276,9 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
             });
           });
         })
-        .catch(function() {
-          document.getElementById('jobs-loading').textContent = 'Failed to load.';
+        .catch(function(err) {
+          document.getElementById('jobs-loading').textContent = 'Failed to load. Try refreshing.';
+          console.error('loadJobs:', err);
         });
     }
 
@@ -328,7 +343,7 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       var btn = this;
       btn.disabled = true;
       btn.textContent = 'Loading…';
-      fetch('api/verification-session.php', { method: 'POST' })
+      fetch(API_BASE + 'api/verification-session.php', { method: 'POST', credentials: 'same-origin' })
         .then(function(r) { return r.json(); })
         .then(function(d) {
           if (d.url) window.location.href = d.url;
@@ -341,12 +356,17 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       var btn = this;
       var wantOnline = !driverData.is_online;
       btn.disabled = true;
-      fetch('api/jobs.php', {
+      var fd = new FormData();
+      fd.append('action', 'set_online');
+      fd.append('online', wantOnline ? '1' : '0');
+      fetch(API_BASE + 'api/jobs.php', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'set_online', online: wantOnline })
+        credentials: 'same-origin',
+        body: fd
       }).then(function(r) {
-        if (!r.ok) return r.json().then(function(d) { throw new Error(d.error || 'Request failed'); });
+        if (!r.ok) return r.json().catch(function() { return r.text(); }).then(function(t) {
+          throw new Error(typeof t === 'object' && t.error ? t.error : (t || 'Request failed'));
+        });
         return r.json();
       }).then(function(d) {
         if (d.ok) {
@@ -354,7 +374,7 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
           setOnlineBtn(d.is_online);
         } else throw new Error(d.error || 'Failed');
       }).catch(function(err) {
-        alert(err.message || 'Could not update. Check connection.');
+        alert(err.message || 'Could not update. Check connection and try again.');
       }).finally(function() { btn.disabled = false; });
     });
 
@@ -372,14 +392,14 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
         fd.append('lat', String(currentLat));
         fd.append('lng', String(currentLng));
         fd.append('reference', currentRef);
-        fetch('api/jobs.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); }).then(function(d) {
+        fetch(API_BASE + 'api/jobs.php', { method: 'POST', credentials: 'same-origin', body: fd }).then(function(r) { return r.json(); }).then(function(d) {
           if (d.ok) { closeLocationModal(); loadJobs(); } else alert(d.error || 'Failed');
         }).catch(function() { alert('Update failed. Check connection.'); }).finally(done);
       } else {
         var fd = new FormData();
         fd.append('lat', String(currentLat));
         fd.append('lng', String(currentLng));
-        fetch('api/location.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); }).then(function(d) {
+        fetch(API_BASE + 'api/location.php', { method: 'POST', credentials: 'same-origin', body: fd }).then(function(r) { return r.json(); }).then(function(d) {
           if (d.ok) { closeLocationModal(); loadJobs(); } else alert(d.error || 'Failed');
         }).catch(function() { alert('Update failed. Check connection.'); }).finally(done);
       }
@@ -519,7 +539,7 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       var fd = new FormData();
       fd.append('action', 'cash_paid');
       fd.append('reference', ref);
-      fetch('api/jobs.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); }).then(function(d) {
+      fetch(API_BASE + 'api/jobs.php', { method: 'POST', credentials: 'same-origin', body: fd }).then(function(r) { return r.json(); }).then(function(d) {
         if (d.ok) loadJobs(); else alert(d.error || 'Failed');
       });
     }
@@ -535,7 +555,7 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
         fd.append('action', 'proof');
         fd.append('reference', ref);
         fd.append('photo', input.files[0]);
-        fetch('api/jobs.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); }).then(function(d) {
+        fetch(API_BASE + 'api/jobs.php', { method: 'POST', credentials: 'same-origin', body: fd }).then(function(r) { return r.json(); }).then(function(d) {
           if (d.ok) loadJobs(); else alert(d.error || 'Failed');
         });
       };
