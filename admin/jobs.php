@@ -166,16 +166,23 @@ require_once __DIR__ . '/header.php';
   }
 
   function loadDriversForAssign(ref, assignedDriverId) {
-    fetch('api/drivers-list.php').then(function(r) { return r.json(); }).then(function(d) {
+    fetch('api/drivers-list.php').then(function(r) {
+      if (!r.ok) throw new Error('Failed to load drivers');
+      return r.json();
+    }).then(function(d) {
       var sel = document.getElementById('assign-driver-select');
       if (!sel) return;
-      var drivers = (d.drivers || []).filter(function(drv) { return drv.source === 'connect'; });
-      if (drivers.length === 0) {
-        sel.innerHTML = '<option value="">No registered drivers – drivers must complete onboarding to receive jobs</option>';
+      var drivers = d.drivers || [];
+      var connectFirst = drivers.filter(function(drv) { return drv.source === 'connect'; });
+      var adminOnly = drivers.filter(function(drv) { return drv.source === 'admin'; });
+      var allDrivers = connectFirst.concat(adminOnly);
+      if (allDrivers.length === 0) {
+        sel.innerHTML = '<option value="">No drivers – add drivers in Drivers or they appear after onboarding</option>';
       } else {
-        sel.innerHTML = '<option value="">Assign driver…</option>' + drivers.map(function(drv) {
+        sel.innerHTML = '<option value="">Assign driver…</option>' + allDrivers.map(function(drv) {
         var selAttr = (assignedDriverId && drv.id === assignedDriverId) ? ' selected' : '';
-        return '<option value="' + drv.id + '"' + selAttr + '>' + (drv.name || drv.email) + ' – ' + (drv.van_make || '') + ' ' + (drv.van_reg || '') + '</option>';
+        var label = (drv.name || drv.email || drv.id) + (drv.van_make || drv.van_reg ? ' – ' + (drv.van_make || '') + ' ' + (drv.van_reg || '') : '');
+        return '<option value="' + String(drv.id).replace(/"/g,'&quot;') + '"' + selAttr + '>' + label.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</option>';
       }).join('');
       }
       var btn = document.getElementById('assign-driver-btn');
@@ -199,6 +206,9 @@ require_once __DIR__ . '/header.php';
           alert('Network error. Try again.');
         });
       };
+    }).catch(function() {
+      var sel = document.getElementById('assign-driver-select');
+      if (sel) sel.innerHTML = '<option value="">Failed to load drivers</option>';
     });
   }
 
