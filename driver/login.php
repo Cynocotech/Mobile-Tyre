@@ -74,9 +74,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <label for="pin" class="block text-sm font-medium text-zinc-300 mb-1">PIN (quick login)</label>
         <input id="pin" type="password" name="pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" class="w-full px-4 py-3 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="4–6 digits">
       </div>
+      <label class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" id="save-details" name="save_details" value="1" class="rounded bg-zinc-700 border-zinc-600 text-safety focus:ring-safety">
+        <span class="text-sm text-zinc-400">Save my email for next time</span>
+      </label>
       <button type="submit" class="w-full px-4 py-3 bg-safety text-zinc-900 font-bold rounded-lg hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety">Log in</button>
     </form>
     <p class="text-zinc-500 text-sm mt-6 text-center"><a href="onboarding.html" class="text-safety hover:underline">New driver? Sign up</a></p>
   </div>
+  <script>
+  (function() {
+    var saved = localStorage.getItem('driver-saved-email');
+    var saveChecked = localStorage.getItem('driver-save-details') === '1';
+    if (saved) document.getElementById('email').value = saved;
+    if (saveChecked) document.getElementById('save-details').checked = true;
+    document.querySelector('form').addEventListener('submit', function() {
+      var email = document.getElementById('email').value.trim();
+      var save = document.getElementById('save-details').checked;
+      if (save && email) {
+        localStorage.setItem('driver-saved-email', email);
+        localStorage.setItem('driver-save-details', '1');
+      } else {
+        localStorage.removeItem('driver-saved-email');
+        localStorage.removeItem('driver-save-details');
+      }
+    });
+  })();
+  </script>
 </body>
 </html>
