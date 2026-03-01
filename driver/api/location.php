@@ -17,9 +17,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
   exit;
 }
 
-$input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
-$lat = trim($input['lat'] ?? '');
-$lng = trim($input['lng'] ?? '');
+$input = $_POST;
+if (empty($input)) {
+  $raw = file_get_contents('php://input');
+  $input = json_decode($raw, true) ?: [];
+}
+$lat = trim((string)($input['lat'] ?? ''));
+$lng = trim((string)($input['lng'] ?? ''));
 
 if ($lat === '' || $lng === '') {
   http_response_code(400);
@@ -28,6 +32,20 @@ if ($lat === '' || $lng === '') {
 }
 
 $db = getDriverDb();
+if (!isset($db[$driverId])) {
+  $adminPath = dirname(__DIR__, 2) . '/admin/data/drivers.json';
+  $driverFromAdmin = null;
+  if (is_file($adminPath)) {
+    $admin = json_decode(file_get_contents($adminPath), true) ?: [];
+    foreach (is_array($admin) ? $admin : [] as $d) {
+      if (($d['id'] ?? '') === $driverId) {
+        $driverFromAdmin = array_merge($d, ['id' => $driverId]);
+        break;
+      }
+    }
+  }
+  $db[$driverId] = $driverFromAdmin ? array_merge($driverFromAdmin, ['updated_at' => date('Y-m-d H:i:s')]) : ['id' => $driverId, 'updated_at' => date('Y-m-d H:i:s')];
+}
 $db[$driverId]['driver_lat'] = $lat;
 $db[$driverId]['driver_lng'] = $lng;
 $db[$driverId]['driver_location_updated_at'] = date('Y-m-d H:i:s');

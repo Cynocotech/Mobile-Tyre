@@ -7,5 +7,6 @@ database/jobs.json
 database/quotes.json
 database/drivers.json
 database/proofs/
+database/insurance/
 admin/config.json
 .stripe-db-saved

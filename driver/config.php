@@ -29,6 +29,27 @@ function getDriverById($id) {
   return $db[$id] ?? null;
 }
 
+function getDriverForProfile($id) {
+  $db = getDriverDb();
+  $d = $db[$id] ?? null;
+  if (!$d) return null;
+  $adminPath = dirname(__DIR__) . '/admin/data/drivers.json';
+  if (is_file($adminPath)) {
+    $admin = json_decode(file_get_contents($adminPath), true) ?: [];
+    foreach (is_array($admin) ? $admin : [] as $a) {
+      if (($a['id'] ?? '') === $id) {
+        $d['vehicleData'] = $d['vehicleData'] ?? $a['vehicleData'] ?? null;
+        $d['kyc'] = $d['kyc'] ?? $a['kyc'] ?? null;
+        $d['van_make'] = ($d['van_make'] ?? '') ?: ($a['van'] ?? '');
+        $d['van_reg'] = ($d['van_reg'] ?? '') ?: ($a['vanReg'] ?? '');
+        $d['license_number'] = ($d['license_number'] ?? '') ?: ($a['kyc']['licenceNumber'] ?? '');
+        break;
+      }
+    }
+  }
+  return $d;
+}
+
 function getDriverByEmail($email) {
   $db = getDriverDb();
   $email = strtolower(trim($email));

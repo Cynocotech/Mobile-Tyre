@@ -17,7 +17,7 @@ require_once __DIR__ . '/header.php';
 
     <!-- Driver modal -->
     <div id="driver-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 overflow-y-auto" style="display: none;">
-      <div class="w-full max-w-lg rounded-2xl border border-zinc-700 bg-zinc-800 p-6 my-8">
+      <div class="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-800 p-6 my-8">
         <h3 id="driver-modal-title" class="text-lg font-bold text-white mb-4">Add driver</h3>
         <form id="driver-form" class="space-y-4">
           <input type="hidden" id="driver-id">
@@ -68,6 +68,11 @@ require_once __DIR__ . '/header.php';
               <div>
                 <label class="block text-zinc-500 text-xs mb-0.5">Insurance expiry (optional)</label>
                 <input type="date" id="kyc-insurance-expiry" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none text-sm">
+              </div>
+              <div id="driver-insurance-uploaded" class="hidden rounded-lg border border-zinc-600 bg-zinc-800/80 p-3">
+                <p class="text-zinc-400 text-sm mb-2">Driver uploaded insurance document</p>
+                <a id="driver-insurance-view" href="#" target="_blank" class="inline-flex items-center gap-1 text-safety text-sm font-medium hover:underline">View document</a>
+                <p id="driver-insurance-date" class="text-zinc-500 text-xs mt-1"></p>
               </div>
               <label class="flex items-center gap-2"><input type="checkbox" id="kyc-id-verified" class="rounded bg-zinc-700 border-zinc-600 text-safety focus:ring-safety"> <span class="text-zinc-300 text-sm">ID (passport/ID) verified</span></label>
             </div>
@@ -197,13 +202,14 @@ require_once __DIR__ . '/header.php';
           });
           return html;
         }
-        function kycSummary(k) {
-          if (!k || typeof k !== 'object') return '';
+        function kycSummary(k, insuranceUrl) {
+          if (!k || typeof k !== 'object') k = {};
           var items = [];
           if (k.rightToWork) items.push('Right to work');
           if (k.licenceVerified) items.push('Licence OK');
           if (k.licenceNumber) items.push('Lic: ' + escape(k.licenceNumber).substring(0,12) + (k.licenceNumber.length > 12 ? '…' : ''));
           if (k.insuranceValid) items.push('Insurance OK');
+          if (insuranceUrl) items.push('<span class="text-green-400">Doc uploaded</span>');
           if (k.idVerified) items.push('ID verified');
           if (items.length === 0) return '';
           return '<div class="mt-2 pt-2 border-t border-zinc-700"><p class="text-zinc-500 text-xs mb-1">KYC</p><p class="text-zinc-400 text-xs">' + items.join(' · ') + '</p></div>';
@@ -263,7 +269,7 @@ require_once __DIR__ . '/header.php';
             '</dl>' +
             vehicleSection +
             blockedReasonHtml +
-            kycSummary(d.kyc) +
+            kycSummary(d.kyc, d.insurance_url) +
             equipSummary(d.equipment) +
             (notes ? '<div class="mt-2 pt-2 border-t border-zinc-700"><p class="text-zinc-500 text-xs">Notes</p><p class="text-zinc-400 text-sm">' + escape(notes) + '</p></div>' : '') +
           '</div>';
@@ -420,6 +426,16 @@ require_once __DIR__ . '/header.php';
           document.getElementById('equip-chocks').checked = !!eq.chocks;
           document.getElementById('equip-other').value = eq.other || '';
           if (d.vehicleData && typeof d.vehicleData === 'object') renderVehicleSummary(d.vehicleData);
+          var insDiv = document.getElementById('driver-insurance-uploaded');
+          var insLink = document.getElementById('driver-insurance-view');
+          var insDate = document.getElementById('driver-insurance-date');
+          if (d.insurance_url && insDiv && insLink) {
+            insDiv.classList.remove('hidden');
+            insLink.href = 'api/driver-insurance.php?id=' + encodeURIComponent(id);
+            insDate.textContent = d.insurance_uploaded_at ? 'Uploaded ' + d.insurance_uploaded_at : '';
+          } else if (insDiv) {
+            insDiv.classList.add('hidden');
+          }
         }
       });
     } else {
@@ -428,6 +444,7 @@ require_once __DIR__ . '/header.php';
       document.getElementById('driver-vehicleData').value = '';
       document.getElementById('driver-rate').value = 80;
       document.getElementById('driver-vehicle-summary').classList.add('hidden');
+      document.getElementById('driver-insurance-uploaded').classList.add('hidden');
       document.getElementById('connect-link-section').classList.add('hidden');
     }
     modal.classList.remove('hidden');

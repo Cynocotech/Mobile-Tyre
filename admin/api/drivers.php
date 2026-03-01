@@ -89,6 +89,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'blocked_reason' => trim($d['blocked_reason'] ?? ''),
             'stripe_onboarding_complete' => !empty($d['stripe_onboarding_complete']),
             'driver_rate' => isset($d['driver_rate']) ? (int)$d['driver_rate'] : 80,
+            'insurance_url' => $d['insurance_url'] ?? null,
+            'insurance_uploaded_at' => $d['insurance_uploaded_at'] ?? null,
           ];
         }
       }
@@ -194,18 +196,23 @@ switch ($action) {
           $password = bin2hex(random_bytes(8));
           $tempPassword = $password;
         }
-        $dbRecord = array_merge($db[$d['id']] ?? [], [
+        $existing = $db[$d['id']] ?? [];
+        $dbRecord = array_merge($existing, [
           'id' => $d['id'],
           'name' => $d['name'],
           'email' => $d['email'],
           'phone' => $d['phone'],
           'van_make' => $d['van'],
           'van_reg' => $d['vanReg'],
-          'active' => ($db[$d['id']]['active'] ?? true),
-          'blacklisted' => !empty($db[$d['id']]['blacklisted']),
+          'active' => ($existing['active'] ?? true),
+          'blacklisted' => !empty($existing['blacklisted']),
           'driver_rate' => $driverRate,
           'updated_at' => date('Y-m-d H:i:s'),
         ]);
+        if (isset($d['vehicleData'])) $dbRecord['vehicleData'] = $d['vehicleData'];
+        if (isset($d['kyc'])) $dbRecord['kyc'] = $d['kyc'];
+        if (isset($d['equipment'])) $dbRecord['equipment'] = $d['equipment'];
+        $dbRecord['license_number'] = $d['kyc']['licenceNumber'] ?? $existing['license_number'] ?? '';
         if ($password) $dbRecord['password_hash'] = password_hash($password, PASSWORD_DEFAULT);
         if (empty($dbRecord['created_at'])) $dbRecord['created_at'] = date('Y-m-d H:i:s');
         $db[$d['id']] = $dbRecord;

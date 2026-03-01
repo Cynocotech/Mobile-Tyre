@@ -9,10 +9,14 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?php echo htmlspecialchars($pageTitle); ?> | No 5 Tyre Driver</title>
-  <link rel="manifest" href="../manifest.json">
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="No5 Driver">
+  <link rel="apple-touch-icon" href="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png">
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('../sw.js').catch(function() {});
+      navigator.serviceWorker.register('../sw.js', { scope: '/' }).catch(function() {});
     }
   </script>
   <meta name="theme-color" content="#18181b">
@@ -23,6 +27,13 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body class="bg-zinc-900 text-zinc-200 antialiased min-h-screen">
+  <div id="pwa-install-banner" class="hidden fixed bottom-4 left-4 right-4 z-50 max-w-2xl mx-auto px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-600 shadow-lg flex items-center justify-between gap-4">
+    <p class="text-sm text-zinc-300">Install app for best experience</p>
+    <div class="flex gap-2">
+      <button type="button" id="pwa-install-btn" class="px-3 py-1.5 rounded-lg bg-safety text-zinc-900 font-semibold text-sm">Install</button>
+      <button type="button" id="pwa-install-dismiss" class="px-3 py-1.5 rounded-lg text-zinc-400 text-sm hover:bg-zinc-700">Later</button>
+    </div>
+  </div>
   <header class="sticky top-0 z-40 bg-zinc-900/95 backdrop-blur border-b border-zinc-700">
     <div class="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
       <div>
@@ -30,16 +41,13 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
         <p class="text-zinc-500 text-xs">My jobs</p>
       </div>
       <div class="flex items-center gap-2">
-        <button type="button" id="btn-online" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors">
-          <span id="online-label">Go online</span>
-        </button>
         <a href="profile.php" class="px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 text-sm">Profile</a>
         <a href="logout.php" class="px-3 py-2 rounded-lg text-zinc-500 hover:text-red-400 text-sm">Logout</a>
       </div>
     </div>
   </header>
 
-  <main class="max-w-2xl mx-auto px-4 py-6">
+  <main class="max-w-2xl mx-auto px-4 py-6 pb-28">
     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
       <div class="flex items-center gap-3">
         <div id="wallet-card" class="rounded-xl border border-zinc-700 bg-zinc-800/50 px-4 py-3">
@@ -69,19 +77,27 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
     </div>
 
     <div id="jobs-loading" class="text-zinc-500 py-8 text-center">Loading jobs…</div>
-    <div id="jobs-list" class="space-y-4 hidden"></div>
-    <div id="jobs-empty" class="hidden text-center py-12 text-zinc-500">
+    <div id="jobs-list" class="space-y-4 hidden pb-24"></div>
+    <div id="jobs-empty" class="hidden text-center py-12 text-zinc-500 pb-24">
       <p class="text-lg">No jobs assigned yet.</p>
       <p class="text-sm mt-2">Jobs will appear here when assigned by the office.</p>
     </div>
   </main>
+
+  <!-- Floating Go online button -->
+  <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+    <button type="button" id="btn-online" class="w-16 h-16 rounded-full bg-safety text-zinc-900 font-bold text-sm shadow-lg shadow-black/30 hover:bg-[#e5c900] active:scale-95 transition-all flex items-center justify-center" title="Go online">
+      <span id="online-label" class="text-center text-xs font-bold leading-tight">Go<br>online</span>
+    </button>
+  </div>
 
   <!-- QR Scanner modal (same template as driver-scanner) -->
   <div id="qr-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 overflow-y-auto" style="display: none;">
     <div class="w-full max-w-lg rounded-2xl border border-zinc-700 bg-zinc-800 p-6 my-4">
       <div class="text-center mb-6">
         <h3 class="text-xl font-bold text-white mb-1">Scan job receipt</h3>
-        <p class="text-zinc-500 text-sm">Point your camera at the customer's receipt QR code, or enter reference below</p>
+        <p class="text-zinc-500 text-sm">Point your camera at the receipt QR, or enter reference below</p>
+        <p id="qr-ios-hint" class="hidden text-amber-400/90 text-xs mt-2">Camera not working? Open in Safari first: <a href="#" id="qr-open-safari" class="underline">Open this page in Safari</a></p>
       </div>
       <div class="scanner-frame mb-6 bg-black rounded-2xl p-4">
         <div id="qr-reader" class="rounded-xl overflow-hidden" style="width: 100%; min-height: 260px;"></div>
@@ -113,8 +129,9 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
     <div class="w-full max-w-sm rounded-2xl border border-zinc-700 bg-zinc-800 p-6">
       <h3 class="text-lg font-bold text-white mb-4">Update location</h3>
       <p id="location-status" class="text-sm text-zinc-400 mb-4">Getting your position…</p>
-      <div class="flex gap-3">
+      <div class="flex flex-wrap gap-3">
         <button type="button" id="location-confirm" class="flex-1 px-4 py-2 bg-safety text-zinc-900 font-bold rounded-lg text-sm">Update</button>
+        <button type="button" id="location-retry" class="hidden px-4 py-2 bg-zinc-600 text-zinc-200 rounded-lg text-sm hover:bg-zinc-500">Retry</button>
         <button type="button" id="location-cancel" class="px-4 py-2 border border-zinc-600 rounded-lg text-sm">Cancel</button>
       </div>
     </div>
@@ -165,11 +182,13 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       var btn = document.getElementById('btn-online');
       var lbl = document.getElementById('online-label');
       if (online) {
-        btn.className = 'px-3 py-2 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-500';
-        lbl.textContent = 'Online';
+        btn.className = 'w-16 h-16 rounded-full bg-safety text-zinc-900 font-bold text-sm shadow-lg shadow-black/30 hover:bg-[#e5c900] active:scale-95 transition-all flex items-center justify-center';
+        lbl.innerHTML = 'Online';
+        btn.title = 'You are online';
       } else {
-        btn.className = 'px-3 py-2 rounded-lg text-sm font-medium bg-zinc-700 text-zinc-300 hover:bg-zinc-600';
-        lbl.textContent = 'Go online';
+        btn.className = 'w-16 h-16 rounded-full bg-safety text-zinc-900 font-bold text-sm shadow-lg shadow-black/30 hover:bg-[#e5c900] active:scale-95 transition-all flex items-center justify-center';
+        lbl.innerHTML = 'Go<br>online';
+        btn.title = 'Go online';
       }
     }
 
@@ -259,28 +278,45 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       currentRef = ref;
       currentLat = null;
       currentLng = null;
+      var statusEl = document.getElementById('location-status');
+      var retryBtn = document.getElementById('location-retry');
+      var confirmBtn = document.getElementById('location-confirm');
       document.getElementById('location-modal').classList.remove('hidden');
       document.getElementById('location-modal').style.display = 'flex';
-      document.getElementById('location-status').textContent = 'Getting your position…';
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          function(p) {
-            currentLat = p.coords.latitude;
-            currentLng = p.coords.longitude;
-            document.getElementById('location-status').textContent = 'Location ready. Click Update to save.';
-          },
-          function(err) {
-            var msg = 'Could not get location. ';
-            if (err.code === 1) msg += 'Allow location access in browser settings.';
-            else if (err.code === 2) msg += 'Position unavailable.';
-            else if (err.code === 3) msg += 'Request timed out.';
-            document.getElementById('location-status').textContent = msg;
-          },
-          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-        );
-      } else {
-        document.getElementById('location-status').textContent = 'Geolocation not supported.';
+      statusEl.textContent = 'Getting your position…';
+      if (retryBtn) retryBtn.classList.add('hidden');
+      confirmBtn.disabled = true;
+      function onSuccess(p) {
+        currentLat = p.coords.latitude;
+        currentLng = p.coords.longitude;
+        statusEl.textContent = 'Location ready. Tap Update to save.';
+        if (retryBtn) retryBtn.classList.add('hidden');
+        confirmBtn.disabled = false;
       }
+      function onError(err) {
+        var msg = 'Could not get location. ';
+        if (err.code === 1) msg += 'Allow location in browser/phone settings.';
+        else if (err.code === 2) msg += 'Position unavailable. Try outdoors or near a window.';
+        else if (err.code === 3) msg += 'Timed out. Tap Retry.';
+        statusEl.textContent = msg;
+        if (retryBtn) { retryBtn.classList.remove('hidden'); retryBtn.onclick = function() { openLocationModal(ref); }; }
+      }
+      if (!window.isSecureContext) {
+        statusEl.textContent = 'Location requires HTTPS. Open via https:// to use GPS.';
+        return;
+      }
+      if (!navigator.geolocation) {
+        statusEl.textContent = 'Geolocation not supported by this device.';
+        return;
+      }
+      function tryGetPosition(highAccuracy) {
+        var opts = { enableHighAccuracy: highAccuracy, timeout: 20000, maximumAge: highAccuracy ? 0 : 60000 };
+        navigator.geolocation.getCurrentPosition(onSuccess, function(err) {
+          if (highAccuracy) tryGetPosition(false);
+          else onError(err);
+        }, opts);
+      }
+      tryGetPosition(true);
     }
 
     document.getElementById('btn-location').addEventListener('click', function() {
@@ -327,6 +363,9 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
         alert('Location not available yet. Wait for GPS or check permissions.');
         return;
       }
+      var btn = document.getElementById('location-confirm');
+      btn.disabled = true;
+      var done = function() { btn.disabled = false; };
       if (currentRef) {
         var fd = new FormData();
         fd.append('action', 'location');
@@ -335,15 +374,14 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
         fd.append('reference', currentRef);
         fetch('api/jobs.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); }).then(function(d) {
           if (d.ok) { closeLocationModal(); loadJobs(); } else alert(d.error || 'Failed');
-        }).catch(function() { alert('Update failed. Check connection.'); });
+        }).catch(function() { alert('Update failed. Check connection.'); }).finally(done);
       } else {
-        fetch('api/location.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lat: currentLat, lng: currentLng })
-        }).then(function(r) { return r.json(); }).then(function(d) {
+        var fd = new FormData();
+        fd.append('lat', String(currentLat));
+        fd.append('lng', String(currentLng));
+        fetch('api/location.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); }).then(function(d) {
           if (d.ok) { closeLocationModal(); loadJobs(); } else alert(d.error || 'Failed');
-        }).catch(function() { alert('Update failed. Check connection.'); });
+        }).catch(function() { alert('Update failed. Check connection.'); }).finally(done);
       }
     });
 
@@ -366,6 +404,8 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
     function openQrModal() {
       var modal = document.getElementById('qr-modal');
       var status = document.getElementById('qr-status');
+      var iosHint = document.getElementById('qr-ios-hint');
+      if (iosHint) iosHint.classList.add('hidden');
       status.classList.add('hidden');
       status.textContent = '';
       status.classList.remove('text-green-400', 'text-amber-400', 'bg-green-500/10', 'bg-amber-500/10');
@@ -373,6 +413,12 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       qrLastScanned = '';
       modal.classList.remove('hidden');
       modal.style.display = 'flex';
+      if (!window.isSecureContext) {
+        status.textContent = 'Camera requires HTTPS. Open this app via https:// to scan.';
+        status.classList.remove('hidden');
+        status.classList.add('text-amber-400', 'bg-amber-500/10');
+        return;
+      }
       var Html5QrcodeClass = (typeof Html5Qrcode !== 'undefined' && Html5Qrcode) || (window.__Html5QrcodeLibrary__ && window.__Html5QrcodeLibrary__.Html5Qrcode);
       if (!Html5QrcodeClass) {
         status.textContent = 'Scanner not loaded. Enter reference below.';
@@ -386,7 +432,7 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       status.classList.remove('hidden');
       status.classList.add('text-zinc-500');
       qrScanner = new Html5QrcodeClass('qr-reader');
-      var scanConfig = { fps: 20, qrbox: 220, disableFlip: true, experimentalFeatures: { useBarCodeDetectorIfSupported: true } };
+      var scanConfig = { fps: 15, qrbox: { width: 200, height: 200 }, disableFlip: false };
       function onScan(decodedText) {
         if (!decodedText || decodedText === qrLastScanned) return;
         qrLastScanned = decodedText;
@@ -406,21 +452,29 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       function tryStart(c) {
         return qrScanner.start(c, scanConfig, onScan, function() {}).then(function() { return c; });
       }
+      function showCameraError(showSafariHint) {
+        status.textContent = 'Camera not available. Enter reference below.';
+        status.classList.remove('hidden', 'text-green-400', 'bg-green-500/10');
+        status.classList.add('text-amber-400', 'bg-amber-500/10');
+        if (showSafariHint && iosHint && (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches)) {
+          iosHint.classList.remove('hidden');
+          var link = document.getElementById('qr-open-safari');
+          if (link) link.href = window.location.href;
+        }
+      }
       tryStart({ facingMode: 'environment' }).catch(function() {
         return tryStart({ facingMode: 'user' }).catch(function() {
-          return Html5QrcodeClass.getCameras().then(function(cams) {
+          return Html5QrcodeClass.getCameras ? Html5QrcodeClass.getCameras().then(function(cams) {
             if (!cams || cams.length === 0) throw new Error('No camera');
             var cam = cams.find(function(c) { return /back|rear|environment/i.test(c.label); }) || cams[0];
             return tryStart(cam.id);
-          });
+          }) : Promise.reject(new Error('No camera'));
         });
       }).then(function() {
         status.classList.add('hidden');
         status.classList.remove('text-zinc-500');
       }).catch(function() {
-        status.textContent = 'Camera denied. Enter reference below.';
-        status.classList.remove('hidden', 'text-green-400', 'bg-green-500/10');
-        status.classList.add('text-amber-400', 'bg-amber-500/10');
+        showCameraError(true);
       });
     }
 
@@ -437,6 +491,11 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
 
     document.getElementById('btn-scan-qr').addEventListener('click', openQrModal);
     document.getElementById('qr-close').addEventListener('click', closeQrModal);
+    var qrOpenSafari = document.getElementById('qr-open-safari');
+    if (qrOpenSafari) qrOpenSafari.addEventListener('click', function(e) {
+      e.preventDefault();
+      window.open(window.location.href, '_blank', 'noopener');
+    });
     document.getElementById('qr-modal').addEventListener('click', function(e) {
       if (e.target.id === 'qr-modal') closeQrModal();
     });
@@ -494,6 +553,26 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
     } else if (verify === 'error') {
       alert('Verification could not be completed.');
       window.history.replaceState({}, '', window.location.pathname);
+    }
+    if (urlParams.get('scan') === '1') setTimeout(openQrModal, 500);
+
+    var installPrompt = null;
+    var installBanner = document.getElementById('pwa-install-banner');
+    if (installBanner && !window.matchMedia('(display-mode: standalone)').matches && !window.navigator.standalone) {
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        installPrompt = e;
+        installBanner.classList.remove('hidden');
+      });
+      document.getElementById('pwa-install-btn') && document.getElementById('pwa-install-btn').addEventListener('click', function() {
+        if (installPrompt) {
+          installPrompt.prompt();
+          installPrompt.userChoice.then(function() { installPrompt = null; installBanner.classList.add('hidden'); });
+        }
+      });
+      document.getElementById('pwa-install-dismiss') && document.getElementById('pwa-install-dismiss').addEventListener('click', function() {
+        installBanner.classList.add('hidden');
+      });
     }
 
     loadJobs();
