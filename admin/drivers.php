@@ -11,9 +11,10 @@ require_once __DIR__ . '/header.php';
 </div>
 <div id="drivers-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
   <p class="text-zinc-500 col-span-full">Loading…</p>
+</div>
 
-    <!-- Driver modal -->
-    <div id="driver-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 overflow-y-auto" style="display: none;">
+<!-- Driver modal (outside drivers-list so it survives innerHTML replacement) -->
+<div id="driver-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 overflow-y-auto" style="display: none;">
       <div class="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-800 p-6 my-8">
         <h3 id="driver-modal-title" class="text-lg font-bold text-white mb-4">Add driver</h3>
         <form id="driver-form" class="space-y-4">
@@ -114,10 +115,10 @@ require_once __DIR__ . '/header.php';
           </div>
         </form>
       </div>
-    </div>
+</div>
 
-    <!-- Block driver modal -->
-    <div id="block-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70" style="display: none;">
+<!-- Block driver modal -->
+<div id="block-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70" style="display: none;">
       <div class="w-full max-w-md rounded-2xl border border-zinc-700 bg-zinc-800 p-6">
         <h3 class="text-lg font-bold text-white mb-2">Block driver</h3>
         <p class="text-zinc-400 text-sm mb-4">They will not be able to log in or receive job assignments. Add a reason (optional but recommended):</p>
@@ -127,7 +128,6 @@ require_once __DIR__ . '/header.php';
           <button type="button" id="block-cancel" class="px-4 py-2 border border-zinc-600 text-zinc-400 rounded-lg text-sm hover:bg-zinc-700">Cancel</button>
         </div>
       </div>
-    </div>
 </div>
 
 <script>

@@ -17,9 +17,11 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
       <nav class="flex items-center gap-2">
         <a href="dashboard.php" class="px-3 py-2 rounded-lg text-sm font-medium <?php echo $currentPage === 'dashboard' ? 'bg-zinc-800 text-safety' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'; ?>">Dashboard</a>
         <a href="services.php" class="px-3 py-2 rounded-lg text-sm font-medium <?php echo $currentPage === 'services' ? 'bg-zinc-800 text-safety' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'; ?>">Services</a>
-        <a href="settings.php" class="px-3 py-2 rounded-lg text-sm font-medium <?php echo $currentPage === 'settings' ? 'bg-zinc-800 text-safety' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'; ?>">Settings</a>
         <a href="drivers.php" class="px-3 py-2 rounded-lg text-sm font-medium <?php echo $currentPage === 'drivers' ? 'bg-zinc-800 text-safety' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'; ?>">Drivers</a>
         <a href="jobs.php" class="px-3 py-2 rounded-lg text-sm font-medium <?php echo $currentPage === 'jobs' ? 'bg-zinc-800 text-safety' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'; ?>">Jobs</a>
+        <a href="reports.php" class="px-3 py-2 rounded-lg text-sm font-medium <?php echo $currentPage === 'reports' ? 'bg-zinc-800 text-safety' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'; ?>">Reports</a>
+        <a href="settings.php" class="px-3 py-2 rounded-lg text-sm font-medium <?php echo $currentPage === 'settings' ? 'bg-zinc-800 text-safety' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'; ?>">Settings</a>
+        <a href="profile.php" class="px-3 py-2 rounded-lg text-sm font-medium <?php echo $currentPage === 'profile' ? 'bg-zinc-800 text-safety' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'; ?>">Profile</a>
         <a href="logout.php" class="px-3 py-2 rounded-lg text-sm font-medium text-zinc-500 hover:text-red-400">Logout</a>
       </nav>
     </div>

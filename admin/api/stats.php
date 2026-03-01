@@ -61,6 +61,8 @@ $last30 = array_filter($deposits, function ($d) {
   $t = strtotime($d['date'] ?? '');
   return $t && $t >= strtotime('-30 days');
 });
+$last7Revenue = array_sum(array_map(function ($d) { return (float) preg_replace('/[^0-9.]/', '', $d['amount_paid'] ?? 0); }, $last7));
+$last30Revenue = array_sum(array_map(function ($d) { return (float) preg_replace('/[^0-9.]/', '', $d['amount_paid'] ?? 0); }, $last30));
 
 $driversPath = $dbFolder . '/drivers.json';
 $driverLocations = [];
@@ -82,7 +84,7 @@ if (is_file($driversPath)) {
 }
 
 echo json_encode([
-  'deposits' => ['count' => $paidCount, 'total' => round($totalDeposits, 2), 'last7' => count($last7), 'last30' => count($last30)],
+  'deposits' => ['count' => $paidCount, 'total' => round($totalDeposits, 2), 'last7' => count($last7), 'last30' => count($last30), 'last7Revenue' => round($last7Revenue, 2), 'last30Revenue' => round($last30Revenue, 2)],
   'jobs' => count($jobs),
   'quotes' => count($quotes),
   'recentDeposits' => array_slice(array_reverse($deposits), 0, 10),
