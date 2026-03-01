@@ -107,7 +107,15 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-      }).then(function(r) { return r.json(); }).then(function(d) {
+      }).then(function(r) {
+        return r.json().then(function(d) {
+          if (!r.ok) throw new Error(d.error || 'Something went wrong.');
+          return d;
+        }).catch(function(e) {
+          if (e.message && e.message !== 'Unexpected token') throw e;
+          throw new Error(r.status >= 500 ? 'Server error. Please try again or call 07895 859505.' : 'Something went wrong.');
+        });
+      }).then(function(d) {
         if (d.accountId && d.driverId) {
           stepForm.classList.add('hidden');
           stepStripe.classList.remove('hidden');
@@ -116,8 +124,8 @@
           showError(d.error || 'Something went wrong.');
           btn.disabled = false;
         }
-      }).catch(function() {
-        showError('Network error. Try again.');
+      }).catch(function(e) {
+        showError(e.message || 'Network error. Try again or call 07895 859505.');
         btn.disabled = false;
       });
     });

@@ -84,6 +84,7 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
             var payment = j.payment_method === 'cash' ? '<span class="text-amber-400">Cash</span>' + (j.cash_paid_at ? ' (marked paid)' : '');
             else payment = 'Card (deposit) – balance due: ' + (j.balance_due || '—');
             var proofBtn = j.proof_url ? '<span class="text-green-400 text-xs">Proof uploaded</span>' : '<button type="button" class="proof-btn px-2 py-1 rounded bg-zinc-700 text-xs" data-ref="' + j.reference + '">Upload proof</button>';
+            var startBtn = j.job_started_at ? '<span class="text-green-400 text-xs">Started</span>' : '<button type="button" class="start-btn px-2 py-1 rounded bg-zinc-700 text-xs" data-ref="' + (j.reference||'') + '">Start job</button>';
             return '<div class="rounded-xl border border-zinc-700 bg-zinc-800/50 p-4" data-ref="' + (j.reference||'') + '">' +
               '<div class="flex justify-between items-start mb-2">' +
                 '<span class="font-mono font-bold text-safety">#' + (j.reference||'') + '</span>' +
@@ -93,12 +94,25 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
               '<p class="text-zinc-400 text-sm mt-1">' + (j.postcode||'') + ' · ' + (j.name||j.email||'') + '</p>' +
               '<p class="text-zinc-500 text-xs mt-2">' + payment + '</p>' +
               '<div class="flex flex-wrap items-center gap-2 mt-3">' +
+                startBtn +
                 '<button type="button" class="loc-btn px-2 py-1 rounded bg-zinc-700 text-xs" data-ref="' + (j.reference||'') + '">Update location</button>' +
                 proofBtn +
                 (j.payment_method !== 'cash' ? '<button type="button" class="cash-btn px-2 py-1 rounded bg-amber-900/50 text-amber-300 text-xs" data-ref="' + (j.reference||'') + '">Mark cash paid</button>' : '') +
               '</div>' +
             '</div>';
           }).join('');
+          list.querySelectorAll('.start-btn').forEach(function(b) {
+            b.addEventListener('click', function() {
+              var ref = b.getAttribute('data-ref');
+              fetch('api/jobs.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'job_start', reference: ref })
+              }).then(function(r) { return r.json(); }).then(function(d) {
+                if (d.ok) loadJobs(); else alert(d.error || 'Failed');
+              });
+            });
+          });
           list.querySelectorAll('.loc-btn').forEach(function(b) {
             b.addEventListener('click', function() { openLocationModal(b.getAttribute('data-ref')); });
           });

@@ -41,7 +41,7 @@ if (!$stripeSecretKey) {
 }
 
 // Create Stripe Connect Express account
-$ch = curl_init('https://api.stripe.com/v1/accounts');'https://api.stripe.com/v1/accounts');
+$ch = curl_init('https://api.stripe.com/v1/accounts');
 curl_setopt_array($ch, [
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_POST => true,

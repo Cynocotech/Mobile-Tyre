@@ -78,11 +78,16 @@ switch ($action) {
       echo json_encode(['error' => 'Job not found']);
       exit;
     }
-    saveJob($jobsPath, $ref, [
+    $jobs = loadJobs($jobsPath);
+    $updates = [
       'driver_lat' => $lat,
       'driver_lng' => $lng,
       'driver_location_updated_at' => date('Y-m-d H:i:s'),
-    ]);
+    ];
+    if (empty($jobs[$ref]['job_started_at'])) {
+      $updates['job_started_at'] = date('Y-m-d H:i:s');
+    }
+    saveJob($jobsPath, $ref, $updates);
     echo json_encode(['ok' => true]);
     break;
 
@@ -111,8 +116,28 @@ switch ($action) {
       exit;
     }
     $proofUrl = 'database/proofs/' . $filename;
-    saveJob($jobsPath, $ref, ['proof_url' => $proofUrl, 'proof_uploaded_at' => date('Y-m-d H:i:s')]);
+    saveJob($jobsPath, $ref, [
+      'proof_url' => $proofUrl,
+      'proof_uploaded_at' => date('Y-m-d H:i:s'),
+      'job_completed_at' => date('Y-m-d H:i:s'),
+    ]);
     echo json_encode(['ok' => true, 'proof_url' => $proofUrl]);
+    break;
+
+  case 'job_start':
+    $ref = trim($input['reference'] ?? '');
+    $jobs = loadJobs($jobsPath);
+    if (!$ref || !isset($jobs[$ref]) || ($jobs[$ref]['assigned_driver_id'] ?? '') !== $driverId) {
+      http_response_code(404);
+      echo json_encode(['error' => 'Job not found']);
+      exit;
+    }
+    if (!empty($jobs[$ref]['job_started_at'])) {
+      echo json_encode(['ok' => true]);
+      exit;
+    }
+    saveJob($jobsPath, $ref, ['job_started_at' => date('Y-m-d H:i:s')]);
+    echo json_encode(['ok' => true]);
     break;
 
   case 'cash_paid':
@@ -127,6 +152,7 @@ switch ($action) {
       'payment_method' => 'cash',
       'cash_paid_at' => date('Y-m-d H:i:s'),
       'cash_paid_by' => $driverId,
+      'job_completed_at' => date('Y-m-d H:i:s'),
     ]);
     echo json_encode(['ok' => true]);
     break;

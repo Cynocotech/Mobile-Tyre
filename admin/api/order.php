@@ -65,10 +65,10 @@ if (is_file($jobsPath)) {
   if (isset($jobs[$ref]) && is_array($jobs[$ref])) {
     $jobData = $jobs[$ref];
     if ($order) {
-      $order = array_merge($order, array_intersect_key($jobData, array_flip(['assigned_driver_id', 'payment_method', 'cash_paid_at', 'proof_url', 'driver_lat', 'driver_lng'])));
+      $order = array_merge($order, array_intersect_key($jobData, array_flip(['assigned_driver_id', 'assigned_at', 'payment_method', 'cash_paid_at', 'cash_paid_by', 'proof_url', 'proof_uploaded_at', 'driver_lat', 'driver_lng', 'driver_location_updated_at', 'job_started_at', 'job_completed_at'])));
     } else {
       $order = $jobData;
-      if (empty($order['date'])) $order['date'] = '';
+      if (empty($order['date'])) $order['date'] = $order['created_at'] ?? '';
     }
     if (!empty($order['assigned_driver_id']) && isset($drivers[$order['assigned_driver_id']])) {
       $order['assigned_driver_name'] = $drivers[$order['assigned_driver_id']]['name'] ?? '';

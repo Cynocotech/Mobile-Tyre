@@ -90,6 +90,27 @@ switch ($action) {
       'vanReg' => trim($input['vanReg'] ?? ''),
       'notes' => trim($input['notes'] ?? '')
     ];
+    if (isset($input['kyc']) && is_array($input['kyc'])) {
+      $d['kyc'] = [
+        'rightToWork' => !empty($input['kyc']['rightToWork']),
+        'licenceVerified' => !empty($input['kyc']['licenceVerified']),
+        'licenceNumber' => trim($input['kyc']['licenceNumber'] ?? ''),
+        'insuranceValid' => !empty($input['kyc']['insuranceValid']),
+        'insuranceExpiry' => trim($input['kyc']['insuranceExpiry'] ?? ''),
+        'idVerified' => !empty($input['kyc']['idVerified']),
+      ];
+    }
+    if (isset($input['equipment']) && is_array($input['equipment'])) {
+      $d['equipment'] = [
+        'jack' => !empty($input['equipment']['jack']),
+        'torqueWrench' => !empty($input['equipment']['torqueWrench']),
+        'compressor' => !empty($input['equipment']['compressor']),
+        'lockingNut' => !empty($input['equipment']['lockingNut']),
+        'pressureGauge' => !empty($input['equipment']['pressureGauge']),
+        'chocks' => !empty($input['equipment']['chocks']),
+        'other' => trim($input['equipment']['other'] ?? ''),
+      ];
+    }
     if (isset($input['vehicleData']) && is_array($input['vehicleData'])) {
       $d['vehicleData'] = $input['vehicleData'];
     } elseif (isset($input['vehicleData']) && $input['vehicleData'] === null) {
@@ -100,6 +121,12 @@ switch ($action) {
       $existing = $drivers[$idx];
       if (!array_key_exists('vehicleData', $input) && !empty($existing['vehicleData'])) {
         $d['vehicleData'] = $existing['vehicleData'];
+      }
+      if (!isset($input['kyc']) && !empty($existing['kyc'])) {
+        $d['kyc'] = $existing['kyc'];
+      }
+      if (!isset($input['equipment']) && !empty($existing['equipment'])) {
+        $d['equipment'] = $existing['equipment'];
       }
       $drivers[$idx] = $d;
     } else {

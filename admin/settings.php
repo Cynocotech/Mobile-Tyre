@@ -9,12 +9,51 @@ require_once __DIR__ . '/header.php';
 <div id="settings-loading" class="text-zinc-500">Loading…</div>
 <form id="settings-form" class="hidden space-y-8">
   <div class="rounded-xl border border-zinc-700 bg-zinc-800/50 p-6">
+    <h2 class="text-lg font-semibold text-white mb-4">Prices</h2>
+    <p class="text-zinc-500 text-sm mb-4">All prices in £. Used for estimates, price list and calculator on the website.</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div>
+        <label for="laborPrice" class="block text-sm font-medium text-zinc-300 mb-1">Labour / call-out</label>
+        <input type="number" id="laborPrice" name="laborPrice" min="0" step="0.01" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="50">
+      </div>
+      <div>
+        <label for="punctureRepair" class="block text-sm font-medium text-zinc-300 mb-1">Puncture repair</label>
+        <input type="number" id="punctureRepair" name="punctureRepair" min="0" step="0.01" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="25">
+      </div>
+      <div>
+        <label for="pricePerTyre" class="block text-sm font-medium text-zinc-300 mb-1">Tyre fitting (per tyre)</label>
+        <input type="number" id="pricePerTyre" name="pricePerTyre" min="0" step="0.01" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="15">
+      </div>
+      <div>
+        <label for="priceBalance" class="block text-sm font-medium text-zinc-300 mb-1">Wheel balancing (per wheel)</label>
+        <input type="number" id="priceBalance" name="priceBalance" min="0" step="0.01" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="12">
+      </div>
+      <div>
+        <label for="lockingWheelNutRemoval" class="block text-sm font-medium text-zinc-300 mb-1">Locking wheel nut removal</label>
+        <input type="number" id="lockingWheelNutRemoval" name="lockingWheelNutRemoval" min="0" step="0.01" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="30">
+      </div>
+      <div>
+        <label for="jumpStart" class="block text-sm font-medium text-zinc-300 mb-1">Jump start</label>
+        <input type="number" id="jumpStart" name="jumpStart" min="0" step="0.01" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="35">
+      </div>
+      <div>
+        <label for="batteryReplacement" class="block text-sm font-medium text-zinc-300 mb-1">Battery replacement</label>
+        <input type="number" id="batteryReplacement" name="batteryReplacement" min="0" step="0.01" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="45">
+      </div>
+      <div>
+        <label for="vatNumber" class="block text-sm font-medium text-zinc-300 mb-1">VAT number</label>
+        <input type="text" id="vatNumber" name="vatNumber" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="GB123456789">
+      </div>
+      <div>
+        <label for="vatRate" class="block text-sm font-medium text-zinc-300 mb-1">VAT rate (%)</label>
+        <input type="number" id="vatRate" name="vatRate" min="0" max="100" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="20">
+      </div>
+    </div>
+  </div>
+
+  <div class="rounded-xl border border-zinc-700 bg-zinc-800/50 p-6">
     <h2 class="text-lg font-semibold text-white mb-4">General</h2>
     <div class="space-y-4">
-      <div>
-        <label for="laborPrice" class="block text-sm font-medium text-zinc-300 mb-1">Labour / call-out price (£)</label>
-        <input type="number" id="laborPrice" name="laborPrice" min="0" step="0.01" class="w-full max-w-xs px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none">
-      </div>
       <div>
         <label for="images" class="block text-sm font-medium text-zinc-300 mb-1">Gallery images (one URL per line)</label>
         <textarea id="images" name="images" rows="4" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none font-mono text-sm" placeholder="https://..."></textarea>
@@ -84,20 +123,6 @@ require_once __DIR__ . '/header.php';
   </div>
 
   <div class="rounded-xl border border-zinc-700 bg-zinc-800/50 p-6">
-    <h2 class="text-lg font-semibold text-white mb-4">VAT</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div>
-        <label for="vatNumber" class="block text-sm font-medium text-zinc-300 mb-1">VAT number</label>
-        <input type="text" id="vatNumber" name="vatNumber" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="GB123456789">
-      </div>
-      <div>
-        <label for="vatRate" class="block text-sm font-medium text-zinc-300 mb-1">VAT rate (%)</label>
-        <input type="number" id="vatRate" name="vatRate" min="0" max="100" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="20">
-      </div>
-    </div>
-  </div>
-
-  <div class="rounded-xl border border-zinc-700 bg-zinc-800/50 p-6">
     <h2 class="text-lg font-semibold text-white mb-4">Driver & Misc</h2>
     <div class="space-y-4">
       <div>
@@ -132,7 +157,16 @@ require_once __DIR__ . '/header.php';
     .then(function(data) {
       document.getElementById('settings-loading').classList.add('hidden');
       form.classList.remove('hidden');
+      var p = data.prices || {};
       if (data.laborPrice != null) document.getElementById('laborPrice').value = data.laborPrice;
+      document.getElementById('punctureRepair').value = p.punctureRepair ?? '';
+      document.getElementById('pricePerTyre').value = p.pricePerTyre ?? '';
+      document.getElementById('priceBalance').value = p.priceBalance ?? '';
+      document.getElementById('lockingWheelNutRemoval').value = p.lockingWheelNutRemoval ?? '';
+      document.getElementById('jumpStart').value = p.jumpStart ?? '';
+      document.getElementById('batteryReplacement').value = p.batteryReplacement ?? '';
+      document.getElementById('vatNumber').value = data.vatNumber || '';
+      document.getElementById('vatRate').value = data.vatRate ?? '';
       if (Array.isArray(data.images)) document.getElementById('images').value = data.images.join('\n');
       if (data.telegramBotToken) document.getElementById('telegramBotToken').value = data.telegramBotToken;
       if (Array.isArray(data.telegramChatIds)) document.getElementById('telegramChatIds').value = data.telegramChatIds.join(', ');
@@ -144,8 +178,6 @@ require_once __DIR__ . '/header.php';
       document.getElementById('smtp_user').value = smtp.user || '';
       document.getElementById('smtp_pass').value = smtp.pass || '';
       document.getElementById('smtp_encryption').value = smtp.encryption || 'ssl';
-      document.getElementById('vatNumber').value = data.vatNumber || '';
-      document.getElementById('vatRate').value = data.vatRate ?? '';
       document.getElementById('vrmApiToken').value = data.vrmApiToken || '';
       document.getElementById('driverScannerUrl').value = data.driverScannerUrl || '';
       document.getElementById('gtmContainerId').value = data.gtmContainerId || '';
@@ -158,6 +190,14 @@ require_once __DIR__ . '/header.php';
     e.preventDefault();
     var payload = {
       laborPrice: parseFloat(document.getElementById('laborPrice').value) || 0,
+      prices: {
+        punctureRepair: parseFloat(document.getElementById('punctureRepair').value) || 0,
+        pricePerTyre: parseFloat(document.getElementById('pricePerTyre').value) || 0,
+        priceBalance: parseFloat(document.getElementById('priceBalance').value) || 0,
+        lockingWheelNutRemoval: parseFloat(document.getElementById('lockingWheelNutRemoval').value) || 0,
+        jumpStart: parseFloat(document.getElementById('jumpStart').value) || 0,
+        batteryReplacement: parseFloat(document.getElementById('batteryReplacement').value) || 0
+      },
       images: document.getElementById('images').value.split(/\n/).map(function(s) { return s.trim(); }).filter(Boolean),
       telegramChatIds: document.getElementById('telegramChatIds').value,
       stripePublishableKey: document.getElementById('stripePublishableKey').value,
