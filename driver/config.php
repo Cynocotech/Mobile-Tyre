@@ -20,8 +20,12 @@ function getDriverDb() {
 
 function saveDriverDb($data) {
   $dir = dirname(DRIVER_DB_PATH);
-  if (!is_dir($dir)) @mkdir($dir, 0755, true);
-  return file_put_contents(DRIVER_DB_PATH, json_encode($data, JSON_PRETTY_PRINT), LOCK_EX) !== false;
+  if (!is_dir($dir)) {
+    if (!@mkdir($dir, 0755, true)) return false;
+  }
+  if (!is_writable($dir)) return false;
+  $json = json_encode($data, JSON_PRETTY_PRINT);
+  return file_put_contents(DRIVER_DB_PATH, $json, LOCK_EX) !== false;
 }
 
 function getDriverById($id) {

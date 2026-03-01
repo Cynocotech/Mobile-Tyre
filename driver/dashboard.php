@@ -63,10 +63,6 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
           <p id="status-sub" class="app-text-muted text-sm mt-0.5">Ready to go?</p>
         </div>
         <div class="flex items-center gap-2">
-          <a href="inbox.php" class="relative p-2.5 rounded-full app-border border app-text-muted hover:app-text transition-colors" aria-label="Inbox">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"/></svg>
-            <span id="header-inbox-badge" class="hidden absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center z-10 leading-none">0</span>
-          </a>
           <a href="profile.php" class="p-2.5 rounded-full app-border border app-text-muted hover:app-text transition-colors" aria-label="Profile">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
           </a>
@@ -80,8 +76,8 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
 
   <main class="max-w-2xl mx-auto px-4 py-4 pb-36">
     <!-- Map -->
-    <div id="map-container" class="relative rounded-2xl overflow-hidden mb-4 shadow-lg" style="height: 280px;">
-      <div id="map" class="w-full h-full" style="background: var(--app-map-bg);"></div>
+    <div id="map-container" class="relative rounded-2xl overflow-hidden mb-4 shadow-lg" style="height: 280px; min-height: 280px;">
+      <div id="map" style="width: 100%; height: 280px; min-height: 280px; background: var(--app-map-bg);"></div>
       <button type="button" id="btn-map-expand" class="absolute top-2 right-2 z-[400] w-9 h-9 rounded-full app-surface border app-border shadow flex items-center justify-center app-text-muted hover:opacity-80" aria-label="Expand map">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
       </button>
@@ -127,11 +123,8 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
   <!-- Bottom navigation -->
   <nav class="fixed bottom-0 left-0 right-0 z-40 app-surface border-t app-border safe-area-pb">
     <div class="max-w-2xl mx-auto flex items-center justify-around h-16 px-2">
-      <a href="dashboard.php" class="flex flex-col items-center justify-center gap-1 flex-1 py-2 font-medium relative" style="color: var(--app-accent);">
-        <span class="relative inline-block">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-          <span id="home-inbox-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center z-10 leading-none">0</span>
-        </span>
+      <a href="dashboard.php" class="flex flex-col items-center justify-center gap-1 flex-1 py-2 font-medium" style="color: var(--app-accent);">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
         <span class="text-xs">Home</span>
       </a>
       <a href="earnings.php" id="nav-earnings" class="flex flex-col items-center justify-center gap-1 flex-1 py-2 app-text-muted hover:opacity-80 transition-colors">
@@ -254,12 +247,15 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
 
     function initMap() {
       if (map) return;
+      var el = document.getElementById('map');
+      if (!el || typeof L === 'undefined') return;
       map = L.map('map', { center: [51.5074, -0.1278], zoom: 10 });
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19
       }).addTo(map);
-      setTimeout(function() { if (map) map.invalidateSize(); }, 100);
+      setTimeout(function() { if (map) map.invalidateSize(); }, 250);
+      window.addEventListener('resize', function() { if (map) map.invalidateSize(); });
     }
 
     function updateMap(jobs, driver) {
@@ -349,13 +345,11 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
         updateInboxBadge(unread);
       }
       function updateInboxBadge(u) {
-        ['inbox-badge', 'home-inbox-badge', 'header-inbox-badge'].forEach(function(id) {
-          var badge = document.getElementById(id);
-          if (badge) {
-            if (u > 0) { badge.textContent = u > 99 ? '99+' : String(u); badge.classList.remove('hidden'); }
-            else { badge.classList.add('hidden'); }
-          }
-        });
+        var badge = document.getElementById('inbox-badge');
+        if (badge) {
+          if (u > 0) { badge.textContent = u > 99 ? '99+' : String(u); badge.classList.remove('hidden'); }
+          else { badge.classList.add('hidden'); }
+        }
       }
       var googleReviewUrl = (d.googleReviewUrl || '').trim();
       var jobs = d.jobs || [];
@@ -739,8 +733,12 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       });
     }
 
-    initMap();
-    loadJobs();
+    function onReady() {
+      initMap();
+      loadJobs();
+    }
+    if (document.readyState === 'complete') onReady();
+    else window.addEventListener('load', onReady);
     if (typeof EventSource !== 'undefined') {
       var evtSrc = new EventSource(API_BASE + 'api/stream.php');
       evtSrc.addEventListener('update', function(e) {

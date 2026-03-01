@@ -194,7 +194,9 @@ switch ($action) {
       echo json_encode(['ok' => true, 'is_online' => $online]);
     } else {
       http_response_code(500);
-      echo json_encode(['error' => 'Failed to update']);
+      $dir = dirname(DRIVER_DB_PATH);
+      $hint = !is_dir($dir) ? 'Database folder missing.' : (!is_writable($dir) ? 'Database folder not writable.' : 'Could not save driver data.');
+      echo json_encode(['error' => 'Failed to update. ' . $hint]);
     }
     break;
 
