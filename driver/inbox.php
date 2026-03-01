@@ -107,17 +107,30 @@ require_once __DIR__ . '/auth.php';
           document.getElementById('messages-list').innerHTML = messages.map(function(m) {
             var readClass = m.read ? 'opacity-75' : '';
             var date = (m.created_at || '').replace(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}).*/, '$3/$2/$1 $4:$5');
+            var tickSvg = m.read
+              ? '<svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>'
+              : '<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/></svg>';
+            var tickTitle = m.read ? 'Read' : 'Tap to mark as read';
             return '<div class="rounded-2xl app-surface border app-border p-4 message-item ' + readClass + '" data-id="' + esc(m.id) + '" data-read="' + (m.read ? '1' : '0') + '">' +
-              '<div class="flex justify-between items-start mb-2">' +
-                '<span class="text-xs app-text-muted">' + esc(m.from || 'Office') + '</span>' +
-                '<span class="text-xs app-text-muted">' + esc(date) + '</span>' +
+              '<div class="flex justify-between items-start gap-3">' +
+                '<div class="flex-1 min-w-0">' +
+                  '<div class="flex justify-between items-start mb-2">' +
+                    '<span class="text-xs app-text-muted">' + esc(m.from || 'Office') + '</span>' +
+                    '<span class="text-xs app-text-muted">' + esc(date) + '</span>' +
+                  '</div>' +
+                  '<p class="app-text text-sm whitespace-pre-wrap">' + esc(m.body || '') + '</p>' +
+                '</div>' +
+                '<button type="button" class="btn-mark-read shrink-0 w-10 h-10 rounded-full flex items-center justify-center border-2 ' + (m.read ? 'border-green-500 bg-green-500/20' : 'border-green-500 bg-transparent hover:bg-green-500/20') + '" data-id="' + esc(m.id) + '" title="' + tickTitle + '">' + tickSvg + '</button>' +
               '</div>' +
-              '<p class="app-text text-sm whitespace-pre-wrap">' + esc(m.body || '') + '</p>' +
             '</div>';
           }).join('');
-          document.querySelectorAll('.message-item').forEach(function(el) {
-            if (el.getAttribute('data-read') === '0') {
-              markAsRead(el.getAttribute('data-id'));
+          document.querySelectorAll('.btn-mark-read').forEach(function(btn) {
+            var el = btn.closest('.message-item');
+            if (el && el.getAttribute('data-read') === '0') {
+              btn.addEventListener('click', function() {
+                var id = btn.getAttribute('data-id');
+                markAsRead(id, btn, el);
+              });
             }
           });
         })
@@ -126,7 +139,7 @@ require_once __DIR__ . '/auth.php';
         });
     }
 
-    function markAsRead(messageId) {
+    function markAsRead(messageId, btnEl, msgEl) {
       if (!messageId) return;
       var fd = new FormData();
       fd.append('action', 'mark_read');
@@ -137,8 +150,19 @@ require_once __DIR__ . '/auth.php';
         body: fd
       }).then(function(r) { return r.json(); }).then(function(d) {
         if (d.ok) {
-          var el = document.querySelector('.message-item[data-id="' + messageId + '"]');
-          if (el) el.classList.add('opacity-75');
+          var el = msgEl || document.querySelector('.message-item[data-id="' + messageId + '"]');
+          var btn = btnEl || (el ? el.querySelector('.btn-mark-read') : null);
+          if (el) {
+            el.setAttribute('data-read', '1');
+            el.classList.add('opacity-75');
+          }
+          if (btn) {
+            btn.innerHTML = '<svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>';
+            btn.classList.add('border-green-500', 'bg-green-500/20');
+            btn.classList.remove('hover:bg-green-500/20');
+            btn.disabled = true;
+            btn.title = 'Read';
+          }
         }
       });
     }

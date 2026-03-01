@@ -71,7 +71,8 @@ if ($jobKey === null) {
             'model' => $row[11] ?? '',
             'estimate_total' => $row[18] ?? '',
             'amount_paid' => $row[19] ?? '',
-            'date' => $row[0] ?? '',
+            'date' => $row[0] ?? date('Y-m-d H:i:s'),
+            'created_at' => $row[0] ?? date('Y-m-d H:i:s'),
           ];
           break;
         }

@@ -27,6 +27,18 @@ function saveMessages($p, $data) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+  $countsOnly = !empty($_GET['counts']);
+  if ($countsOnly) {
+    $all = loadMessages($path);
+    $counts = [];
+    foreach ($all as $did => $msgs) {
+      if (!is_array($msgs)) continue;
+      $unread = count(array_filter($msgs, fn($m) => empty($m['read'])));
+      if ($unread > 0) $counts[$did] = $unread;
+    }
+    echo json_encode(['counts' => $counts]);
+    exit;
+  }
   $driverId = trim($_GET['driver_id'] ?? '');
   if (!$driverId) {
     http_response_code(400);

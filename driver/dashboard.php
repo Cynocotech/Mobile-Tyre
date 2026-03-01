@@ -290,8 +290,8 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
         btn.className = baseClass;
         btn.style.background = 'var(--app-online)';
         btn.style.color = 'white';
-        lbl.textContent = 'Go offline';
-        btn.title = 'Tap to go offline';
+        lbl.textContent = 'You\'re online – Tap to go offline';
+        btn.title = 'You\'re online. Tap to go offline';
         icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 0v4m0-4V8"/>';
         icon.setAttribute('viewBox', '0 0 24 24');
         if (heading) heading.textContent = "You're online";
@@ -324,33 +324,32 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       return p.replace(/[^/]+$/, '');
     })();
 
-    function loadJobs() {
-      fetch(API_BASE + 'api/jobs.php', { credentials: 'same-origin' })
-        .then(function(r) {
-          if (!r.ok) throw new Error('Server error ' + r.status);
-          return r.json();
-        })
-        .then(function(d) {
-          document.getElementById('jobs-loading').classList.add('hidden');
-          driverData = d.driver || {};
-          fetch(API_BASE + 'api/messages.php', { credentials: 'same-origin' })
-            .then(function(r) { return r.json(); })
-            .then(function(md) {
-              var unread = ((md.messages || []).filter(function(x) { return !x.read; })).length;
-              var badge = document.getElementById('inbox-badge');
-              if (badge) {
-                if (unread > 0) {
-                  badge.textContent = unread > 99 ? '99+' : String(unread);
-                  badge.classList.remove('hidden');
-                } else {
-                  badge.classList.add('hidden');
-                }
-              }
-            })
-            .catch(function() {});
-          var googleReviewUrl = (d.googleReviewUrl || '').trim();
-          var jobs = d.jobs || [];
-          var verified = driverData.kyc_verified;
+    function applyDriverData(d) {
+      if (!d) return;
+      document.getElementById('jobs-loading').classList.add('hidden');
+      driverData = d.driver || {};
+      var unread = d.unreadMessages != null ? d.unreadMessages : -1;
+      if (unread < 0) {
+        fetch(API_BASE + 'api/messages.php', { credentials: 'same-origin' })
+          .then(function(r) { return r.json(); })
+          .then(function(md) {
+            var u = ((md.messages || []).filter(function(x) { return !x.read; })).length;
+            updateInboxBadge(u);
+          })
+          .catch(function() {});
+      } else {
+        updateInboxBadge(unread);
+      }
+      function updateInboxBadge(u) {
+        var badge = document.getElementById('inbox-badge');
+        if (badge) {
+          if (u > 0) { badge.textContent = u > 99 ? '99+' : String(u); badge.classList.remove('hidden'); }
+          else { badge.classList.add('hidden'); }
+        }
+      }
+      var googleReviewUrl = (d.googleReviewUrl || '').trim();
+      var jobs = d.jobs || [];
+      var verified = driverData.kyc_verified;
           document.getElementById('verification-banner').classList.toggle('hidden', verified);
           setOnlineBtn(driverData.is_online);
           setOpportunitiesText(jobs.length, driverData.wallet_earned);
@@ -417,7 +416,15 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
           list.querySelectorAll('.review-btn').forEach(function(b) {
             b.addEventListener('click', function() { openReviewModal(googleReviewUrl); });
           });
+    }
+
+    function loadJobs() {
+      fetch(API_BASE + 'api/jobs.php', { credentials: 'same-origin' })
+        .then(function(r) {
+          if (!r.ok) throw new Error('Server error ' + r.status);
+          return r.json();
         })
+        .then(applyDriverData)
         .catch(function(err) {
           document.getElementById('jobs-loading').textContent = 'Failed to load. Try refreshing.';
           document.getElementById('opportunities-text').textContent = 'Could not load. Pull down to refresh.';
@@ -519,7 +526,10 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
     document.getElementById('btn-online').addEventListener('click', function() {
       var btn = this;
       var wantOnline = !driverData.is_online;
+      var prevOnline = driverData.is_online;
       btn.disabled = true;
+      driverData.is_online = wantOnline;
+      setOnlineBtn(wantOnline);
       var fd = new FormData();
       fd.append('action', 'set_online');
       fd.append('online', wantOnline ? '1' : '0');
@@ -538,6 +548,8 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
           setOnlineBtn(d.is_online);
         } else throw new Error(d.error || 'Failed');
       }).catch(function(err) {
+        driverData.is_online = prevOnline;
+        setOnlineBtn(prevOnline);
         alert(err.message || 'Could not update. Check connection and try again.');
       }).finally(function() { btn.disabled = false; });
     });
@@ -696,6 +708,13 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
     }
 
     loadJobs();
+    if (typeof EventSource !== 'undefined') {
+      var evtSrc = new EventSource(API_BASE + 'api/stream.php');
+      evtSrc.addEventListener('update', function(e) {
+        try { applyDriverData(JSON.parse(e.data)); } catch (_) {}
+      });
+      evtSrc.onerror = function() { evtSrc.close(); };
+    }
   })();
   </script>
   <style>

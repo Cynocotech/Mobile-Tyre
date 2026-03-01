@@ -226,7 +226,18 @@ require_once __DIR__ . '/header.php';
   }
 
   fetchStats();
-  setInterval(fetchStats, 30000);
+  if (typeof EventSource !== 'undefined') {
+    var evtSrc = new EventSource('api/stream.php');
+    evtSrc.addEventListener('stats', function(e) {
+      try { renderStats(JSON.parse(e.data)); } catch (_) {}
+    });
+    evtSrc.onerror = function() {
+      evtSrc.close();
+      setInterval(fetchStats, 15000);
+    };
+  } else {
+    setInterval(fetchStats, 15000);
+  }
 
   function showOrder(ref) {
     if (!ref) return;

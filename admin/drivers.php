@@ -181,9 +181,12 @@ require_once __DIR__ . '/header.php';
   var form = document.getElementById('driver-form');
 
   function loadDrivers() {
-    fetch('api/drivers.php?action=all')
-      .then(function(r) { return r.json(); })
-      .then(function(drivers) {
+    Promise.all([
+      fetch('api/drivers.php?action=all').then(function(r) { return r.json(); }),
+      fetch('api/driver-messages.php?counts=1').then(function(r) { return r.json(); }).then(function(d) { return d.counts || {}; }).catch(function() { return {}; })
+    ]).then(function(results) {
+      var drivers = results[0];
+      var unreadCounts = results[1];
         if (!Array.isArray(drivers)) { driversList.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-red-400">Failed to load</td></tr>'; return; }
         if (drivers.length === 0) {
           driversList.innerHTML = '<tr><td colspan="8" class="py-12 text-center text-zinc-500">No drivers. Click Add driver or they will appear after onboarding.</td></tr>';
@@ -211,8 +214,10 @@ require_once __DIR__ . '/header.php';
           var statusBadge = blacklisted ? '<span class="px-2 py-0.5 rounded text-xs font-medium bg-red-900/60 text-red-300">Blocked</span>' : (active ? '<span class="px-2 py-0.5 rounded text-xs font-medium bg-green-900/50 text-green-300">Active</span>' : '<span class="px-2 py-0.5 rounded text-xs font-medium bg-zinc-700 text-zinc-400">Inactive</span>');
           var sourceBadge = source === 'connect' ? '<span class="px-2 py-0.5 rounded text-xs bg-safety/20 text-safety">Connect</span>' : '<span class="px-2 py-0.5 rounded text-xs bg-zinc-700 text-zinc-400">Admin</span>';
           var blockCountDisplay = blockCount > 0 ? '<span class="font-medium' + (blacklisted ? ' text-red-300' : ' text-zinc-400') + '">' + blockCount + '</span>' : '<span class="text-zinc-500">0</span>';
+          var unread = unreadCounts[d.id] || 0;
+          var msgBtn = '<button type="button" class="btn-message px-2 py-1 rounded bg-safety/20 text-safety text-xs relative inline-flex items-center gap-1" data-id="' + escape(d.id||'') + '" data-name="' + escape(d.name||'') + '">Message' + (unread > 0 ? '<span class="ml-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">' + (unread > 99 ? '99+' : unread) + '</span>' : '') + '</button>';
           var actionBtns = '<div class="flex flex-wrap gap-1 justify-end">' +
-            '<button type="button" class="btn-message px-2 py-1 rounded bg-safety/20 text-safety text-xs" data-id="' + escape(d.id||'') + '" data-name="' + escape(d.name||'') + '">Message</button>' +
+            msgBtn +
             '<button type="button" class="btn-edit-driver px-2 py-1 rounded bg-zinc-700 text-zinc-300 text-xs" data-id="' + escape(d.id||'') + '">Edit</button>' +
             (source === 'admin' ? '<button type="button" class="btn-delete-driver px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + escape(d.id||'') + '">Delete</button>' : '') +
             (blacklisted ? '<button type="button" class="btn-unblock px-2 py-1 rounded bg-zinc-600 text-zinc-200 text-xs" data-id="' + escape(d.id||'') + '">Unblock</button>' : '<button type="button" class="btn-block px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + escape(d.id||'') + '">Block</button>') +
@@ -257,10 +262,10 @@ require_once __DIR__ . '/header.php';
         driversList.querySelectorAll('.btn-message').forEach(function(b) {
           b.addEventListener('click', function(e) { e.stopPropagation(); openMessageModal(b.getAttribute('data-id'), b.getAttribute('data-name')); });
         });
-      })
-      .catch(function() {
-        driversList.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-red-400">Failed to load drivers.</td></tr>';
-      });
+    })
+    .catch(function() {
+      driversList.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-red-400">Failed to load drivers.</td></tr>';
+    });
   }
 
   function openDriverModal(id) {
@@ -447,6 +452,7 @@ require_once __DIR__ . '/header.php';
       if (d.ok) {
         document.getElementById('message-body').value = '';
         openMessageModal(driverId, document.getElementById('message-driver-name').textContent);
+        loadDrivers();
       } else {
         alert(d.error || 'Failed to send');
       }

@@ -20,12 +20,16 @@ $csvPath = $dbFolder . '/customers.csv';
 
 $order = null;
 
+$refPaddedForCsv = strlen($ref) > 0 && strlen($ref) <= 6 ? str_pad($ref, 6, '0', STR_PAD_LEFT) : $ref;
 if (is_file($csvPath)) {
   $h = fopen($csvPath, 'r');
   if ($h) {
     $header = fgetcsv($h);
     while (($row = fgetcsv($h)) !== false) {
-      if ((string)($row[1] ?? '') === (string)$ref) {
+      $rowRef = (string)($row[1] ?? '');
+      $rowRefNorm = preg_replace('/[^0-9]/', '', $rowRef);
+      $rowRefPadded = strlen($rowRefNorm) > 0 && strlen($rowRefNorm) <= 6 ? str_pad($rowRefNorm, 6, '0', STR_PAD_LEFT) : $rowRefNorm;
+      if ($rowRef === $ref || $rowRefNorm === $ref || $rowRefPadded === $ref || $rowRefPadded === $refPaddedForCsv) {
         $order = [
           'date' => $row[0] ?? '',
           'reference' => $row[1] ?? '',
@@ -64,8 +68,9 @@ $adminDrivers = is_file($adminDriversPath) ? json_decode(file_get_contents($admi
 
 if (is_file($jobsPath)) {
   $jobs = @json_decode(file_get_contents($jobsPath), true) ?: [];
-  if (isset($jobs[$ref]) && is_array($jobs[$ref])) {
-    $jobData = $jobs[$ref];
+  $jobKey = (isset($jobs[$ref]) && is_array($jobs[$ref])) ? $ref : ((isset($jobs[$refPaddedForCsv]) && is_array($jobs[$refPaddedForCsv])) ? $refPaddedForCsv : null);
+  if ($jobKey !== null) {
+    $jobData = $jobs[$jobKey];
     if ($order) {
       $order = array_merge($order, array_intersect_key($jobData, array_flip(['assigned_driver_id', 'assigned_at', 'payment_method', 'cash_paid_at', 'cash_paid_by', 'proof_url', 'proof_uploaded_at', 'driver_lat', 'driver_lng', 'driver_location_updated_at', 'job_started_at', 'job_completed_at'])));
     } else {
