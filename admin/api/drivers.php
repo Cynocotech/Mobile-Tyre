@@ -244,14 +244,58 @@ switch ($action) {
     }
     break;
   case 'delete':
-    $id = $input['id'] ?? '';
-    $drivers = array_filter($drivers, fn($x) => ($x['id'] ?? '') !== $id);
-    if (saveDrivers($driversPath, array_values($drivers))) {
-      echo json_encode(['ok' => true]);
-    } else {
-      http_response_code(500);
-      echo json_encode(['error' => 'Failed to delete']);
+    $id = trim((string) ($input['id'] ?? ''));
+    if (!$id) {
+      http_response_code(400);
+      echo json_encode(['error' => 'Driver ID required']);
+      exit;
     }
+    $drivers = array_filter($drivers, fn($x) => ($x['id'] ?? '') !== $id);
+    if (!saveDrivers($driversPath, array_values($drivers))) {
+      http_response_code(500);
+      echo json_encode(['error' => 'Failed to delete from admin list']);
+      exit;
+    }
+    $dbPath = $base . '/database/drivers.json';
+    if (is_file($dbPath)) {
+      $db = @json_decode(file_get_contents($dbPath), true) ?: [];
+      if (isset($db[$id])) {
+        unset($db[$id]);
+        $dir = dirname($dbPath);
+        if (!is_dir($dir)) @mkdir($dir, 0755, true);
+        file_put_contents($dbPath, json_encode($db, JSON_PRETTY_PRINT), LOCK_EX);
+      }
+    }
+    $jobsPath = $base . '/database/jobs.json';
+    if (is_file($jobsPath)) {
+      $jobs = @json_decode(file_get_contents($jobsPath), true) ?: [];
+      $changed = false;
+      foreach ($jobs as $k => $j) {
+        if (!is_array($j)) continue;
+        if (($j['assigned_driver_id'] ?? '') === $id) {
+          unset($jobs[$k]['assigned_driver_id']);
+          unset($jobs[$k]['assigned_at']);
+          $sid = $jobs[$k]['session_id'] ?? '';
+          if ($sid && isset($jobs['_session_' . $sid])) {
+            unset($jobs['_session_' . $sid]['assigned_driver_id']);
+            unset($jobs['_session_' . $sid]['assigned_at']);
+          }
+          $changed = true;
+        }
+      }
+      if ($changed) {
+        file_put_contents($jobsPath, json_encode($jobs, JSON_PRETTY_PRINT), LOCK_EX);
+      }
+    }
+    $msgPath = $base . '/database/driver_messages.json';
+    if (is_file($msgPath)) {
+      $msgs = @json_decode(file_get_contents($msgPath), true) ?: [];
+      if (isset($msgs[$id])) {
+        unset($msgs[$id]);
+        file_put_contents($msgPath, json_encode($msgs, JSON_PRETTY_PRINT), LOCK_EX);
+      }
+    }
+    echo json_encode(['ok' => true]);
     break;
   case 'assign':
     $jobRef = $input['jobRef'] ?? '';

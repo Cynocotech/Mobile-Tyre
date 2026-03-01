@@ -219,7 +219,7 @@ require_once __DIR__ . '/header.php';
           var actionBtns = '<div class="flex flex-wrap gap-1 justify-end">' +
             msgBtn +
             '<button type="button" class="btn-edit-driver px-2 py-1 rounded bg-zinc-700 text-zinc-300 text-xs" data-id="' + escape(d.id||'') + '">Edit</button>' +
-            (source === 'admin' ? '<button type="button" class="btn-delete-driver px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + escape(d.id||'') + '">Delete</button>' : '') +
+            '<button type="button" class="btn-delete-driver px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + escape(d.id||'') + '">Delete</button>' +
             (blacklisted ? '<button type="button" class="btn-unblock px-2 py-1 rounded bg-zinc-600 text-zinc-200 text-xs" data-id="' + escape(d.id||'') + '">Unblock</button>' : '<button type="button" class="btn-block px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + escape(d.id||'') + '">Block</button>') +
             (active ? '<button type="button" class="btn-deactivate px-2 py-1 rounded bg-zinc-600 text-zinc-200 text-xs" data-id="' + escape(d.id||'') + '">Deactivate</button>' : '<button type="button" class="btn-activate px-2 py-1 rounded bg-green-900/50 text-green-300 text-xs" data-id="' + escape(d.id||'') + '">Activate</button>') +
           '</div>';
@@ -245,7 +245,7 @@ require_once __DIR__ . '/header.php';
           b.addEventListener('click', function(e) { e.stopPropagation(); openDriverModal(b.getAttribute('data-id')); });
         });
         driversList.querySelectorAll('.btn-delete-driver').forEach(function(b) {
-          b.addEventListener('click', function(e) { e.stopPropagation(); if (confirm('Delete this driver?')) deleteDriver(b.getAttribute('data-id')); });
+          b.addEventListener('click', function(e) { e.stopPropagation(); if (confirm('Delete this driver? They will no longer be able to log in.')) deleteDriver(b.getAttribute('data-id')); });
         });
         driversList.querySelectorAll('.btn-activate').forEach(function(b) {
           b.addEventListener('click', function(e) { e.stopPropagation(); setDriverStatus(b.getAttribute('data-id'), 'activate'); });
