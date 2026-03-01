@@ -24,7 +24,10 @@ if (is_file($csvPath)) {
         $deposits[] = [
           'date' => $row[0] ?? '',
           'reference' => $row[1] ?? '',
+          'session_id' => $row[2] ?? '',
           'email' => $row[3] ?? '',
+          'name' => $row[4] ?? '',
+          'phone' => $row[5] ?? '',
           'postcode' => $row[6] ?? '',
           'estimate_total' => $row[18] ?? '',
           'amount_paid' => $row[19] ?? '',
