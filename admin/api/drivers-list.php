@@ -13,6 +13,7 @@ if (is_file($dbPath)) {
   $raw = json_decode(file_get_contents($dbPath), true) ?: [];
   foreach ($raw as $id => $d) {
     if (is_array($d) && !isset($seen[$id])) {
+      if (!empty($d['blacklisted']) || (isset($d['active']) && !$d['active'])) continue;
       $seen[$id] = true;
       $drivers[] = [
         'id' => $id,
@@ -32,6 +33,7 @@ if (is_file($adminPath)) {
   foreach (is_array($admin) ? $admin : [] as $d) {
     $id = $d['id'] ?? '';
     if (!$id || isset($seen[$id])) continue;
+    if (!empty($d['blacklisted']) || (isset($d['active']) && !$d['active'])) continue;
     $seen[$id] = true;
     $drivers[] = [
       'id' => $id,

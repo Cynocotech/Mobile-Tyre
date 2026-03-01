@@ -28,8 +28,18 @@ require_once __DIR__ . '/header.php';
             <input type="text" id="driver-name" required class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none">
           </div>
           <div>
+            <label for="driver-email" class="block text-sm font-medium text-zinc-300 mb-1">Email</label>
+            <input type="email" id="driver-email" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="driver@example.com">
+            <p class="text-zinc-500 text-xs mt-0.5">Required for login and Stripe Connect payouts</p>
+          </div>
+          <div>
             <label for="driver-phone" class="block text-sm font-medium text-zinc-300 mb-1">Phone</label>
             <input type="tel" id="driver-phone" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none">
+          </div>
+          <div>
+            <label for="driver-password" class="block text-sm font-medium text-zinc-300 mb-1">Password</label>
+            <input type="password" id="driver-password" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="Leave blank to auto-generate">
+            <p class="text-zinc-500 text-xs mt-0.5">For driver login. Min 8 chars. Blank = generate temporary</p>
           </div>
 
           <div class="border-t border-zinc-700 pt-4">
@@ -79,14 +89,41 @@ require_once __DIR__ . '/header.php';
           </div>
 
           <div>
+            <label for="driver-rate" class="block text-sm font-medium text-zinc-300 mb-1">Driver rate (%)</label>
+            <input type="number" id="driver-rate" min="1" max="100" value="80" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none">
+            <p class="text-zinc-500 text-xs mt-0.5">Share of job value paid to driver (default 80%)</p>
+          </div>
+          <div>
             <label for="driver-notes" class="block text-sm font-medium text-zinc-300 mb-1">Notes</label>
             <textarea id="driver-notes" rows="2" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none"></textarea>
+          </div>
+          <div id="connect-link-section" class="border-t border-zinc-700 pt-4 hidden">
+            <h4 class="text-sm font-semibold text-white mb-2">Stripe Connect (payouts)</h4>
+            <p class="text-zinc-500 text-xs mb-2">Send this link to the driver to complete bank details & identity for payouts.</p>
+            <div class="flex gap-2">
+              <input type="text" id="connect-link-url" readonly class="flex-1 px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-zinc-400 text-sm font-mono">
+              <button type="button" id="btn-copy-connect-link" class="px-3 py-2 rounded-lg bg-zinc-600 text-zinc-200 text-sm">Copy</button>
+              <button type="button" id="btn-get-connect-link" class="px-3 py-2 rounded-lg bg-safety text-zinc-900 font-medium text-sm">Get link</button>
+            </div>
           </div>
           <div class="flex gap-2 pt-2">
             <button type="submit" class="px-4 py-2 bg-safety text-zinc-900 font-bold rounded-lg text-sm">Save</button>
             <button type="button" id="driver-modal-cancel" class="px-4 py-2 border border-zinc-600 text-zinc-400 rounded-lg text-sm hover:bg-zinc-700">Cancel</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Block driver modal -->
+    <div id="block-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70" style="display: none;">
+      <div class="w-full max-w-md rounded-2xl border border-zinc-700 bg-zinc-800 p-6">
+        <h3 class="text-lg font-bold text-white mb-2">Block driver</h3>
+        <p class="text-zinc-400 text-sm mb-4">They will not be able to log in or receive job assignments. Add a reason (optional but recommended):</p>
+        <textarea id="block-reason" rows="3" class="w-full px-4 py-3 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none mb-4" placeholder="e.g. Failed to complete jobs, insurance expired..."></textarea>
+        <div class="flex gap-2">
+          <button type="button" id="block-confirm" class="px-4 py-2 bg-red-600 text-white font-medium rounded-lg text-sm hover:bg-red-700">Block</button>
+          <button type="button" id="block-cancel" class="px-4 py-2 border border-zinc-600 text-zinc-400 rounded-lg text-sm hover:bg-zinc-700">Cancel</button>
+        </div>
       </div>
     </div>
   </div>
@@ -133,12 +170,12 @@ require_once __DIR__ . '/header.php';
   var form = document.getElementById('driver-form');
 
   function loadDrivers() {
-    fetch('api/drivers.php?action=drivers')
+    fetch('api/drivers.php?action=all')
       .then(function(r) { return r.json(); })
       .then(function(drivers) {
         if (!Array.isArray(drivers)) { driversList.innerHTML = '<p class="text-red-400">Failed to load</p>'; return; }
         if (drivers.length === 0) {
-          driversList.innerHTML = '<p class="text-zinc-500">No drivers. Click Add driver.</p>';
+          driversList.innerHTML = '<p class="text-zinc-500">No drivers. Click Add driver or they will appear after onboarding.</p>';
           return;
         }
         function escape(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -190,24 +227,42 @@ require_once __DIR__ . '/header.php';
           var vanReg = (d.vanReg||'').trim();
           var notes = (d.notes||'').trim();
           var v = d.vehicleData;
+          var active = d.active !== false;
+          var blacklisted = !!d.blacklisted;
+          var blockedReason = (d.blocked_reason||'').trim();
+          var driverRate = d.driver_rate != null ? d.driver_rate : 80;
+          var source = d.source || 'admin';
+          var statusBadge = blacklisted ? '<span class="px-2 py-0.5 rounded text-xs font-medium bg-red-900/60 text-red-300">Blocked</span>' : (active ? '<span class="px-2 py-0.5 rounded text-xs font-medium bg-green-900/50 text-green-300">Active</span>' : '<span class="px-2 py-0.5 rounded text-xs font-medium bg-zinc-700 text-zinc-400">Inactive</span>');
+          var sourceBadge = source === 'connect' ? '<span class="px-2 py-0.5 rounded text-xs bg-safety/20 text-safety">Connect</span>' : '<span class="px-2 py-0.5 rounded text-xs bg-zinc-700 text-zinc-400">Admin</span>';
+          var rateBadge = '<span class="px-2 py-0.5 rounded text-xs bg-zinc-700 text-zinc-400" title="Driver share of job value">' + driverRate + '%</span>';
+          var blockedReasonHtml = blockedReason ? '<div class="mt-2 p-2 rounded bg-red-900/30 border border-red-800/50"><p class="text-zinc-500 text-xs mb-0.5">Block reason</p><p class="text-red-300 text-sm">' + escape(blockedReason) + '</p></div>' : '';
           var vehicleSection = v && typeof v === 'object' && (v.registrationNumber || v.make || v.model)
             ? '<div class="mt-3 pt-3 border-t border-zinc-700"><p class="text-zinc-500 text-xs font-medium mb-2">Vehicle details</p><dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">' + vehicleRows(v) + '</dl></div>'
             : ('<dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">' +
                 '<dt class="text-zinc-500">Van</dt><dd class="text-zinc-300">' + escape(van||'—') + '</dd>' +
                 '<dt class="text-zinc-500">Reg</dt><dd class="text-zinc-300 font-mono">' + escape(vanReg||'—') + '</dd>' +
               '</dl>');
-          return '<div class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4" data-id="' + (d.id||'') + '">' +
+          var statusBtns = (blacklisted ? '<button type="button" class="btn-unblock px-2 py-1 rounded bg-zinc-600 text-zinc-200 text-xs" data-id="' + (d.id||'') + '">Unblock</button>' : '<button type="button" class="btn-block px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + (d.id||'') + '">Block</button>') +
+            (active ? '<button type="button" class="btn-deactivate px-2 py-1 rounded bg-zinc-600 text-zinc-200 text-xs" data-id="' + (d.id||'') + '">Deactivate</button>' : '<button type="button" class="btn-activate px-2 py-1 rounded bg-green-900/50 text-green-300 text-xs" data-id="' + (d.id||'') + '">Activate</button>');
+          return '<div class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4' + (blacklisted ? ' opacity-75 border-red-900/50' : '') + '" data-id="' + (d.id||'') + '">' +
             '<div class="flex justify-between items-start gap-3 mb-3">' +
-              '<p class="font-semibold text-white">' + escape(d.name||'—') + '</p>' +
+              '<div class="flex flex-wrap items-center gap-2">' +
+                '<p class="font-semibold text-white">' + escape(d.name||'—') + '</p>' +
+                statusBadge +
+                sourceBadge +
+                rateBadge +
+              '</div>' +
               '<div class="flex gap-1 shrink-0">' +
-                '<button type="button" class="btn-edit-driver px-2 py-1 rounded bg-zinc-700 text-zinc-300 text-xs" data-id="' + (d.id||'') + '">Edit</button>' +
-                '<button type="button" class="btn-delete-driver px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + (d.id||'') + '">Delete</button>' +
+                (source === 'admin' ? '<button type="button" class="btn-edit-driver px-2 py-1 rounded bg-zinc-700 text-zinc-300 text-xs" data-id="' + (d.id||'') + '">Edit</button>' : '') +
+                (source === 'admin' ? '<button type="button" class="btn-delete-driver px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + (d.id||'') + '">Delete</button>' : '') +
               '</div>' +
             '</div>' +
+            '<div class="flex flex-wrap gap-1 mb-2">' + statusBtns + '</div>' +
             '<dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">' +
               '<dt class="text-zinc-500">Phone</dt><dd class="text-zinc-300">' + escape(phone||'—') + '</dd>' +
             '</dl>' +
             vehicleSection +
+            blockedReasonHtml +
             kycSummary(d.kyc) +
             equipSummary(d.equipment) +
             (notes ? '<div class="mt-2 pt-2 border-t border-zinc-700"><p class="text-zinc-500 text-xs">Notes</p><p class="text-zinc-400 text-sm">' + escape(notes) + '</p></div>' : '') +
@@ -220,6 +275,18 @@ require_once __DIR__ . '/header.php';
           b.addEventListener('click', function() {
             if (confirm('Delete this driver?')) deleteDriver(b.getAttribute('data-id'));
           });
+        });
+        driversList.querySelectorAll('.btn-activate').forEach(function(b) {
+          b.addEventListener('click', function() { setDriverStatus(b.getAttribute('data-id'), 'activate'); });
+        });
+        driversList.querySelectorAll('.btn-deactivate').forEach(function(b) {
+          b.addEventListener('click', function() { setDriverStatus(b.getAttribute('data-id'), 'deactivate'); });
+        });
+        driversList.querySelectorAll('.btn-block').forEach(function(b) {
+          b.addEventListener('click', function() { openBlockModal(b.getAttribute('data-id')); });
+        });
+        driversList.querySelectorAll('.btn-unblock').forEach(function(b) {
+          b.addEventListener('click', function() { setDriverStatus(b.getAttribute('data-id'), 'unblock'); });
         });
       });
   }
@@ -322,14 +389,19 @@ require_once __DIR__ . '/header.php';
   function openDriverModal(id) {
     document.getElementById('driver-modal-title').textContent = id ? 'Edit driver' : 'Add driver';
     document.getElementById('driver-id').value = id || '';
+    document.getElementById('connect-link-url').value = '';
+    document.getElementById('connect-link-section').classList.toggle('hidden', !id);
     if (id) {
-      fetch('api/drivers.php?action=drivers').then(function(r) { return r.json(); }).then(function(drivers) {
-        var d = drivers.find(function(x) { return (x.id||'') === id; });
+      fetch('api/drivers.php?action=all').then(function(r) { return r.json(); }).then(function(drivers) {
+        var d = Array.isArray(drivers) ? drivers.find(function(x) { return (x.id||'') === id; }) : null;
         if (d) {
           document.getElementById('driver-name').value = d.name || '';
+          document.getElementById('driver-email').value = d.email || '';
+          document.getElementById('driver-password').value = '';
           document.getElementById('driver-phone').value = d.phone || '';
           document.getElementById('driver-van').value = d.van || '';
           document.getElementById('driver-vanReg').value = d.vanReg || '';
+          document.getElementById('driver-rate').value = d.driver_rate != null ? d.driver_rate : 80;
           document.getElementById('driver-notes').value = d.notes || '';
           document.getElementById('driver-vehicleData').value = (d.vehicleData && typeof d.vehicleData === 'object') ? JSON.stringify(d.vehicleData) : '';
           var kyc = d.kyc || {};
@@ -354,7 +426,9 @@ require_once __DIR__ . '/header.php';
       form.reset();
       document.getElementById('driver-id').value = '';
       document.getElementById('driver-vehicleData').value = '';
+      document.getElementById('driver-rate').value = 80;
       document.getElementById('driver-vehicle-summary').classList.add('hidden');
+      document.getElementById('connect-link-section').classList.add('hidden');
     }
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
@@ -374,6 +448,42 @@ require_once __DIR__ . '/header.php';
       if (d.ok) loadDrivers(); else alert(d.error || 'Failed');
     });
   }
+
+  function setDriverStatus(id, action, blockReason) {
+    var payload = { driver_id: id, action: action };
+    if (action === 'block' && blockReason != null) payload.block_reason = String(blockReason).trim();
+    fetch('api/driver-status.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (d.ok) loadDrivers(); else alert(d.error || 'Failed');
+    });
+  }
+
+  var pendingBlockId = null;
+  function openBlockModal(driverId) {
+    pendingBlockId = driverId;
+    document.getElementById('block-reason').value = '';
+    var blockModal = document.getElementById('block-modal');
+    blockModal.classList.remove('hidden');
+    blockModal.style.display = 'flex';
+  }
+  function closeBlockModal() {
+    pendingBlockId = null;
+    var blockModal = document.getElementById('block-modal');
+    blockModal.classList.add('hidden');
+    blockModal.style.display = 'none';
+  }
+  document.getElementById('block-confirm').addEventListener('click', function() {
+    if (pendingBlockId) {
+      var reason = document.getElementById('block-reason').value;
+      setDriverStatus(pendingBlockId, 'block', reason);
+      closeBlockModal();
+    }
+  });
+  document.getElementById('block-cancel').addEventListener('click', closeBlockModal);
+  document.getElementById('block-modal').addEventListener('click', function(e) { if (e.target.id === 'block-modal') closeBlockModal(); });
 
   document.getElementById('btn-add-driver').addEventListener('click', function() { openDriverModal(); });
   document.getElementById('driver-modal-cancel').addEventListener('click', closeDriverModal);
@@ -474,9 +584,12 @@ require_once __DIR__ . '/header.php';
       action: 'save',
       id: document.getElementById('driver-id').value || undefined,
       name: document.getElementById('driver-name').value,
+      email: document.getElementById('driver-email').value,
+      password: document.getElementById('driver-password').value,
       phone: document.getElementById('driver-phone').value,
       van: document.getElementById('driver-van').value,
       vanReg: document.getElementById('driver-vanReg').value,
+      driver_rate: parseInt(document.getElementById('driver-rate').value, 10) || 80,
       notes: document.getElementById('driver-notes').value,
       kyc: {
         rightToWork: document.getElementById('kyc-right-to-work').checked,
@@ -506,8 +619,50 @@ require_once __DIR__ . '/header.php';
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     }).then(function(r) { return r.json(); }).then(function(d) {
-      if (d.ok) { closeDriverModal(); loadDrivers(); } else alert(d.error || 'Failed');
+      if (d.ok) {
+        if (d.temp_password) {
+          alert('Driver saved. Temporary password: ' + d.temp_password + '\nShare this with the driver for first login.');
+        }
+        closeDriverModal();
+        loadDrivers();
+      } else {
+        alert(d.error || 'Failed');
+      }
     });
+  });
+
+  document.getElementById('btn-get-connect-link').addEventListener('click', function() {
+    var id = document.getElementById('driver-id').value;
+    if (!id) { alert('Save the driver first.'); return; }
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Loading…';
+    fetch('api/connect-link.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ driver_id: id })
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      btn.disabled = false;
+      btn.textContent = 'Get link';
+      if (d.url) {
+        document.getElementById('connect-link-url').value = d.url;
+        document.getElementById('connect-link-section').classList.remove('hidden');
+        if (d.temp_password) alert('Temporary login password: ' + d.temp_password + '\nShare with the driver.');
+      } else {
+        alert(d.error || 'Failed');
+      }
+    }).catch(function() { btn.disabled = false; btn.textContent = 'Get link'; alert('Network error'); });
+  });
+
+  document.getElementById('btn-copy-connect-link').addEventListener('click', function() {
+    var inp = document.getElementById('connect-link-url');
+    if (inp.value) {
+      inp.select();
+      document.execCommand('copy');
+      this.textContent = 'Copied';
+      var t = this;
+      setTimeout(function() { t.textContent = 'Copy'; }, 1500);
+    }
   });
 
   loadDrivers();

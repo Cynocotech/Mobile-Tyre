@@ -176,9 +176,10 @@ if (!empty($input['vehicle_wheels']) && preg_match('/^[1-4]$/', (string) $input[
   $payload['metadata']['vehicle_wheels'] = $input['vehicle_wheels'];
 }
 
-// Payment split: when assigned_driver_id provided and driver has Stripe Connect, split 80% driver / 20% platform
+// Payment split: when assigned_driver_id provided and driver has Stripe Connect, use driver_rate (default 80%)
 $assignedDriverId = isset($input['assigned_driver_id']) ? trim((string) $input['assigned_driver_id']) : '';
 $stripeAccountId = null;
+$driverRate = 80;
 if ($assignedDriverId !== '' && preg_match('/^d_[a-f0-9]+$/', $assignedDriverId)) {
   $driversPath = __DIR__ . '/database/drivers.json';
   if (is_file($driversPath)) {
@@ -187,13 +188,14 @@ if ($assignedDriverId !== '' && preg_match('/^d_[a-f0-9]+$/', $assignedDriverId)
       $driver = $drivers[$assignedDriverId];
       if (!empty($driver['stripe_account_id']) && !empty($driver['stripe_onboarding_complete'])) {
         $stripeAccountId = $driver['stripe_account_id'];
+        $driverRate = isset($driver['driver_rate']) ? max(1, min(100, (int)$driver['driver_rate'])) : 80;
         $payload['metadata']['assigned_driver_id'] = $assignedDriverId;
       }
     }
   }
 }
 if ($stripeAccountId) {
-  $platformFeePence = (int) ceil($amountPence * 20 / 100);
+  $platformFeePence = (int) ceil($amountPence * (100 - $driverRate) / 100);
   $payload['payment_intent_data'] = [
     'application_fee_amount' => $platformFeePence,
     'transfer_data' => ['destination' => $stripeAccountId],

@@ -63,6 +63,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     echo json_encode(loadJobs());
   } elseif ($action === 'drivers') {
     echo json_encode(loadDrivers($driversPath));
+  } elseif ($action === 'all') {
+    $all = [];
+    $seen = [];
+    $dbPath = $base . '/database/drivers.json';
+    if (is_file($dbPath)) {
+      $raw = json_decode(file_get_contents($dbPath), true) ?: [];
+      foreach ($raw as $id => $d) {
+        if (is_array($d)) {
+          $seen[$id] = true;
+          $all[] = [
+            'id' => $id,
+            'name' => $d['name'] ?? '',
+            'phone' => $d['phone'] ?? '',
+            'van' => $d['van_make'] ?? '',
+            'vanReg' => $d['van_reg'] ?? '',
+            'email' => $d['email'] ?? '',
+            'vehicleData' => $d['vehicleData'] ?? null,
+            'kyc' => $d['kyc'] ?? null,
+            'equipment' => $d['equipment'] ?? null,
+            'notes' => $d['notes'] ?? '',
+            'source' => 'connect',
+            'active' => isset($d['active']) ? (bool)$d['active'] : true,
+            'blacklisted' => !empty($d['blacklisted']),
+            'blocked_reason' => trim($d['blocked_reason'] ?? ''),
+            'stripe_onboarding_complete' => !empty($d['stripe_onboarding_complete']),
+            'driver_rate' => isset($d['driver_rate']) ? (int)$d['driver_rate'] : 80,
+          ];
+        }
+      }
+    }
+    $adminDrivers = loadDrivers($driversPath);
+    foreach (is_array($adminDrivers) ? $adminDrivers : [] as $d) {
+      $id = $d['id'] ?? '';
+      if ($id && empty($seen[$id])) {
+        $seen[$id] = true;
+        $d['source'] = 'admin';
+        $d['active'] = isset($d['active']) ? (bool)$d['active'] : true;
+        $d['blacklisted'] = !empty($d['blacklisted']);
+        $d['blocked_reason'] = trim($d['blocked_reason'] ?? '');
+        $d['driver_rate'] = isset($d['driver_rate']) ? (int)$d['driver_rate'] : 80;
+        $all[] = $d;
+      }
+    }
+    echo json_encode($all);
   } else {
     echo json_encode(['drivers' => loadDrivers($driversPath), 'jobs' => loadJobs()]);
   }
@@ -82,13 +126,17 @@ $drivers = loadDrivers($driversPath);
 
 switch ($action) {
   case 'save':
+    $driverRate = isset($input['driver_rate']) ? (int)$input['driver_rate'] : 80;
+    $driverRate = max(1, min(100, $driverRate));
     $d = [
-      'id' => $input['id'] ?? uniqid('d'),
+      'id' => $input['id'] ?? ('d_' . bin2hex(random_bytes(8))),
       'name' => trim($input['name'] ?? ''),
+      'email' => strtolower(trim($input['email'] ?? '')),
       'phone' => trim($input['phone'] ?? ''),
       'van' => trim($input['van'] ?? ''),
       'vanReg' => trim($input['vanReg'] ?? ''),
-      'notes' => trim($input['notes'] ?? '')
+      'notes' => trim($input['notes'] ?? ''),
+      'driver_rate' => $driverRate,
     ];
     if (isset($input['kyc']) && is_array($input['kyc'])) {
       $d['kyc'] = [
@@ -133,7 +181,38 @@ switch ($action) {
       $drivers[] = $d;
     }
     if (saveDrivers($driversPath, $drivers)) {
-      echo json_encode(['ok' => true, 'driver' => $d]);
+      $tempPassword = null;
+      if ($d['email']) {
+        $dbPath = $base . '/database/drivers.json';
+        $db = is_file($dbPath) ? (json_decode(file_get_contents($dbPath), true) ?: []) : [];
+        $newPass = trim($input['password'] ?? '');
+        if (strlen($newPass) >= 8) {
+          $password = $newPass;
+        } elseif (isset($db[$d['id']]['password_hash'])) {
+          $password = null;
+        } else {
+          $password = bin2hex(random_bytes(8));
+          $tempPassword = $password;
+        }
+        $dbRecord = array_merge($db[$d['id']] ?? [], [
+          'id' => $d['id'],
+          'name' => $d['name'],
+          'email' => $d['email'],
+          'phone' => $d['phone'],
+          'van_make' => $d['van'],
+          'van_reg' => $d['vanReg'],
+          'active' => ($db[$d['id']]['active'] ?? true),
+          'blacklisted' => !empty($db[$d['id']]['blacklisted']),
+          'driver_rate' => $driverRate,
+          'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+        if ($password) $dbRecord['password_hash'] = password_hash($password, PASSWORD_DEFAULT);
+        if (empty($dbRecord['created_at'])) $dbRecord['created_at'] = date('Y-m-d H:i:s');
+        $db[$d['id']] = $dbRecord;
+        if (!is_dir(dirname($dbPath))) @mkdir(dirname($dbPath), 0755, true);
+        file_put_contents($dbPath, json_encode($db, JSON_PRETTY_PRINT), LOCK_EX);
+      }
+      echo json_encode(['ok' => true, 'driver' => $d, 'temp_password' => $tempPassword]);
     } else {
       http_response_code(500);
       echo json_encode(['error' => 'Failed to save']);

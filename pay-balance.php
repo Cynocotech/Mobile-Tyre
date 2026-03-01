@@ -39,12 +39,14 @@ if (!$stripeSecretKey) {
 
 $assignedDriverId = $job['assigned_driver_id'] ?? '';
 $stripeAccountId = null;
+$driverRate = 80;
 if ($assignedDriverId) {
   $driversPath = __DIR__ . '/database/drivers.json';
   if (is_file($driversPath)) {
     $drivers = @json_decode(file_get_contents($driversPath), true);
     if (is_array($drivers) && isset($drivers[$assignedDriverId]) && !empty($drivers[$assignedDriverId]['stripe_account_id']) && !empty($drivers[$assignedDriverId]['stripe_onboarding_complete'])) {
       $stripeAccountId = $drivers[$assignedDriverId]['stripe_account_id'];
+      $driverRate = isset($drivers[$assignedDriverId]['driver_rate']) ? max(1, min(100, (int)$drivers[$assignedDriverId]['driver_rate'])) : 80;
     }
   }
 }
@@ -81,7 +83,7 @@ $payload = [
 ];
 if (!empty($job['email'])) $payload['customer_email'] = $job['email'];
 if ($stripeAccountId) {
-  $platformFeePence = (int) ceil($balancePence * 20 / 100);
+  $platformFeePence = (int) ceil($balancePence * (100 - $driverRate) / 100);
   $payload['payment_intent_data'] = [
     'application_fee_amount' => $platformFeePence,
     'transfer_data' => ['destination' => $stripeAccountId],

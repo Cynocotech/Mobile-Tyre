@@ -13,16 +13,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($email && $password) {
     $driver = getDriverByEmail($email);
     if ($driver && password_verify($password, $driver['password_hash'] ?? '')) {
-      $_SESSION[DRIVER_SESSION_KEY] = $driver['id'];
-      $_SESSION['driver_time'] = time();
-      header('Location: dashboard.php');
-      exit;
+      if (!empty($driver['blacklisted'])) {
+        $reason = trim($driver['blocked_reason'] ?? '');
+        $error = 'Account blocked. Contact the office.' . ($reason ? ' Reason: ' . htmlspecialchars($reason) : '');
+      } else {
+        $_SESSION[DRIVER_SESSION_KEY] = $driver['id'];
+        $_SESSION['driver_time'] = time();
+        header('Location: dashboard.php');
+        exit;
+      }
     }
   }
-  if ($pin && strlen($pin) >= 4) {
+  if (!$error && $pin && strlen($pin) >= 4) {
     $db = getDriverDb();
     foreach ($db as $d) {
       if (!empty($d['pin_hash']) && password_verify($pin, $d['pin_hash'])) {
+        if (!empty($d['blacklisted'])) {
+          $reason = trim($d['blocked_reason'] ?? '');
+          $error = 'Account blocked. Contact the office.' . ($reason ? ' Reason: ' . htmlspecialchars($reason) : '');
+          break;
+        }
         $_SESSION[DRIVER_SESSION_KEY] = $d['id'];
         $_SESSION['driver_time'] = time();
         header('Location: dashboard.php');
@@ -45,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="bg-zinc-900 text-zinc-200 min-h-screen flex items-center justify-center p-4">
   <div class="w-full max-w-sm rounded-2xl border border-zinc-700 bg-zinc-800/80 p-8">
     <h1 class="text-xl font-bold text-white mb-6 text-center">Driver login</h1>
+    <?php if (isset($_GET['blocked'])): ?><p class="text-red-400 text-sm mb-4">Your account has been blocked. Contact the office.</p><?php endif; ?>
     <?php if ($error): ?><p class="text-red-400 text-sm mb-4"><?php echo htmlspecialchars($error); ?></p><?php endif; ?>
     <form method="post" class="space-y-4">
       <div>

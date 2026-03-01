@@ -12,6 +12,12 @@ if (isset($_SESSION['driver_time']) && (time() - $_SESSION['driver_time']) > DRI
 $driverId = $_SESSION[DRIVER_SESSION_KEY] ?? null;
 $driver = $driverId ? getDriverById($driverId) : null;
 
+if ($driver && !empty($driver['blacklisted'])) {
+  unset($_SESSION[DRIVER_SESSION_KEY], $_SESSION['driver_time']);
+  header('Location: login.php?blocked=1');
+  exit;
+}
+
 if (!$driver) {
   if (basename($_SERVER['PHP_SELF']) === 'login.php') {
     return; // Allow login page
