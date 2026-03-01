@@ -1,13 +1,12 @@
 <?php
 /**
- * Clear all deposits from customers.csv and jobs.json.
+ * Clear all deposits from the jobs table (database-only).
  * Run from CLI: php clear-deposits.php
  * Or visit: /clear-deposits.php (requires ?confirm=yes for safety)
  */
 $base = __DIR__;
-$dbFolder = $base . '/database';
-$csvPath = $dbFolder . '/customers.csv';
-$jobsPath = $dbFolder . '/jobs.json';
+require_once $base . '/config/db.php';
+require_once $base . '/config/db-helpers.php';
 
 $isCli = php_sapi_name() === 'cli';
 $confirm = $isCli || (isset($_GET['confirm']) && $_GET['confirm'] === 'yes');
@@ -15,7 +14,7 @@ $confirm = $isCli || (isset($_GET['confirm']) && $_GET['confirm'] === 'yes');
 if (!$confirm) {
   if ($isCli) {
     echo "Run with: php clear-deposits.php\n";
-    echo "This will clear all deposits from customers.csv and jobs.json.\n";
+    echo "This will clear amount_paid and payment_status from all jobs in the database.\n";
     exit(1);
   }
   header('Content-Type: text/html; charset=utf-8');
@@ -23,17 +22,9 @@ if (!$confirm) {
   exit;
 }
 
-if (!is_dir($dbFolder)) {
-  @mkdir($dbFolder, 0755, true);
+$cnt = 0;
+if (function_exists('dbClearDeposits')) {
+  $cnt = dbClearDeposits();
 }
 
-$csvHeader = ['date', 'reference', 'session_id', 'email', 'name', 'phone', 'postcode', 'lat', 'lng', 'vrm', 'make', 'model', 'colour', 'year', 'fuel', 'tyre_size', 'wheels', 'vehicle_desc', 'estimate_total', 'amount_paid', 'currency', 'payment_status'];
-$fp = fopen($csvPath, 'w');
-if ($fp) {
-  fputcsv($fp, $csvHeader);
-  fclose($fp);
-}
-
-file_put_contents($jobsPath, "{\n}\n", LOCK_EX);
-
-echo $isCli ? "Done. Deposits cleared.\n" : '<p>Done. All deposits cleared.</p>';
+echo $isCli ? "Done. Cleared deposits from $cnt job(s).\n" : "<p>Done. Cleared deposits from $cnt job(s).</p>";

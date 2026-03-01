@@ -46,7 +46,6 @@ $last30 = array_filter($deposits, function ($d) {
 $last7Revenue = array_sum(array_map(function ($d) { return (float) preg_replace('/[^0-9.]/', '', $d['amount_paid'] ?? 0); }, $last7));
 $last30Revenue = array_sum(array_map(function ($d) { return (float) preg_replace('/[^0-9.]/', '', $d['amount_paid'] ?? 0); }, $last30));
 
-$adminDriversPath = dirname(__DIR__) . '/data/drivers.json';
 $driverLocations = [];
 $driversAll = [];
 $seen = [];
@@ -67,18 +66,6 @@ foreach (is_array($db) ? $db : [] as $id => $d) {
         'updated_at' => $d['driver_location_updated_at'] ?? '',
       ];
     }
-  }
-}
-if (is_file($adminDriversPath)) {
-  $admin = @json_decode(file_get_contents($adminDriversPath), true) ?: [];
-  foreach (is_array($admin) ? $admin : [] as $d) {
-    $id = $d['id'] ?? '';
-    if (!$id || isset($seen[$id])) continue;
-    if (!empty($d['blacklisted'])) continue;
-    $seen[$id] = true;
-    $dbRecord = $db[$id] ?? null;
-    $isOnline = $dbRecord ? !empty($dbRecord['is_online']) : false;
-    $driversAll[] = ['id' => $id, 'name' => $d['name'] ?? '', 'is_online' => $isOnline];
   }
 }
 

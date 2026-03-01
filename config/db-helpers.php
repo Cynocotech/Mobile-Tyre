@@ -77,6 +77,14 @@ function dbAssignDriver(string $ref, string $driverId): bool {
   ]);
 }
 
+function dbClearDeposits(): int {
+  $pdo = db();
+  if (!$pdo) return 0;
+  $st = $pdo->prepare("UPDATE jobs SET amount_paid = '', payment_status = '' WHERE amount_paid != '' OR payment_status != ''");
+  $st->execute();
+  return (int) $st->rowCount();
+}
+
 function dbRowToJob(array $r): array {
   $j = [];
   foreach (['reference','session_id','date','email','name','phone','postcode','lat','lng','vrm','make','model','colour','year','fuel','tyre_size','wheels','vehicle_desc','estimate_total','amount_paid','currency','payment_status','assigned_driver_id','assigned_at','payment_method','cash_paid_at','proof_url','proof_uploaded_at','job_started_at','job_completed_at','driver_lat','driver_lng','driver_location_updated_at','created_at'] as $c) {
@@ -128,6 +136,7 @@ function dbGetDriverByEmail(string $email): ?array {
 function dbSaveDriver(array $d): bool {
   $pdo = db();
   if (!$pdo || empty($d['id'])) return false;
+  if (isset($d['vehicleData']) && !array_key_exists('vehicle_data', $d)) $d['vehicle_data'] = $d['vehicleData'];
   $id = $d['id'];
   $existing = dbGetDriverById($id);
   $cols = ['email','password_hash','pin_hash','name','phone','van_make','van_reg','stripe_account_id','stripe_onboarding_complete','is_online','driver_lat','driver_lng','driver_location_updated_at','referral_code','referred_by_driver_id','source','blacklisted','blocked_reason','kyc','equipment','vehicle_data','notes','driver_rate','insurance_url','insurance_uploaded_at'];
@@ -254,6 +263,7 @@ function dbRowToDriver(array $r): array {
       if ($c === 'stripe_onboarding_complete' || $c === 'is_online' || $c === 'blacklisted') $v = (bool)$v;
       if ($c === 'kyc' || $c === 'equipment' || $c === 'vehicle_data') $v = $v ? json_decode($v, true) : null;
       $d[$c] = $v;
+      if ($c === 'vehicle_data') $d['vehicleData'] = $v;
     }
   }
   return $d;

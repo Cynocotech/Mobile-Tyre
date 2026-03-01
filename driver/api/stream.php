@@ -93,25 +93,8 @@ $maxTime = time() + 50;
 
 sendEvent('update', buildDriverPayload($driverId));
 
-$configPath = $base . '/config/db.php';
-$useDb = false;
-if (is_file($configPath)) {
-  require_once $configPath;
-  $useDb = function_exists('useDatabase') && useDatabase();
-}
-$messagesPath = $base . '/database/driver_messages.json';
 while (time() < $maxTime && connection_status() === CONNECTION_NORMAL) {
-  $mtime = (!$useDb && is_file($messagesPath)) ? filemtime($messagesPath) : 0;
-  if (!$useDb) {
-    $jobsPath = $base . '/database/jobs.json';
-    $driversPath = $base . '/database/drivers.json';
-    if (is_file($jobsPath)) $mtime = max($mtime, filemtime($jobsPath));
-    if (is_file($driversPath)) $mtime = max($mtime, filemtime($driversPath));
-  }
-  if ($useDb || $mtime > $lastMtime) {
-    $lastMtime = $useDb ? time() : $mtime;
-    sendEvent('update', buildDriverPayload($driverId));
-  }
+  sendEvent('update', buildDriverPayload($driverId));
   echo ": keepalive\n\n";
   flush();
   sleep($interval);

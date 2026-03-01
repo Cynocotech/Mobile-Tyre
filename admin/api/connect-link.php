@@ -7,7 +7,7 @@ if (empty($_SESSION['admin_ok'])) { http_response_code(403); header('Content-Typ
 header('Content-Type: application/json');
 
 $base = dirname(__DIR__, 2);
-$dbPath = $base . '/database/drivers.json';
+require_once $base . '/driver/config.php';
 $configPath = $base . '/dynamic.json';
 $config = is_file($configPath) ? json_decode(file_get_contents($configPath), true) : [];
 $stripeSecretKey = getenv('STRIPE_SECRET_KEY') ?: ($config['stripeSecretKey'] ?? '');
@@ -27,28 +27,7 @@ if (!$driverId) {
   exit;
 }
 
-$db = is_file($dbPath) ? json_decode(file_get_contents($dbPath), true) : [];
-$driver = $db[$driverId] ?? null;
-
-if (!$driver) {
-  $adminPath = __DIR__ . '/../data/drivers.json';
-  $admin = is_file($adminPath) ? json_decode(file_get_contents($adminPath), true) : [];
-  foreach (is_array($admin) ? $admin : [] as $d) {
-    if (($d['id'] ?? '') === $driverId) {
-      if (empty(trim($d['email'] ?? ''))) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Driver needs email. Add email and save first.']);
-        exit;
-      }
-      $driver = [
-        'id' => $driverId,
-        'name' => $d['name'] ?? '',
-        'email' => strtolower(trim($d['email'] ?? '')),
-      ];
-      break;
-    }
-  }
-}
+$driver = getDriverById($driverId);
 
 if (!$driver || empty(trim($driver['email'] ?? ''))) {
   http_response_code(404);
@@ -87,7 +66,7 @@ if (!$accountId) {
   }
   $accountId = $acc['id'];
   $tempPass = null;
-  $db = is_file($dbPath) ? json_decode(file_get_contents($dbPath), true) : [];
+  $db = getDriverDb();
   if (!isset($db[$driverId])) {
     $tempPass = bin2hex(random_bytes(8));
     $db[$driverId] = [
@@ -106,8 +85,7 @@ if (!$accountId) {
     $db[$driverId]['stripe_account_id'] = $accountId;
     $db[$driverId]['updated_at'] = date('Y-m-d H:i:s');
   }
-  if (!is_dir(dirname($dbPath))) @mkdir(dirname($dbPath), 0755, true);
-  file_put_contents($dbPath, json_encode($db, JSON_PRETTY_PRINT), LOCK_EX);
+  saveDriverDb($db);
 }
 
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';

@@ -36,8 +36,6 @@ function buildStats(string $dbFolder): array {
   require_once $base . '/includes/jobs.php';
   require_once $base . '/driver/config.php';
 
-  $adminDriversPath = dirname(__DIR__) . '/data/drivers.json';
-
   $deposits = [];
   $jobs = [];
   $jobsAll = jobsGetAll();
@@ -87,18 +85,6 @@ function buildStats(string $dbFolder): array {
     }
   }
 
-  if (is_file($adminDriversPath)) {
-    $admin = @json_decode((string) file_get_contents($adminDriversPath), true) ?: [];
-    foreach (is_array($admin) ? $admin : [] as $d) {
-      $id = $d['id'] ?? '';
-      if (!$id || isset($seen[$id]) || !empty($d['blacklisted'])) continue;
-      $seen[$id] = true;
-      $dbRecord = $db[$id] ?? null;
-      $isOnline = $dbRecord ? !empty($dbRecord['is_online']) : false;
-      $driversAll[] = ['id' => $id, 'name' => $d['name'] ?? '', 'is_online' => $isOnline];
-    }
-  }
-
   return [
     'deposits' => [
       'count' => $paidCount,
@@ -126,15 +112,8 @@ $maxTime = time() + 50;
 sendEvent('stats', buildStats($dbFolder));
 
 while (time() < $maxTime && connection_status() === CONNECTION_NORMAL) {
-  $mtime = max(
-    is_file($driversPath) ? filemtime($driversPath) : 0,
-    is_file($jobsPath) ? filemtime($jobsPath) : 0,
-    is_file($csvPath) ? filemtime($csvPath) : 0,
-  );
-  if ($mtime > $lastMtime) {
-    $lastMtime = $mtime;
-    sendEvent('stats', buildStats($dbFolder));
-  }
+  $lastMtime = time();
+  sendEvent('stats', buildStats($dbFolder));
   echo ": keepalive\n\n";
   flush();
   sleep($interval);

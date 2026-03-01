@@ -11,9 +11,8 @@ $driverId = isset($_GET['id']) ? safe_id($_GET['id']) : '';
 if (!$driverId) { http_response_code(400); exit; }
 
 $base = dirname(__DIR__, 2);
-$dbPath = $base . '/database/drivers.json';
-$db = is_file($dbPath) ? json_decode(file_get_contents($dbPath), true) : [];
-$rec = $db[$driverId] ?? null;
+require_once $base . '/driver/config.php';
+$rec = getDriverById($driverId);
 if (!$rec || empty($rec['insurance_url']) || !preg_match('#^database/insurance/[a-zA-Z0-9_\-]+\.(pdf|jpg|jpeg|png)$#i', $rec['insurance_url'])) {
   http_response_code(404);
   exit;

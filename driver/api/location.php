@@ -33,18 +33,7 @@ if ($lat === '' || $lng === '') {
 
 $db = getDriverDb();
 if (!isset($db[$driverId])) {
-  $adminPath = dirname(__DIR__, 2) . '/admin/data/drivers.json';
-  $driverFromAdmin = null;
-  if (is_file($adminPath)) {
-    $admin = json_decode(file_get_contents($adminPath), true) ?: [];
-    foreach (is_array($admin) ? $admin : [] as $d) {
-      if (($d['id'] ?? '') === $driverId) {
-        $driverFromAdmin = array_merge($d, ['id' => $driverId]);
-        break;
-      }
-    }
-  }
-  $db[$driverId] = $driverFromAdmin ? array_merge($driverFromAdmin, ['updated_at' => date('Y-m-d H:i:s')]) : ['id' => $driverId, 'updated_at' => date('Y-m-d H:i:s')];
+  $db[$driverId] = ['id' => $driverId, 'updated_at' => date('Y-m-d H:i:s')];
 }
 $db[$driverId]['driver_lat'] = $lat;
 $db[$driverId]['driver_lng'] = $lng;

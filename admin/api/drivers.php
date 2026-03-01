@@ -4,27 +4,17 @@ if (empty($_SESSION['admin_ok'])) { http_response_code(403); header('Content-Typ
 header('Content-Type: application/json');
 
 $base = dirname(__DIR__, 2);
-$driversPath = __DIR__ . '/../data/drivers.json';
-$dbFolder = $base . '/database';
-$jobsPath = $dbFolder . '/jobs.json';
-$csvPath = $dbFolder . '/customers.csv';
-
 require_once $base . '/includes/jobs.php';
 require_once $base . '/driver/config.php';
 
-function getDriverNameById($id, $db, $adminDrivers) {
-  if ($id && isset($db[$id])) return $db[$id]['name'] ?? '';
-  foreach (is_array($adminDrivers) ? $adminDrivers : [] as $a) {
-    if (($a['id'] ?? '') === $id) return $a['name'] ?? '';
-  }
-  return '';
+function getDriverNameById($id, $db) {
+  return ($id && isset($db[$id])) ? ($db[$id]['name'] ?? '') : '';
 }
 
-function generateReferralCodeLocal($db, $adminDrivers) {
+function generateReferralCodeLocal($db) {
   $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   $used = [];
   foreach ($db as $d) { if (!empty($d['referral_code'])) $used[strtoupper($d['referral_code'])] = true; }
-  foreach (is_array($adminDrivers) ? $adminDrivers : [] as $d) { if (!empty($d['referral_code'])) $used[strtoupper($d['referral_code'])] = true; }
   do {
     $code = '';
     for ($i = 0; $i < 6; $i++) $code .= $chars[random_int(0, strlen($chars) - 1)];
@@ -32,46 +22,24 @@ function generateReferralCodeLocal($db, $adminDrivers) {
   } while (true);
 }
 
-function loadDrivers($path) {
-  if (!is_file($path)) return [];
-  $d = @json_decode(file_get_contents($path), true);
-  return is_array($d) ? $d : [];
+function loadDrivers(): array {
+  $db = getDriverDb();
+  $out = [];
+  foreach ($db as $id => $d) $out[] = array_merge($d, ['id' => $id]);
+  return $out;
 }
 
-function saveDrivers($path, $drivers) {
-  $dir = dirname($path);
-  if (!is_dir($dir)) @mkdir($dir, 0755, true);
-  return file_put_contents($path, json_encode($drivers, JSON_PRETTY_PRINT), LOCK_EX) !== false;
+function saveDriversList(array $drivers): bool {
+  $byId = [];
+  foreach ($drivers as $d) { $id = $d['id'] ?? ''; if ($id) $byId[$id] = $d; }
+  return saveDriverDb($byId);
 }
 
-function loadJobs() {
-  global $csvPath;
+function loadJobs(): array {
   $jobsAll = jobsGetAll();
   $jobs = [];
   foreach ($jobsAll as $k => $v) {
-    if (is_array($v)) $jobs[] = array_merge(['reference' => $k], $v);
-  }
-  if (empty($jobs) && is_file($csvPath)) {
-    $h = fopen($csvPath, 'r');
-    if ($h) {
-      $header = fgetcsv($h);
-      while (($row = fgetcsv($h)) !== false) {
-        if (count($row) >= 2) {
-          $jobs[] = [
-            'reference' => $row[1] ?? '',
-            'date' => $row[0] ?? '',
-            'email' => $row[3] ?? '',
-            'postcode' => $row[6] ?? '',
-            'vrm' => $row[9] ?? '',
-            'make' => $row[10] ?? '',
-            'model' => $row[11] ?? '',
-            'estimate_total' => $row[18] ?? '',
-            'amount_paid' => $row[19] ?? ''
-          ];
-        }
-      }
-      fclose($h);
-    }
+    if (is_array($v)) $jobs[] = array_merge(['reference' => $v['reference'] ?? $k], $v);
   }
   return $jobs;
 }
@@ -91,79 +59,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
     echo json_encode($jobs);
   } elseif ($action === 'drivers') {
-    echo json_encode(loadDrivers($driversPath));
+    echo json_encode(loadDrivers());
   } elseif ($action === 'all') {
+    $raw = getDriverDb();
     $all = [];
-    $seen = [];
-    $dbPath = $base . '/database/drivers.json';
-    $raw = [];
-    $adminDrivers = loadDrivers($driversPath);
-    if (is_file($dbPath)) {
-      $raw = json_decode(file_get_contents($dbPath), true) ?: [];
-      $adminDriversForCode = loadDrivers($driversPath);
-      foreach ($raw as $id => $d) {
-        if (is_array($d)) {
-          $seen[$id] = true;
-          if (empty(trim($d['referral_code'] ?? ''))) {
-            $raw[$id]['referral_code'] = generateReferralCodeLocal($raw, $adminDriversForCode);
-            file_put_contents($dbPath, json_encode($raw, JSON_PRETTY_PRINT), LOCK_EX);
-          }
-          $refById = $d['referred_by_driver_id'] ?? '';
-          $all[] = [
-            'id' => $id,
-            'name' => $d['name'] ?? '',
-            'phone' => $d['phone'] ?? '',
-            'van' => $d['van_make'] ?? '',
-            'vanReg' => $d['van_reg'] ?? '',
-            'email' => $d['email'] ?? '',
-            'vehicleData' => $d['vehicleData'] ?? null,
-            'kyc' => $d['kyc'] ?? null,
-            'equipment' => $d['equipment'] ?? null,
-            'notes' => $d['notes'] ?? '',
-            'source' => 'connect',
-            'referral_code' => trim($raw[$id]['referral_code'] ?? $d['referral_code'] ?? ''),
-            'referred_by_driver_id' => $refById,
-            'referred_by_name' => getDriverNameById($refById, $raw, $adminDrivers),
-            'active' => isset($d['active']) ? (bool)$d['active'] : true,
-            'blacklisted' => !empty($d['blacklisted']),
-            'blocked_reason' => trim($d['blocked_reason'] ?? ''),
-            'block_history' => isset($d['block_history']) && is_array($d['block_history']) ? $d['block_history'] : [],
-            'block_count' => isset($d['block_count']) ? (int)$d['block_count'] : 0,
-            'stripe_onboarding_complete' => !empty($d['stripe_onboarding_complete']),
-            'driver_rate' => isset($d['driver_rate']) ? (int)$d['driver_rate'] : 80,
-            'insurance_url' => $d['insurance_url'] ?? null,
-            'insurance_uploaded_at' => $d['insurance_uploaded_at'] ?? null,
-          ];
-        }
+    $needsSave = false;
+    foreach ($raw as $id => $d) {
+      if (!is_array($d)) continue;
+      if (empty(trim($d['referral_code'] ?? ''))) {
+        $raw[$id]['referral_code'] = generateReferralCodeLocal($raw);
+        $needsSave = true;
       }
+      $refById = $d['referred_by_driver_id'] ?? '';
+      $all[] = [
+        'id' => $id,
+        'name' => $d['name'] ?? '',
+        'phone' => $d['phone'] ?? '',
+        'van' => $d['van_make'] ?? '',
+        'vanReg' => $d['van_reg'] ?? '',
+        'email' => $d['email'] ?? '',
+        'vehicleData' => $d['vehicle_data'] ?? $d['vehicleData'] ?? null,
+        'kyc' => $d['kyc'] ?? null,
+        'equipment' => $d['equipment'] ?? null,
+        'notes' => $d['notes'] ?? '',
+        'source' => $d['source'] ?? 'connect',
+        'referral_code' => trim($raw[$id]['referral_code'] ?? $d['referral_code'] ?? ''),
+        'referred_by_driver_id' => $refById,
+        'referred_by_name' => getDriverNameById($refById, $raw),
+        'active' => isset($d['active']) ? (bool)$d['active'] : true,
+        'blacklisted' => !empty($d['blacklisted']),
+        'blocked_reason' => trim($d['blocked_reason'] ?? ''),
+        'block_history' => isset($d['block_history']) && is_array($d['block_history']) ? $d['block_history'] : [],
+        'block_count' => isset($d['block_count']) ? (int)$d['block_count'] : 0,
+        'stripe_onboarding_complete' => !empty($d['stripe_onboarding_complete']),
+        'driver_rate' => isset($d['driver_rate']) ? (int)$d['driver_rate'] : 80,
+        'insurance_url' => $d['insurance_url'] ?? null,
+        'insurance_uploaded_at' => $d['insurance_uploaded_at'] ?? null,
+      ];
     }
-    $adminNeedsSave = false;
-    foreach (is_array($adminDrivers) ? $adminDrivers : [] as $ai => $d) {
-      $id = $d['id'] ?? '';
-      if ($id && empty($seen[$id])) {
-        $seen[$id] = true;
-        $refById = $d['referred_by_driver_id'] ?? '';
-        if (empty(trim($d['referral_code'] ?? ''))) {
-          $adminDrivers[$ai]['referral_code'] = generateReferralCodeLocal($raw, $adminDrivers);
-          $adminNeedsSave = true;
-        }
-        $d['source'] = 'admin';
-        $d['referral_code'] = trim($adminDrivers[$ai]['referral_code'] ?? $d['referral_code'] ?? '');
-        $d['referred_by_driver_id'] = $refById;
-        $d['referred_by_name'] = getDriverNameById($refById, $raw, $adminDrivers);
-        $d['active'] = isset($d['active']) ? (bool)$d['active'] : true;
-        $d['blacklisted'] = !empty($d['blacklisted']);
-        $d['blocked_reason'] = trim($d['blocked_reason'] ?? '');
-        $d['block_history'] = isset($d['block_history']) && is_array($d['block_history']) ? $d['block_history'] : [];
-        $d['block_count'] = isset($d['block_count']) ? (int)$d['block_count'] : 0;
-        $d['driver_rate'] = isset($d['driver_rate']) ? (int)$d['driver_rate'] : 80;
-        $all[] = $d;
-      }
-    }
-    if ($adminNeedsSave) saveDrivers($driversPath, $adminDrivers);
+    if ($needsSave) saveDriverDb($raw);
     echo json_encode($all);
   } else {
-    echo json_encode(['drivers' => loadDrivers($driversPath), 'jobs' => loadJobs()]);
+    echo json_encode(['drivers' => loadDrivers(), 'jobs' => loadJobs()]);
   }
   exit;
 }
@@ -177,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $input = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $input['action'] ?? '';
 
-$drivers = loadDrivers($driversPath);
+$drivers = loadDrivers();
 
 switch ($action) {
   case 'save':
@@ -226,7 +163,7 @@ switch ($action) {
     foreach (is_array($drivers) ? $drivers : [] as $ad) {
       if (($ad['id'] ?? '') === $d['id'] && !empty($ad['referral_code'])) { $existingCode = $ad['referral_code']; break; }
     }
-    $d['referral_code'] = $existingCode ?: generateReferralCodeLocal($db, $drivers);
+    $d['referral_code'] = $existingCode ?: generateReferralCodeLocal($db);
 
     $idx = array_search($d['id'], array_column($drivers, 'id'));
     if ($idx !== false) {
@@ -244,7 +181,7 @@ switch ($action) {
     } else {
       $drivers[] = $d;
     }
-    if (saveDrivers($driversPath, $drivers)) {
+    if (saveDriversList($drivers)) {
       $tempPassword = null;
       if ($d['email']) {
         $newPass = trim($input['password'] ?? '');
@@ -294,62 +231,12 @@ switch ($action) {
       echo json_encode(['error' => 'Driver ID required']);
       exit;
     }
-    $drivers = array_filter($drivers, fn($x) => ($x['id'] ?? '') !== $id);
-    if (!saveDrivers($driversPath, array_values($drivers))) {
-      http_response_code(500);
-      echo json_encode(['error' => 'Failed to delete from admin list']);
-      exit;
-    }
-    if (function_exists('useDatabase') && useDatabase() && function_exists('dbDeleteDriver')) {
-      dbDeleteDriver($id);
-      if (function_exists('dbDeleteDriverMessages')) dbDeleteDriverMessages($id);
-      $jobsAll = jobsGetAll();
-      foreach ($jobsAll as $ref => $j) {
-        if (is_array($j) && ($j['assigned_driver_id'] ?? '') === $id) {
-          jobsUpdate($ref, ['assigned_driver_id' => '', 'assigned_at' => null]);
-        }
-      }
-    } else {
-      $dbPath = $base . '/database/drivers.json';
-      if (is_file($dbPath)) {
-        $db = @json_decode(file_get_contents($dbPath), true) ?: [];
-        if (isset($db[$id])) {
-          unset($db[$id]);
-          $dir = dirname($dbPath);
-          if (!is_dir($dir)) @mkdir($dir, 0755, true);
-          file_put_contents($dbPath, json_encode($db, JSON_PRETTY_PRINT), LOCK_EX);
-        }
-      }
-      $jobsPath = $base . '/database/jobs.json';
-      if (is_file($jobsPath)) {
-        $jobs = @json_decode(file_get_contents($jobsPath), true) ?: [];
-        $changed = false;
-        foreach ($jobs as $k => $j) {
-          if (!is_array($j)) continue;
-          if (($j['assigned_driver_id'] ?? '') === $id) {
-            unset($jobs[$k]['assigned_driver_id']);
-            unset($jobs[$k]['assigned_at']);
-            $sid = $jobs[$k]['session_id'] ?? '';
-            if ($sid && isset($jobs['_session_' . $sid])) {
-              unset($jobs['_session_' . $sid]['assigned_driver_id']);
-              unset($jobs['_session_' . $sid]['assigned_at']);
-            }
-            $changed = true;
-          }
-        }
-        if ($changed) {
-          file_put_contents($jobsPath, json_encode($jobs, JSON_PRETTY_PRINT), LOCK_EX);
-        }
-      }
-    }
-    if (!function_exists('useDatabase') || !useDatabase()) {
-      $msgPath = $base . '/database/driver_messages.json';
-      if (is_file($msgPath)) {
-        $msgs = @json_decode(file_get_contents($msgPath), true) ?: [];
-        if (isset($msgs[$id])) {
-          unset($msgs[$id]);
-          file_put_contents($msgPath, json_encode($msgs, JSON_PRETTY_PRINT), LOCK_EX);
-        }
+    if (function_exists('dbDeleteDriver')) dbDeleteDriver($id);
+    if (function_exists('dbDeleteDriverMessages')) dbDeleteDriverMessages($id);
+    $jobsAll = jobsGetAll();
+    foreach ($jobsAll as $ref => $j) {
+      if (is_array($j) && ($j['assigned_driver_id'] ?? '') === $id) {
+        jobsUpdate($ref, ['assigned_driver_id' => '', 'assigned_at' => null]);
       }
     }
     echo json_encode(['ok' => true]);

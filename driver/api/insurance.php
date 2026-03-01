@@ -16,7 +16,6 @@ if (!$driver) {
 
 $base = dirname(__DIR__, 2);
 $insuranceDir = $base . '/database/insurance';
-$dbPath = $base . '/database/drivers.json';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (empty($_FILES['insurance']['tmp_name']) || $_FILES['insurance']['error'] !== UPLOAD_ERR_OK) {
@@ -41,20 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
   $insuranceUrl = 'database/insurance/' . $filename;
   $db = getDriverDb();
-  if (!isset($db[$driverId])) {
-    $adminPath = $base . '/admin/data/drivers.json';
-    $driverFromAdmin = null;
-    if (is_file($adminPath)) {
-      $admin = json_decode(file_get_contents($adminPath), true) ?: [];
-      foreach (is_array($admin) ? $admin : [] as $d) {
-        if (($d['id'] ?? '') === $driverId) {
-          $driverFromAdmin = array_merge($d, ['id' => $driverId]);
-          break;
-        }
-      }
-    }
-    $db[$driverId] = $driverFromAdmin ?: ['id' => $driverId];
-  }
+  if (!isset($db[$driverId])) $db[$driverId] = ['id' => $driverId];
   $db[$driverId]['insurance_url'] = $insuranceUrl;
   $db[$driverId]['insurance_uploaded_at'] = date('Y-m-d H:i:s');
   $db[$driverId]['updated_at'] = date('Y-m-d H:i:s');

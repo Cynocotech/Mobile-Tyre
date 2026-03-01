@@ -36,43 +36,11 @@ if ($name === '') {
 
 $db = getDriverDb();
 if (!isset($db[$driverId])) {
-  $adminPath = dirname(__DIR__, 2) . '/admin/data/drivers.json';
-  $driverFromAdmin = null;
-  if (is_file($adminPath)) {
-    $admin = json_decode(file_get_contents($adminPath), true) ?: [];
-    foreach (is_array($admin) ? $admin : [] as $d) {
-      if (($d['id'] ?? '') === $driverId) {
-        $driverFromAdmin = array_merge($d, ['id' => $driverId]);
-        break;
-      }
-    }
-  }
-  $db[$driverId] = $driverFromAdmin ?: ['id' => $driverId];
+  $db[$driverId] = ['id' => $driverId];
 }
-
 $db[$driverId]['name'] = $name;
 $db[$driverId]['phone'] = $phone;
 $db[$driverId]['updated_at'] = date('Y-m-d H:i:s');
-
-$adminPath = dirname(__DIR__, 2) . '/admin/data/drivers.json';
-if (is_file($adminPath)) {
-  $admin = json_decode(file_get_contents($adminPath), true) ?: [];
-  $found = false;
-  foreach ($admin as &$d) {
-    if (($d['id'] ?? '') === $driverId) {
-      $d['name'] = $name;
-      $d['phone'] = $phone;
-      $found = true;
-      break;
-    }
-  }
-  if ($found) {
-    $dir = dirname($adminPath);
-    if (!is_dir($dir)) @mkdir($dir, 0755, true);
-    file_put_contents($adminPath, json_encode($admin, JSON_PRETTY_PRINT), LOCK_EX);
-  }
-}
-
 saveDriverDb($db);
 
 echo json_encode(['ok' => true]);

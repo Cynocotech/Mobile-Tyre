@@ -181,17 +181,12 @@ $assignedDriverId = isset($input['assigned_driver_id']) ? trim((string) $input['
 $stripeAccountId = null;
 $driverRate = 80;
 if ($assignedDriverId !== '' && preg_match('/^d_[a-f0-9]+$/', $assignedDriverId)) {
-  $driversPath = __DIR__ . '/database/drivers.json';
-  if (is_file($driversPath)) {
-    $drivers = @json_decode(file_get_contents($driversPath), true);
-    if (is_array($drivers) && isset($drivers[$assignedDriverId])) {
-      $driver = $drivers[$assignedDriverId];
-      if (!empty($driver['stripe_account_id']) && !empty($driver['stripe_onboarding_complete'])) {
-        $stripeAccountId = $driver['stripe_account_id'];
-        $driverRate = isset($driver['driver_rate']) ? max(1, min(100, (int)$driver['driver_rate'])) : 80;
-        $payload['metadata']['assigned_driver_id'] = $assignedDriverId;
-      }
-    }
+  require_once __DIR__ . '/driver/config.php';
+  $driver = getDriverById($assignedDriverId);
+  if ($driver && !empty($driver['stripe_account_id']) && !empty($driver['stripe_onboarding_complete'])) {
+    $stripeAccountId = $driver['stripe_account_id'];
+    $driverRate = isset($driver['driver_rate']) ? max(1, min(100, (int)$driver['driver_rate'])) : 80;
+    $payload['metadata']['assigned_driver_id'] = $assignedDriverId;
   }
 }
 if ($stripeAccountId) {

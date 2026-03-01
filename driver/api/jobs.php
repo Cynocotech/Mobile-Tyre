@@ -149,20 +149,7 @@ switch ($action) {
 
   case 'set_online':
     $db = getDriverDb();
-    if (!isset($db[$driverId])) {
-      $adminPath = dirname(__DIR__, 2) . '/admin/data/drivers.json';
-      $driver = null;
-      if (is_file($adminPath)) {
-        $admin = json_decode(file_get_contents($adminPath), true) ?: [];
-        foreach (is_array($admin) ? $admin : [] as $d) {
-          if (($d['id'] ?? '') === $driverId) {
-            $driver = array_merge($d, ['id' => $driverId]);
-            break;
-          }
-        }
-      }
-      $db[$driverId] = $driver ? array_merge($driver, ['is_online' => false, 'updated_at' => date('Y-m-d H:i:s')]) : ['id' => $driverId, 'is_online' => false, 'updated_at' => date('Y-m-d H:i:s')];
-    }
+    if (!isset($db[$driverId])) $db[$driverId] = ['id' => $driverId, 'is_online' => false, 'updated_at' => date('Y-m-d H:i:s')];
     $v = $input['online'] ?? true;
     $online = ($v === true || $v === 'true' || $v === 1 || $v === '1');
     $db[$driverId]['is_online'] = $online;
@@ -171,9 +158,7 @@ switch ($action) {
       echo json_encode(['ok' => true, 'is_online' => $online]);
     } else {
       http_response_code(500);
-      $dir = dirname(DRIVER_DB_PATH);
-      $hint = !is_dir($dir) ? 'Database folder missing.' : (!is_writable($dir) ? 'Database folder not writable.' : 'Could not save driver data.');
-      echo json_encode(['error' => 'Failed to update. ' . $hint]);
+      echo json_encode(['error' => 'Failed to update driver status.']);
     }
     break;
 
