@@ -17,7 +17,8 @@ security_headers();
 $hash = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
 $timeout = 86400;
 $base = dirname(__DIR__);
-if (is_file($base . '/config/db.php')) {
+$needAuthCheck = (basename($_SERVER['PHP_SELF']) === 'login.php' && $_SERVER['REQUEST_METHOD'] === 'POST');
+if ($needAuthCheck && is_file($base . '/config/db.php')) {
   require_once $base . '/config/db.php';
   require_once $base . '/config/db-helpers.php';
   if (function_exists('useDatabase') && useDatabase() && function_exists('dbGetAdminSettings')) {
@@ -30,11 +31,13 @@ if (is_file($base . '/config/db.php')) {
     $hash = $config['passwordHash'] ?? $hash;
     $timeout = (int) ($config['sessionTimeout'] ?? $timeout);
   }
-} else {
+} elseif ($needAuthCheck) {
   $configPath = __DIR__ . '/config.json';
   $config = is_file($configPath) ? json_decode(file_get_contents($configPath), true) : [];
   $hash = $config['passwordHash'] ?? $hash;
   $timeout = (int) ($config['sessionTimeout'] ?? $timeout);
+} elseif (!empty($_SESSION['admin_ok'])) {
+  $timeout = (int) ($_SESSION['admin_timeout'] ?? 86400);
 }
 
 if (isset($_SESSION['admin_time']) && (time() - $_SESSION['admin_time']) > $timeout) {
@@ -51,6 +54,7 @@ if (empty($_SESSION['admin_ok'])) {
         session_regenerate_id(true);
         $_SESSION['admin_ok'] = true;
         $_SESSION['admin_time'] = time();
+        $_SESSION['admin_timeout'] = $timeout;
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
         header('Location: index.php');
         exit;

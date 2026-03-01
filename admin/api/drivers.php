@@ -48,6 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
   $action = $_GET['action'] ?? 'list';
   if ($action === 'jobs') {
     $jobs = loadJobs();
+    $limit = min(200, max(10, (int) ($_GET['limit'] ?? 100)));
+    if (count($jobs) > $limit) $jobs = array_slice($jobs, 0, $limit);
     $drivers = getDriverDb();
     foreach ($jobs as &$j) {
       $aid = $j['assigned_driver_id'] ?? '';

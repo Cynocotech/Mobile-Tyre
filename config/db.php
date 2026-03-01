@@ -61,11 +61,15 @@ function db(): ?PDO {
 
 function useDatabase(): bool {
   if (db() === null) return false;
+  static $cached = null;
+  if ($cached !== null) return $cached;
   $root = dirname(__DIR__);
   if (is_file($root . '/dynamic.json')) {
     $c = @json_decode(file_get_contents($root . '/dynamic.json'), true);
-    if (empty($c['useDatabase'])) return false;
+    $cached = !empty($c['useDatabase']);
+    return $cached;
   }
+  $cached = true;
   return true;
 }
 
