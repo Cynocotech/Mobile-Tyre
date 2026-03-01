@@ -65,6 +65,16 @@ require_once __DIR__ . '/header.php';
 
   <div class="rounded-xl border border-zinc-700 bg-zinc-800/50 overflow-hidden">
     <h2 class="text-lg font-semibold text-white px-6 py-4 border-b border-zinc-700 flex items-center gap-2">
+      <svg class="w-5 h-5 text-safety" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2V7a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+      Online drivers
+    </h2>
+    <div id="online-drivers-list" class="px-6 py-4 space-y-2 max-h-48 overflow-y-auto border-b border-zinc-700">
+      <p class="text-zinc-500 text-sm">Loading…</p>
+    </div>
+  </div>
+
+  <div class="rounded-xl border border-zinc-700 bg-zinc-800/50 overflow-hidden">
+    <h2 class="text-lg font-semibold text-white px-6 py-4 border-b border-zinc-700 flex items-center gap-2">
       <svg class="w-5 h-5 text-safety" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
       Driver locations
     </h2>
@@ -155,12 +165,26 @@ require_once __DIR__ . '/header.php';
     }
   }
 
-  fetch('api/stats.php')
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      document.getElementById('stats-loading').classList.add('hidden');
-      document.getElementById('stats-content').classList.remove('hidden');
-      initAdminMap(data.driverLocations || []);
+  function renderStats(data) {
+    document.getElementById('stats-loading').classList.add('hidden');
+    document.getElementById('stats-content').classList.remove('hidden');
+    initAdminMap(data.driverLocations || []);
+    var drivers = data.drivers || [];
+    var onlineDriversEl = document.getElementById('online-drivers-list');
+    if (onlineDriversEl) {
+      if (drivers.length === 0) {
+        onlineDriversEl.innerHTML = '<p class="text-zinc-500 text-sm">No drivers yet. Add drivers or they will appear after onboarding.</p>';
+      } else {
+        var onlineCount = drivers.filter(function(d) { return d.is_online; }).length;
+        function escD(s) { if (s == null || s === '') return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+        onlineDriversEl.innerHTML = drivers.map(function(d) {
+          var status = d.is_online ? '<span class="text-green-400">Online</span>' : '<span class="text-zinc-500">Offline</span>';
+          return '<div class="flex justify-between items-center py-1 text-sm"><span class="text-zinc-300">' + escD(d.name || d.id || '—') + '</span>' + status + '</div>';
+        }).join('');
+        var h2 = onlineDriversEl.previousElementSibling;
+        if (h2) h2.innerHTML = '<svg class="w-5 h-5 text-safety" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2V7a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>Online drivers <span class="text-zinc-500 font-normal text-sm">(' + onlineCount + '/' + drivers.length + ')</span>';
+      }
+    }
       if (data.deposits) {
         document.getElementById('stat-deposits-total').textContent = '£' + (data.deposits.total || 0).toFixed(2);
         document.getElementById('stat-deposits-count').textContent = data.deposits.count || 0;
@@ -170,7 +194,10 @@ require_once __DIR__ . '/header.php';
       document.getElementById('stat-quotes').textContent = data.quotes || 0;
       var tbody = document.getElementById('recent-deposits-body');
       var rows = data.recentDeposits || [];
-      if (rows.length === 0) return;
+      if (rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-zinc-500">No deposits yet</td></tr>';
+        return;
+      }
       function esc(s) { if (s == null || s === '') return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
       tbody.innerHTML = rows.map(function(d) {
         var ref = esc((d.reference || '').toString());
@@ -187,10 +214,19 @@ require_once __DIR__ . '/header.php';
         row.addEventListener('click', function() { showOrder(row.getAttribute('data-ref')); });
         row.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showOrder(row.getAttribute('data-ref')); } });
       });
-    })
-    .catch(function() {
-      document.getElementById('stats-loading').textContent = 'Failed to load stats.';
-    });
+  }
+
+  function fetchStats() {
+    fetch('api/stats.php')
+      .then(function(r) { return r.json(); })
+      .then(renderStats)
+      .catch(function() {
+        document.getElementById('stats-loading').textContent = 'Failed to load stats.';
+      });
+  }
+
+  fetchStats();
+  setInterval(fetchStats, 30000);
 
   function showOrder(ref) {
     if (!ref) return;

@@ -83,12 +83,6 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       </button>
     </div>
 
-    <!-- Earnings (for nav scroll) -->
-    <div id="earnings" class="rounded-2xl app-surface border app-border p-4 mb-4">
-      <p class="app-text-muted text-xs">Wallet earned</p>
-      <p id="wallet-amount" class="text-xl font-bold mt-0.5" style="color: var(--app-accent);">£0.00</p>
-    </div>
-
     <!-- Opportunities -->
     <div class="rounded-2xl app-surface border app-border p-4 mb-4 flex items-center justify-between gap-4">
       <div class="flex-1 min-w-0">
@@ -133,11 +127,11 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
         <span class="text-xs">Home</span>
       </a>
-      <a href="#earnings" id="nav-earnings" class="flex flex-col items-center justify-center gap-1 flex-1 py-2 app-text-muted hover:opacity-80 transition-colors">
+      <a href="earnings.php" id="nav-earnings" class="flex flex-col items-center justify-center gap-1 flex-1 py-2 app-text-muted hover:opacity-80 transition-colors">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         <span class="text-xs">Earnings</span>
       </a>
-      <a href="#" class="flex flex-col items-center justify-center gap-1 flex-1 py-2 app-text-muted hover:app-text transition-colors relative">
+      <a href="inbox.php" class="flex flex-col items-center justify-center gap-1 flex-1 py-2 app-text-muted hover:app-text transition-colors relative">
         <span class="relative">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"/></svg>
           <span id="inbox-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">9+</span>
@@ -161,6 +155,14 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
           <button type="button" onclick="document.getElementById('menu-sheet').classList.add('hidden'); document.getElementById('menu-sheet').style.display='none';" class="p-2 -m-2 app-text-muted hover:app-text">×</button>
         </div>
         <div class="space-y-2">
+          <a href="earnings.php" class="flex items-center gap-3 p-3 rounded-xl app-border border app-text hover:opacity-90">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Earnings
+          </a>
+          <a href="inbox.php" class="flex items-center gap-3 p-3 rounded-xl app-border border app-text hover:opacity-90">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"/></svg>
+            Inbox
+          </a>
           <a href="profile.php" class="flex items-center gap-3 p-3 rounded-xl app-border border app-text hover:opacity-90">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
             Profile
@@ -331,11 +333,25 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
         .then(function(d) {
           document.getElementById('jobs-loading').classList.add('hidden');
           driverData = d.driver || {};
+          fetch(API_BASE + 'api/messages.php', { credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(md) {
+              var unread = ((md.messages || []).filter(function(x) { return !x.read; })).length;
+              var badge = document.getElementById('inbox-badge');
+              if (badge) {
+                if (unread > 0) {
+                  badge.textContent = unread > 99 ? '99+' : String(unread);
+                  badge.classList.remove('hidden');
+                } else {
+                  badge.classList.add('hidden');
+                }
+              }
+            })
+            .catch(function() {});
           var googleReviewUrl = (d.googleReviewUrl || '').trim();
           var jobs = d.jobs || [];
           var verified = driverData.kyc_verified;
           document.getElementById('verification-banner').classList.toggle('hidden', verified);
-          document.getElementById('wallet-amount').textContent = '£' + (driverData.wallet_earned || 0).toFixed(2);
           setOnlineBtn(driverData.is_online);
           setOpportunitiesText(jobs.length, driverData.wallet_earned);
           updateMap(jobs, driverData);

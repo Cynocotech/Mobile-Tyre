@@ -65,21 +65,46 @@ $last7Revenue = array_sum(array_map(function ($d) { return (float) preg_replace(
 $last30Revenue = array_sum(array_map(function ($d) { return (float) preg_replace('/[^0-9.]/', '', $d['amount_paid'] ?? 0); }, $last30));
 
 $driversPath = $dbFolder . '/drivers.json';
+$adminDriversPath = dirname(__DIR__) . '/data/drivers.json';
 $driverLocations = [];
+$driversAll = [];
+$seen = [];
 $db = [];
+
+// database/drivers.json
 if (is_file($driversPath)) {
   $db = @json_decode(file_get_contents($driversPath), true) ?: [];
   foreach ($db as $id => $d) {
-    if (is_array($d) && !empty($d['driver_lat']) && !empty($d['driver_lng']) && empty($d['blacklisted'])) {
-      $driverLocations[] = [
-        'id' => $id,
-        'name' => $d['name'] ?? '',
-        'lat' => (float) $d['driver_lat'],
-        'lng' => (float) $d['driver_lng'],
-        'is_online' => !empty($d['is_online']),
-        'updated_at' => $d['driver_location_updated_at'] ?? '',
-      ];
+    if (is_array($d) && empty($d['blacklisted'])) {
+      $seen[$id] = true;
+      $isOnline = !empty($d['is_online']);
+      $name = $d['name'] ?? '';
+      $driversAll[] = ['id' => $id, 'name' => $name, 'is_online' => $isOnline];
+      if (!empty($d['driver_lat']) && !empty($d['driver_lng'])) {
+        $driverLocations[] = [
+          'id' => $id,
+          'name' => $name,
+          'lat' => (float) $d['driver_lat'],
+          'lng' => (float) $d['driver_lng'],
+          'is_online' => $isOnline,
+          'updated_at' => $d['driver_location_updated_at'] ?? '',
+        ];
+      }
     }
+  }
+}
+
+// admin/data/drivers.json - merge in drivers not yet in db
+if (is_file($adminDriversPath)) {
+  $admin = @json_decode(file_get_contents($adminDriversPath), true) ?: [];
+  foreach (is_array($admin) ? $admin : [] as $d) {
+    $id = $d['id'] ?? '';
+    if (!$id || isset($seen[$id])) continue;
+    if (!empty($d['blacklisted'])) continue;
+    $seen[$id] = true;
+    $dbRecord = $db[$id] ?? null;
+    $isOnline = $dbRecord ? !empty($dbRecord['is_online']) : false;
+    $driversAll[] = ['id' => $id, 'name' => $d['name'] ?? '', 'is_online' => $isOnline];
   }
 }
 
@@ -89,4 +114,5 @@ echo json_encode([
   'quotes' => count($quotes),
   'recentDeposits' => array_slice(array_reverse($deposits), 0, 10),
   'driverLocations' => $driverLocations,
+  'drivers' => $driversAll,
 ]);

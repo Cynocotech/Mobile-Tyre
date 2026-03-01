@@ -141,6 +141,26 @@ require_once __DIR__ . '/header.php';
       </div>
 </div>
 
+<!-- Message driver modal -->
+<div id="message-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 overflow-y-auto" style="display: none;">
+  <div class="w-full max-w-lg rounded-2xl border border-zinc-700 bg-zinc-800 p-6 my-8">
+    <h3 class="text-lg font-bold text-white mb-1">Message driver</h3>
+    <p id="message-driver-name" class="text-zinc-400 text-sm mb-4">—</p>
+    <input type="hidden" id="message-driver-id">
+    <div id="message-history" class="rounded-lg border border-zinc-600 bg-zinc-800/80 p-4 mb-4 max-h-48 overflow-y-auto space-y-3 text-sm">
+      <p class="text-zinc-500 text-center">Loading…</p>
+    </div>
+    <div class="space-y-2">
+      <label for="message-body" class="block text-sm text-zinc-400">New message</label>
+      <textarea id="message-body" rows="4" class="w-full px-4 py-3 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none placeholder-zinc-500" placeholder="Type your message to the driver..."></textarea>
+    </div>
+    <div class="flex gap-2 mt-4">
+      <button type="button" id="message-send" class="px-4 py-2 bg-safety text-zinc-900 font-bold rounded-lg text-sm hover:bg-[#e5c900]">Send</button>
+      <button type="button" id="message-close" class="px-4 py-2 border border-zinc-600 text-zinc-400 rounded-lg text-sm hover:bg-zinc-700">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Block driver modal -->
 <div id="block-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70" style="display: none;">
       <div class="w-full max-w-md rounded-2xl border border-zinc-700 bg-zinc-800 p-6">
@@ -192,6 +212,7 @@ require_once __DIR__ . '/header.php';
           var sourceBadge = source === 'connect' ? '<span class="px-2 py-0.5 rounded text-xs bg-safety/20 text-safety">Connect</span>' : '<span class="px-2 py-0.5 rounded text-xs bg-zinc-700 text-zinc-400">Admin</span>';
           var blockCountDisplay = blockCount > 0 ? '<span class="font-medium' + (blacklisted ? ' text-red-300' : ' text-zinc-400') + '">' + blockCount + '</span>' : '<span class="text-zinc-500">0</span>';
           var actionBtns = '<div class="flex flex-wrap gap-1 justify-end">' +
+            '<button type="button" class="btn-message px-2 py-1 rounded bg-safety/20 text-safety text-xs" data-id="' + escape(d.id||'') + '" data-name="' + escape(d.name||'') + '">Message</button>' +
             '<button type="button" class="btn-edit-driver px-2 py-1 rounded bg-zinc-700 text-zinc-300 text-xs" data-id="' + escape(d.id||'') + '">Edit</button>' +
             (source === 'admin' ? '<button type="button" class="btn-delete-driver px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + escape(d.id||'') + '">Delete</button>' : '') +
             (blacklisted ? '<button type="button" class="btn-unblock px-2 py-1 rounded bg-zinc-600 text-zinc-200 text-xs" data-id="' + escape(d.id||'') + '">Unblock</button>' : '<button type="button" class="btn-block px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + escape(d.id||'') + '">Block</button>') +
@@ -232,6 +253,9 @@ require_once __DIR__ . '/header.php';
         });
         driversList.querySelectorAll('.btn-unblock').forEach(function(b) {
           b.addEventListener('click', function(e) { e.stopPropagation(); setDriverStatus(b.getAttribute('data-id'), 'unblock'); });
+        });
+        driversList.querySelectorAll('.btn-message').forEach(function(b) {
+          b.addEventListener('click', function(e) { e.stopPropagation(); openMessageModal(b.getAttribute('data-id'), b.getAttribute('data-name')); });
         });
       })
       .catch(function() {
@@ -369,6 +393,69 @@ require_once __DIR__ . '/header.php';
   });
   document.getElementById('block-cancel').addEventListener('click', closeBlockModal);
   document.getElementById('block-modal').addEventListener('click', function(e) { if (e.target.id === 'block-modal') closeBlockModal(); });
+
+  function escMsg(s) { if (s == null || s === '') return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function openMessageModal(driverId, driverName) {
+    document.getElementById('message-driver-id').value = driverId || '';
+    document.getElementById('message-driver-name').textContent = driverName || driverId || '—';
+    document.getElementById('message-body').value = '';
+    var hist = document.getElementById('message-history');
+    hist.innerHTML = '<p class="text-zinc-500 text-center">Loading…</p>';
+    var msgModal = document.getElementById('message-modal');
+    msgModal.classList.remove('hidden');
+    msgModal.style.display = 'flex';
+    if (driverId) {
+      fetch('api/driver-messages.php?driver_id=' + encodeURIComponent(driverId))
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          var msgs = (d.messages || []).slice(0, 20);
+          if (msgs.length === 0) {
+            hist.innerHTML = '<p class="text-zinc-500 text-center">No messages yet. Send one below.</p>';
+          } else {
+            hist.innerHTML = msgs.map(function(m) {
+              var from = m.from === 'admin' ? 'You' : (m.from || '—');
+              var date = (m.created_at || '').replace(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}).*/, '$3/$2/$1 $4:$5');
+              return '<div class="border-b border-zinc-700/50 pb-2 last:border-0"><div class="flex justify-between text-xs text-zinc-500 mb-0.5"><span>' + escMsg(from) + '</span><span>' + escMsg(date) + '</span></div><p class="text-zinc-300 whitespace-pre-wrap">' + escMsg(m.body) + '</p></div>';
+            }).join('');
+          }
+        })
+        .catch(function() {
+          hist.innerHTML = '<p class="text-zinc-500 text-center">Failed to load.</p>';
+        });
+    }
+  }
+  function closeMessageModal() {
+    document.getElementById('message-modal').classList.add('hidden');
+    document.getElementById('message-modal').style.display = 'none';
+  }
+  document.getElementById('message-close').addEventListener('click', closeMessageModal);
+  document.getElementById('message-modal').addEventListener('click', function(e) { if (e.target.id === 'message-modal') closeMessageModal(); });
+  document.getElementById('message-send').addEventListener('click', function() {
+    var driverId = document.getElementById('message-driver-id').value.trim();
+    var body = document.getElementById('message-body').value.trim();
+    if (!driverId || !body) { alert('Enter a message.'); return; }
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    fetch('api/driver-messages.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ driver_id: driverId, body: body })
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      btn.disabled = false;
+      btn.textContent = 'Send';
+      if (d.ok) {
+        document.getElementById('message-body').value = '';
+        openMessageModal(driverId, document.getElementById('message-driver-name').textContent);
+      } else {
+        alert(d.error || 'Failed to send');
+      }
+    }).catch(function() {
+      btn.disabled = false;
+      btn.textContent = 'Send';
+      alert('Network error');
+    });
+  });
 
   document.getElementById('btn-add-driver').addEventListener('click', function() { openDriverModal(); });
   document.getElementById('driver-modal-cancel').addEventListener('click', closeDriverModal);

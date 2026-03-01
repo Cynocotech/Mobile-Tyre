@@ -6,6 +6,8 @@ database/*.csv
 database/jobs.json
 database/quotes.json
 database/drivers.json
+database/products.json
+database/driver_messages.json
 database/proofs/
 database/insurance/
 admin/config.json
