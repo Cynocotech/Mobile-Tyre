@@ -41,16 +41,16 @@ if (strlen($rawInput) > 10240) {
   exit;
 }
 
-// Load Stripe secret key: env first, then dynamic.json
+// Load Stripe secret key: env first, then config (dynamic.json + DB)
 $stripeSecretKey = getenv('STRIPE_SECRET_KEY');
 if (!$stripeSecretKey || trim($stripeSecretKey) === '') {
-  $configPath = __DIR__ . '/dynamic.json';
-  if (is_file($configPath)) {
-    $config = @json_decode(file_get_contents($configPath), true);
-    if (!empty($config['stripeSecretKey'])) {
-      $stripeSecretKey = trim((string) $config['stripeSecretKey']);
-    }
+  if (is_file(__DIR__ . '/config/db.php')) {
+    require_once __DIR__ . '/config/db.php';
+    require_once __DIR__ . '/config/db-helpers.php';
+    if (is_file(__DIR__ . '/config/config.php')) require_once __DIR__ . '/config/config.php';
   }
+  $config = function_exists('getDynamicConfig') ? getDynamicConfig() : (is_file(__DIR__ . '/dynamic.json') ? (@json_decode(file_get_contents(__DIR__ . '/dynamic.json'), true) ?: []) : []);
+  if (!empty($config['stripeSecretKey'])) $stripeSecretKey = trim((string) $config['stripeSecretKey']);
 }
 
 if (!$stripeSecretKey) {

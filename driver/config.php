@@ -3,12 +3,12 @@
  * Driver system config and helpers – database only.
  */
 $base = dirname(__DIR__);
-$configPath = $base . '/dynamic.json';
 if (is_file($base . '/config/db.php')) {
   require_once $base . '/config/db.php';
   require_once $base . '/config/db-helpers.php';
+  if (is_file($base . '/config/config.php')) require_once $base . '/config/config.php';
 }
-$config = is_file($configPath) ? json_decode(file_get_contents($configPath), true) : [];
+$config = function_exists('getDynamicConfig') ? getDynamicConfig() : (is_file($base . '/dynamic.json') ? (json_decode(file_get_contents($base . '/dynamic.json'), true) ?: []) : []);
 $useDb = !empty($config['useDatabase']) && function_exists('useDatabase') && useDatabase();
 $stripeSecretKey = getenv('STRIPE_SECRET_KEY') ?: ($config['stripeSecretKey'] ?? '');
 $GLOBALS['stripeSecretKey'] = $stripeSecretKey;

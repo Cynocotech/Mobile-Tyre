@@ -824,7 +824,7 @@
               if (calcTyresPlus) calcTyresPlus.addEventListener('click', function(){ calcTyres.value = Math.min(8, (parseInt(calcTyres.value,10)||1) + 1); updateCalc(); });
               updateCalc();
             }
-            fetch('dynamic.json').then(function(r){ return r.json(); }).then(initCalculator).catch(function(){ initCalculator({}); });
+            fetch('api-config.php').then(function(r){ return r.json(); }).then(initCalculator).catch(function(){ fetch('dynamic.json').then(function(r){ return r.json(); }).then(initCalculator).catch(function(){ initCalculator({}); }); });
           })();
         </script>
 

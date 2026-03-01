@@ -7,9 +7,11 @@ if (empty($_SESSION['admin_ok'])) { http_response_code(403); header('Content-Typ
 header('Content-Type: application/json');
 
 $base = dirname(__DIR__, 2);
+require_once $base . '/config/db.php';
+require_once $base . '/config/db-helpers.php';
+require_once $base . '/config/config.php';
 require_once $base . '/driver/config.php';
-$configPath = $base . '/dynamic.json';
-$config = is_file($configPath) ? json_decode(file_get_contents($configPath), true) : [];
+$config = getDynamicConfig();
 $stripeSecretKey = getenv('STRIPE_SECRET_KEY') ?: ($config['stripeSecretKey'] ?? '');
 
 if (!$stripeSecretKey) {

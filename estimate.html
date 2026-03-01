@@ -365,12 +365,12 @@
       ];
 
       function loadConfig() {
-        return fetch('dynamic.json').then(function (r) { return r.ok ? r.json() : {}; }).then(function (data) {
-          if (data.laborPrice != null) CONFIG.laborPrice = Number(data.laborPrice);
-          if (data.prices && typeof data.prices === 'object') {
+        return fetch('api-config.php').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return fetch('dynamic.json').then(function (r) { return r.ok ? r.json() : {}; }); }).then(function (data) {
+          if (data && data.laborPrice != null) CONFIG.laborPrice = Number(data.laborPrice);
+          if (data && data.prices && typeof data.prices === 'object') {
             Object.keys(data.prices).forEach(function (k) { CONFIG.prices[k] = Number(data.prices[k]) || 0; });
           }
-          if (data.services && Array.isArray(data.services) && data.services.length > 0) {
+          if (data && data.services && Array.isArray(data.services) && data.services.length > 0) {
             serviceDefs = data.services.map(function (s) {
               return { id: s.id || '', label: s.label || '', key: s.key || '', price: Number(s.price) || 0 };
             });

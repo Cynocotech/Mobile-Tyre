@@ -1,7 +1,7 @@
 <?php
 /**
  * Admin authentication – session-based. Include at top of all admin pages.
- * Default password: password (change in config or use php -r "echo password_hash('yourpass', PASSWORD_DEFAULT);")
+ * Uses admin_settings table when useDatabase, else admin/config.json.
  */
 if (session_status() === PHP_SESSION_NONE) {
   session_start([
@@ -14,10 +14,28 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/includes/security.php';
 security_headers();
 
-$configPath = __DIR__ . '/config.json';
-$config = is_file($configPath) ? json_decode(file_get_contents($configPath), true) : [];
-$hash = $config['passwordHash'] ?? '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
-$timeout = (int) ($config['sessionTimeout'] ?? 86400);
+$hash = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
+$timeout = 86400;
+$base = dirname(__DIR__);
+if (is_file($base . '/config/db.php')) {
+  require_once $base . '/config/db.php';
+  require_once $base . '/config/db-helpers.php';
+  if (function_exists('useDatabase') && useDatabase() && function_exists('dbGetAdminSettings')) {
+    $dbConfig = dbGetAdminSettings();
+    $hash = $dbConfig['passwordHash'] ?? $hash;
+    $timeout = (int) ($dbConfig['sessionTimeout'] ?? $timeout);
+  } else {
+    $configPath = __DIR__ . '/config.json';
+    $config = is_file($configPath) ? json_decode(file_get_contents($configPath), true) : [];
+    $hash = $config['passwordHash'] ?? $hash;
+    $timeout = (int) ($config['sessionTimeout'] ?? $timeout);
+  }
+} else {
+  $configPath = __DIR__ . '/config.json';
+  $config = is_file($configPath) ? json_decode(file_get_contents($configPath), true) : [];
+  $hash = $config['passwordHash'] ?? $hash;
+  $timeout = (int) ($config['sessionTimeout'] ?? $timeout);
+}
 
 if (isset($_SESSION['admin_time']) && (time() - $_SESSION['admin_time']) > $timeout) {
   unset($_SESSION['admin_ok'], $_SESSION['admin_time']);

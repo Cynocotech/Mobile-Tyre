@@ -3,8 +3,6 @@ $pageTitle = 'Dashboard';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/header.php';
 ?>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <h1 class="text-2xl font-bold text-white mb-8 flex items-center gap-3">
   <svg class="w-8 h-8 text-safety" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
   Dashboard
@@ -131,6 +129,17 @@ require_once __DIR__ . '/header.php';
 (function() {
   var adminMap, adminMarkers = [];
 
+  function loadLeafletThen(cb) {
+    if (typeof L !== 'undefined') { cb(); return; }
+    var link = document.createElement('link');
+    link.rel = 'stylesheet'; link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'; link.crossOrigin = '';
+    document.head.appendChild(link);
+    var s = document.createElement('script');
+    s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'; s.crossOrigin = '';
+    s.onload = cb;
+    document.head.appendChild(s);
+  }
+
   function initAdminMap(locations) {
     var container = document.getElementById('admin-map-container');
     var emptyMsg = document.getElementById('admin-map-empty');
@@ -141,27 +150,29 @@ require_once __DIR__ . '/header.php';
     }
     if (container) container.classList.remove('hidden');
     if (emptyMsg) emptyMsg.classList.add('hidden');
-    if (!adminMap) {
-      adminMap = L.map('admin-map').setView([51.5074, -0.1278], 10);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap',
-        maxZoom: 19
-      }).addTo(adminMap);
+    function addMarkers() {
+      adminMarkers.forEach(function(m) { adminMap.removeLayer(m); });
+      adminMarkers = [];
+      var bounds = [];
+      locations.forEach(function(d) {
+        var lat = parseFloat(d.lat), lng = parseFloat(d.lng);
+        if (isNaN(lat) || isNaN(lng)) return;
+        var name = (d.name || 'Driver').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        var popup = name + (d.is_online ? ' <span class="text-green-400">• Online</span>' : '');
+        var m = L.marker([lat, lng]).addTo(adminMap).bindPopup(popup);
+        adminMarkers.push(m);
+        bounds.push([lat, lng]);
+      });
+      if (bounds.length > 0) adminMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
     }
-    adminMarkers.forEach(function(m) { adminMap.removeLayer(m); });
-    adminMarkers = [];
-    var bounds = [];
-    locations.forEach(function(d) {
-      var lat = parseFloat(d.lat), lng = parseFloat(d.lng);
-      if (isNaN(lat) || isNaN(lng)) return;
-      var name = (d.name || 'Driver').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      var popup = name + (d.is_online ? ' <span class="text-green-400">• Online</span>' : '');
-      var m = L.marker([lat, lng]).addTo(adminMap).bindPopup(popup);
-      adminMarkers.push(m);
-      bounds.push([lat, lng]);
-    });
-    if (bounds.length > 0) {
-      adminMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
+    if (!adminMap) {
+      loadLeafletThen(function() {
+        adminMap = L.map('admin-map').setView([51.5074, -0.1278], 10);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 }).addTo(adminMap);
+        addMarkers();
+      });
+    } else {
+      addMarkers();
     }
   }
 
@@ -218,7 +229,7 @@ require_once __DIR__ . '/header.php';
   }
 
   function fetchStats() {
-    AdminAPI.fetchWithTimeout('api/stats.php')
+    return AdminAPI.fetchWithTimeout('api/stats.php')
       .then(function(data) {
         if (data && data.error) {
           document.getElementById('stats-loading').textContent = data.error || 'Failed to load stats.';
@@ -234,19 +245,20 @@ require_once __DIR__ . '/header.php';
       });
   }
 
-  fetchStats();
-  if (typeof EventSource !== 'undefined') {
-    var evtSrc = new EventSource('api/stream.php');
-    evtSrc.addEventListener('stats', function(e) {
-      try { renderStats(JSON.parse(e.data)); } catch (_) {}
-    });
-    evtSrc.onerror = function() {
-      evtSrc.close();
+  fetchStats().finally(function() {
+    if (typeof EventSource !== 'undefined') {
+      var evtSrc = new EventSource('api/stream.php');
+      evtSrc.addEventListener('stats', function(e) {
+        try { renderStats(JSON.parse(e.data)); } catch (_) {}
+      });
+      evtSrc.onerror = function() {
+        evtSrc.close();
+        setInterval(fetchStats, 15000);
+      };
+    } else {
       setInterval(fetchStats, 15000);
-    };
-  } else {
-    setInterval(fetchStats, 15000);
-  }
+    }
+  });
 
   function showOrder(ref) {
     if (!ref) return;

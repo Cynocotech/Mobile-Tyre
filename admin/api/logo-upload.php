@@ -12,6 +12,9 @@ if (empty($_SESSION['admin_ok'])) {
 header('Content-Type: application/json');
 
 $base = dirname(__DIR__, 2);
+require_once $base . '/config/db.php';
+require_once $base . '/config/db-helpers.php';
+require_once $base . '/config/config.php';
 $dynamicPath = $base . '/dynamic.json';
 $uploadsDir = $base . '/uploads';
 
@@ -22,15 +25,20 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 if (!empty($_POST['remove']) || isset($_POST['remove'])) {
-  $current = is_file($dynamicPath) ? @json_decode(file_get_contents($dynamicPath), true) : [];
-  if (!is_array($current)) $current = [];
+  $current = getDynamicConfig();
   $old = $current['logoUrl'] ?? '';
-  unset($current['logoUrl']);
+  if (function_exists('useDatabase') && useDatabase() && function_exists('dbSetSiteConfig')) {
+    dbSetSiteConfig('logoUrl', '');
+  } else {
+    $j = is_file($dynamicPath) ? @json_decode(file_get_contents($dynamicPath), true) : [];
+    if (!is_array($j)) $j = [];
+    unset($j['logoUrl']);
+    file_put_contents($dynamicPath, json_encode($j, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
+  }
   if ($old && strpos($old, 'uploads/') === 0) {
     $oldPath = $base . '/' . $old;
     if (is_file($oldPath)) @unlink($oldPath);
   }
-  file_put_contents($dynamicPath, json_encode($current, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
   echo json_encode(['ok' => true]);
   exit;
 }
@@ -84,15 +92,23 @@ if (!move_uploaded_file($file['tmp_name'], $destPath)) {
 }
 
 $logoUrl = 'uploads/' . $destName;
-$current = is_file($dynamicPath) ? @json_decode(file_get_contents($dynamicPath), true) : [];
-if (!is_array($current)) $current = [];
-$current['logoUrl'] = $logoUrl;
-
-if (file_put_contents($dynamicPath, json_encode($current, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX) === false) {
-  @unlink($destPath);
-  http_response_code(500);
-  echo json_encode(['error' => 'Failed to save config']);
-  exit;
+if (function_exists('useDatabase') && useDatabase() && function_exists('dbSetSiteConfig')) {
+  if (!dbSetSiteConfig('logoUrl', $logoUrl)) {
+    @unlink($destPath);
+    http_response_code(500);
+    echo json_encode(['error' => 'Failed to save config']);
+    exit;
+  }
+} else {
+  $current = is_file($dynamicPath) ? @json_decode(file_get_contents($dynamicPath), true) : [];
+  if (!is_array($current)) $current = [];
+  $current['logoUrl'] = $logoUrl;
+  if (file_put_contents($dynamicPath, json_encode($current, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX) === false) {
+    @unlink($destPath);
+    http_response_code(500);
+    echo json_encode(['error' => 'Failed to save config']);
+    exit;
+  }
 }
 
 echo json_encode(['ok' => true, 'logoUrl' => $logoUrl]);

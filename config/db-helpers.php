@@ -193,6 +193,72 @@ function dbSaveQuote(array $data): bool {
   return $st->execute([$json]);
 }
 
+/**
+ * Optimized dashboard stats – uses targeted queries, no full-table scans.
+ */
+function dbGetDashboardStats(): array {
+  $pdo = db();
+  if (!$pdo) return ['deposits' => ['count' => 0, 'total' => 0, 'last7' => 0, 'last30' => 0, 'last7Revenue' => 0, 'last30Revenue' => 0], 'jobs' => 0, 'quotes' => 0, 'recentDeposits' => [], 'driverLocations' => [], 'drivers' => []];
+
+  $jobsCount = (int) $pdo->query("SELECT COUNT(*) FROM jobs")->fetchColumn();
+  $quotesCount = (int) $pdo->query("SELECT COUNT(*) FROM quotes")->fetchColumn();
+
+  // Deposit aggregates in SQL (no row fetch for totals)
+  $paidCount = 0;
+  $totalDeposits = 0.0;
+  $last7Count = 0;
+  $last30Count = 0;
+  $last7Revenue = 0.0;
+  $last30Revenue = 0.0;
+  $cutoff7 = strtotime('-7 days');
+  $cutoff30 = strtotime('-30 days');
+  try {
+    $agg = $pdo->query("SELECT COUNT(*) AS cnt FROM jobs WHERE amount_paid IS NOT NULL AND amount_paid != ''")->fetch(PDO::FETCH_ASSOC);
+    $paidCount = (int) ($agg['cnt'] ?? 0);
+    $amtSt = $pdo->query("SELECT amount_paid, COALESCE(created_at, date) AS dt FROM jobs WHERE amount_paid IS NOT NULL AND amount_paid != ''");
+    while ($row = $amtSt->fetch(PDO::FETCH_ASSOC)) {
+      $amt = (float) preg_replace('/[^0-9.]/', '', $row['amount_paid'] ?? '0');
+      $totalDeposits += $amt;
+      $t = strtotime($row['dt'] ?? '');
+      if ($t >= $cutoff7) { $last7Count++; $last7Revenue += $amt; }
+      if ($t >= $cutoff30) { $last30Count++; $last30Revenue += $amt; }
+    }
+  } catch (Throwable $e) { /* fallback */ }
+
+  // Recent 10 deposits only
+  $recent = [];
+  $recentSt = $pdo->query("SELECT reference, date, created_at, email, name, phone, postcode, estimate_total, amount_paid, payment_status, session_id FROM jobs WHERE amount_paid IS NOT NULL AND amount_paid != '' ORDER BY COALESCE(created_at, date) DESC LIMIT 10");
+  while ($r = $recentSt->fetch(PDO::FETCH_ASSOC)) {
+    $recent[] = ['date' => $r['date'] ?? $r['created_at'] ?? '', 'reference' => $r['reference'] ?? '', 'session_id' => $r['session_id'] ?? '', 'email' => $r['email'] ?? '', 'name' => $r['name'] ?? '', 'phone' => $r['phone'] ?? '', 'postcode' => $r['postcode'] ?? '', 'estimate_total' => $r['estimate_total'] ?? '', 'amount_paid' => $r['amount_paid'] ?? '', 'payment_status' => $r['payment_status'] ?? 'paid'];
+  }
+
+  // Drivers: lightweight – id, name, is_online, location only if present
+  $drivers = [];
+  $driverLocations = [];
+  $driversSt = $pdo->query("SELECT id, name, is_online, driver_lat, driver_lng, driver_location_updated_at FROM drivers WHERE blacklisted = 0");
+  while ($r = $driversSt->fetch(PDO::FETCH_ASSOC)) {
+    $id = $r['id'] ?? '';
+    if (!$id) continue;
+    $name = $r['name'] ?? '';
+    $isOnline = !empty($r['is_online']);
+    $drivers[] = ['id' => $id, 'name' => $name, 'is_online' => $isOnline];
+    $lat = $r['driver_lat'] ?? '';
+    $lng = $r['driver_lng'] ?? '';
+    if ($lat !== '' && $lat !== null && $lng !== '' && $lng !== null) {
+      $driverLocations[] = ['id' => $id, 'name' => $name, 'lat' => (float) $lat, 'lng' => (float) $lng, 'is_online' => $isOnline, 'updated_at' => $r['driver_location_updated_at'] ?? ''];
+    }
+  }
+
+  return [
+    'deposits' => ['count' => $paidCount, 'total' => round($totalDeposits, 2), 'last7' => $last7Count, 'last30' => $last30Count, 'last7Revenue' => round($last7Revenue, 2), 'last30Revenue' => round($last30Revenue, 2)],
+    'jobs' => $jobsCount,
+    'quotes' => $quotesCount,
+    'recentDeposits' => $recent,
+    'driverLocations' => $driverLocations,
+    'drivers' => $drivers,
+  ];
+}
+
 function dbGetDriverMessages(string $driverId): array {
   $pdo = db();
   if (!$pdo || !$driverId) return [];
@@ -267,4 +333,187 @@ function dbRowToDriver(array $r): array {
     }
   }
   return $d;
+}
+
+// --- Admin settings (replaces admin/config.json) ---
+function dbGetAdminSettings(): array {
+  $pdo = db();
+  if (!$pdo) return [];
+  $rows = $pdo->query("SELECT id, value FROM admin_settings")->fetchAll(PDO::FETCH_ASSOC);
+  $out = [];
+  foreach ($rows as $r) {
+    $k = $r['id'] ?? '';
+    if ($k === '') continue;
+    $v = $r['value'] ?? '';
+    $out[$k] = $v;
+    if (in_array($k, ['sessionTimeout', 'sort_order', 'stock'])) $out[$k] = (int) $v;
+  }
+  return $out;
+}
+
+function dbGetAdminSetting(string $key): ?string {
+  $pdo = db();
+  if (!$pdo || $key === '') return null;
+  $st = $pdo->prepare("SELECT value FROM admin_settings WHERE id = ?");
+  $st->execute([$key]);
+  $r = $st->fetch(PDO::FETCH_ASSOC);
+  return isset($r['value']) ? $r['value'] : null;
+}
+
+function dbSetAdminSetting(string $key, $value): bool {
+  $pdo = db();
+  if (!$pdo || $key === '') return false;
+  $v = is_array($value) || is_object($value) ? json_encode($value) : (string) $value;
+  $isMysql = strpos((string) $pdo->getAttribute(PDO::ATTR_DRIVER_NAME), 'mysql') !== false;
+  if ($isMysql) {
+    $st = $pdo->prepare("INSERT INTO admin_settings (id, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)");
+  } else {
+    $st = $pdo->prepare("INSERT OR REPLACE INTO admin_settings (id, value) VALUES (?, ?)");
+  }
+  return $st->execute([$key, $v]);
+}
+
+// --- Services (replaces admin/data/services.json) ---
+function dbGetServices(): array {
+  $pdo = db();
+  if (!$pdo) return [];
+  $rows = $pdo->query("SELECT * FROM services ORDER BY sort_order ASC, id ASC")->fetchAll(PDO::FETCH_ASSOC);
+  $out = [];
+  foreach ($rows as $r) {
+    $s = [
+      'id' => $r['id'] ?? '',
+      'key' => $r['service_key'] ?? '',
+      'label' => $r['label'] ?? '',
+      'price' => (float) ($r['price'] ?? 0),
+      'description' => $r['description'] ?? '',
+      'enabled' => !empty($r['enabled']),
+      'seo' => $r['seo'] ? json_decode($r['seo'], true) : ['title' => '', 'description' => '', 'ogImage' => ''],
+      'icon' => $r['icon'] ?? 'wrench',
+    ];
+    $out[] = $s;
+  }
+  return $out;
+}
+
+function dbSaveService(array $s): bool {
+  $pdo = db();
+  if (!$pdo) return false;
+  $id = preg_replace('/[^a-z0-9_-]/', '', $s['id'] ?? uniqid('s'));
+  $key = preg_replace('/[^a-zA-Z0-9]/', '', $s['key'] ?? '');
+  $label = trim($s['label'] ?? '');
+  $price = (float) ($s['price'] ?? 0);
+  $desc = trim($s['description'] ?? '');
+  $enabled = !empty($s['enabled']) ? 1 : 0;
+  $seo = isset($s['seo']) && is_array($s['seo']) ? json_encode($s['seo']) : '{}';
+  $icon = trim($s['icon'] ?? 'wrench');
+  $isMysql = strpos((string) $pdo->getAttribute(PDO::ATTR_DRIVER_NAME), 'mysql') !== false;
+  if ($isMysql) {
+    $st = $pdo->prepare("INSERT INTO services (id, service_key, label, price, description, enabled, seo, icon) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE service_key=VALUES(service_key), label=VALUES(label), price=VALUES(price), description=VALUES(description), enabled=VALUES(enabled), seo=VALUES(seo), icon=VALUES(icon)");
+  } else {
+    $st = $pdo->prepare("INSERT OR REPLACE INTO services (id, service_key, label, price, description, enabled, seo, icon) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+  }
+  return $st->execute([$id, $key, $label, $price, $desc, $enabled, $seo, $icon]);
+}
+
+function dbDeleteService(string $id): bool {
+  $pdo = db();
+  if (!$pdo || $id === '') return false;
+  $st = $pdo->prepare("DELETE FROM services WHERE id = ?");
+  return $st->execute([$id]);
+}
+
+function dbReorderServices(array $order): bool {
+  $pdo = db();
+  if (!$pdo || empty($order)) return true;
+  foreach ($order as $i => $id) {
+    $st = $pdo->prepare("UPDATE services SET sort_order = ? WHERE id = ?");
+    $st->execute([$i, $id]);
+  }
+  return true;
+}
+
+// --- Products (replaces database/products.json) ---
+function dbGetProducts(): array {
+  $pdo = db();
+  if (!$pdo) return [];
+  $rows = $pdo->query("SELECT * FROM products ORDER BY id ASC")->fetchAll(PDO::FETCH_ASSOC);
+  $out = [];
+  foreach ($rows as $r) {
+    $out[] = [
+      'id' => $r['id'] ?? '',
+      'sku' => $r['sku'] ?? '',
+      'name' => $r['name'] ?? '',
+      'description' => $r['description'] ?? '',
+      'price' => (float) ($r['price'] ?? 0),
+      'category' => in_array($r['category'] ?? '', ['Tyre', 'Part', 'Other']) ? $r['category'] : 'Other',
+      'stock' => (int) ($r['stock'] ?? 0),
+      'image_url' => $r['image_url'] ?? '',
+      'status' => ($r['status'] ?? '') === 'active' ? 'active' : 'inactive',
+    ];
+  }
+  return $out;
+}
+
+function dbSaveProduct(array $p): bool {
+  $pdo = db();
+  if (!$pdo) return false;
+  $id = trim($p['id'] ?? '') ?: ('prd_' . bin2hex(random_bytes(8)));
+  $sku = trim($p['sku'] ?? '');
+  $name = trim($p['name'] ?? '');
+  $desc = trim($p['description'] ?? '');
+  $price = (float) ($p['price'] ?? 0);
+  $cat = in_array($p['category'] ?? '', ['Tyre', 'Part', 'Other']) ? $p['category'] : 'Other';
+  $stock = max(0, (int) ($p['stock'] ?? 0));
+  $img = trim($p['image_url'] ?? '');
+  $status = !empty($p['status']) && $p['status'] === 'active' ? 'active' : 'inactive';
+  $isMysql = strpos((string) $pdo->getAttribute(PDO::ATTR_DRIVER_NAME), 'mysql') !== false;
+  if ($isMysql) {
+    $st = $pdo->prepare("INSERT INTO products (id, sku, name, description, price, category, stock, image_url, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE sku=VALUES(sku), name=VALUES(name), description=VALUES(description), price=VALUES(price), category=VALUES(category), stock=VALUES(stock), image_url=VALUES(image_url), status=VALUES(status)");
+  } else {
+    $st = $pdo->prepare("INSERT OR REPLACE INTO products (id, sku, name, description, price, category, stock, image_url, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+  }
+  return $st->execute([$id, $sku, $name, $desc, $price, $cat, $stock, $img, $status]);
+}
+
+function dbDeleteProduct(string $id): bool {
+  $pdo = db();
+  if (!$pdo || $id === '') return false;
+  $st = $pdo->prepare("DELETE FROM products WHERE id = ?");
+  return $st->execute([$id]);
+}
+
+// --- Site config (replaces dynamic.json for admin-editable keys) ---
+function dbGetSiteConfig(): array {
+  $pdo = db();
+  if (!$pdo) return [];
+  $rows = $pdo->query("SELECT id, value FROM site_config")->fetchAll(PDO::FETCH_ASSOC);
+  $out = [];
+  foreach ($rows as $r) {
+    $k = $r['id'] ?? '';
+    if ($k === '') continue;
+    $v = $r['value'] ?? '';
+    $dec = @json_decode($v, true);
+    $out[$k] = (json_last_error() === JSON_ERROR_NONE) ? $dec : $v;
+  }
+  return $out;
+}
+
+function dbSetSiteConfig(string $key, $value): bool {
+  $pdo = db();
+  if (!$pdo || $key === '') return false;
+  $v = is_array($value) || is_object($value) ? json_encode($value) : (string) $value;
+  $isMysql = strpos((string) $pdo->getAttribute(PDO::ATTR_DRIVER_NAME), 'mysql') !== false;
+  if ($isMysql) {
+    $st = $pdo->prepare("INSERT INTO site_config (id, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)");
+  } else {
+    $st = $pdo->prepare("INSERT OR REPLACE INTO site_config (id, value) VALUES (?, ?)");
+  }
+  return $st->execute([$key, $v]);
+}
+
+function dbSetSiteConfigMultiple(array $kv): bool {
+  foreach ($kv as $k => $v) {
+    if (is_string($k) && $k !== '') dbSetSiteConfig($k, $v);
+  }
+  return true;
 }

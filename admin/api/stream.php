@@ -16,7 +16,8 @@ if (empty($_SESSION['admin_ok'])) {
 ignore_user_abort(false);
 
 $base = dirname(__DIR__, 2);
-$dbFolder = $base . '/database';
+require_once $base . '/config/db.php';
+require_once $base . '/config/db-helpers.php';
 
 header('Content-Type: text/event-stream');
 header('Cache-Control: no-cache');
@@ -31,89 +32,20 @@ function sendEvent(string $event, mixed $data): void {
   flush();
 }
 
-function buildStats(string $dbFolder): array {
-  $base = dirname($dbFolder);
-  require_once $base . '/includes/jobs.php';
-  require_once $base . '/driver/config.php';
-
-  $deposits = [];
-  $jobs = [];
-  $jobsAll = jobsGetAll();
-  foreach ($jobsAll as $ref => $v) {
-    if (!is_array($v)) continue;
-    $jobs[] = $v;
-    $deposits[] = [
-      'date' => $v['date'] ?? $v['created_at'] ?? '',
-      'reference' => $v['reference'] ?? $ref,
-      'session_id' => $v['session_id'] ?? '',
-      'email' => $v['email'] ?? '',
-      'name' => $v['name'] ?? '',
-      'phone' => $v['phone'] ?? '',
-      'postcode' => $v['postcode'] ?? '',
-      'estimate_total' => $v['estimate_total'] ?? '',
-      'amount_paid' => $v['amount_paid'] ?? '',
-      'payment_status' => $v['payment_status'] ?? 'paid',
-    ];
+function buildStats(): array {
+  if (function_exists('useDatabase') && useDatabase() && function_exists('dbGetDashboardStats')) {
+    return dbGetDashboardStats();
   }
-  require_once $base . '/includes/quotes.php';
-  $quotes = quotesGetAll();
-
-  $totalDeposits = array_sum(array_map(fn($d) => (float) preg_replace('/[^0-9.]/', '', $d['amount_paid'] ?? '0'), $deposits));
-  $paidCount = count(array_filter($deposits, fn($d) => ($d['payment_status'] ?? '') === 'paid'));
-  $last7 = array_filter($deposits, fn($d) => ($t = strtotime($d['date'] ?? '')) && $t >= strtotime('-7 days'));
-  $last30 = array_filter($deposits, fn($d) => ($t = strtotime($d['date'] ?? '')) && $t >= strtotime('-30 days'));
-  $last7Revenue = array_sum(array_map(fn($d) => (float) preg_replace('/[^0-9.]/', '', $d['amount_paid'] ?? '0'), $last7));
-  $last30Revenue = array_sum(array_map(fn($d) => (float) preg_replace('/[^0-9.]/', '', $d['amount_paid'] ?? '0'), $last30));
-
-  $driversAll = [];
-  $driverLocations = [];
-  $seen = [];
-  $db = getDriverDb();
-  foreach (is_array($db) ? $db : [] as $id => $d) {
-    if (is_array($d) && empty($d['blacklisted'])) {
-      $seen[$id] = true;
-      $isOnline = !empty($d['is_online']);
-      $name = $d['name'] ?? '';
-      $driversAll[] = ['id' => $id, 'name' => $name, 'is_online' => $isOnline];
-      if (!empty($d['driver_lat']) && !empty($d['driver_lng'])) {
-        $driverLocations[] = [
-          'id' => $id, 'name' => $name,
-          'lat' => (float) $d['driver_lat'], 'lng' => (float) $d['driver_lng'],
-          'is_online' => $isOnline, 'updated_at' => $d['driver_location_updated_at'] ?? '',
-        ];
-      }
-    }
-  }
-
-  return [
-    'deposits' => [
-      'count' => $paidCount,
-      'total' => round($totalDeposits, 2),
-      'last7' => count($last7),
-      'last30' => count($last30),
-      'last7Revenue' => round($last7Revenue, 2),
-      'last30Revenue' => round($last30Revenue, 2),
-    ],
-    'jobs' => count($jobs),
-    'quotes' => count($quotes),
-    'recentDeposits' => (function() use ($deposits) {
-      usort($deposits, fn($a, $b) => (strtotime($b['date'] ?? '') ?: 0) - (strtotime($a['date'] ?? '') ?: 0));
-      return array_slice($deposits, 0, 10);
-    })(),
-    'driverLocations' => $driverLocations,
-    'drivers' => $driversAll,
-  ];
+  return ['deposits' => ['count' => 0, 'total' => 0, 'last7' => 0, 'last30' => 0, 'last7Revenue' => 0, 'last30Revenue' => 0], 'jobs' => 0, 'quotes' => 0, 'recentDeposits' => [], 'driverLocations' => [], 'drivers' => []];
 }
 
-$lastMtime = 0;
 $interval = 2;
 $maxTime = time() + 50;
 
-sendEvent('stats', buildStats($dbFolder));
+sendEvent('stats', buildStats());
 
 while (time() < $maxTime && connection_status() === CONNECTION_NORMAL) {
-  $lastMtime = time();
-  sendEvent('stats', buildStats($dbFolder));
+  sendEvent('stats', buildStats());
   echo ": keepalive\n\n";
   flush();
   sleep($interval);
