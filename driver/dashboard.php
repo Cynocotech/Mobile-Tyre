@@ -20,6 +20,7 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
   <script>tailwind.config = { theme: { extend: { colors: { safety: '#fede00' } } } }</script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="../html5-qrcode-master/minified/html5-qrcode.min.js" onerror="this.remove();var s=document.createElement('script');s.src='https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';document.head.appendChild(s);"></script>
 </head>
 <body class="bg-zinc-900 text-zinc-200 antialiased min-h-screen">
   <header class="sticky top-0 z-40 bg-zinc-900/95 backdrop-blur border-b border-zinc-700">
@@ -48,6 +49,9 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
         <button type="button" id="btn-location" class="px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-zinc-300 text-sm hover:bg-zinc-700 whitespace-nowrap">
           Update my location
         </button>
+        <button type="button" id="btn-scan-qr" class="px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-zinc-300 text-sm hover:bg-zinc-700 whitespace-nowrap">
+          Scan receipt QR
+        </button>
       </div>
     </div>
 
@@ -71,6 +75,17 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       <p class="text-sm mt-2">Jobs will appear here when assigned by the office.</p>
     </div>
   </main>
+
+  <!-- QR Scanner modal -->
+  <div id="qr-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 overflow-y-auto" style="display: none;">
+    <div class="w-full max-w-lg rounded-2xl border border-zinc-700 bg-zinc-800 p-6 my-4">
+      <h3 class="text-lg font-bold text-white mb-2">Scan job receipt</h3>
+      <p class="text-zinc-500 text-sm mb-4">Point your camera at the customer's receipt QR code</p>
+      <div id="qr-reader" class="rounded-xl overflow-hidden bg-black mb-4" style="width: 100%; min-height: 280px;"></div>
+      <p id="qr-status" class="text-sm text-zinc-400 mb-4 hidden"></p>
+      <button type="button" id="qr-close" class="w-full px-4 py-2 border border-zinc-600 text-zinc-300 rounded-lg text-sm hover:bg-zinc-700">Close</button>
+    </div>
+  </div>
 
   <!-- Location modal -->
   <div id="location-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70" style="display: none;">
@@ -310,6 +325,73 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       document.getElementById('location-modal').style.display = 'none';
     }
 
+    var qrScanner = null;
+    var qrLastScanned = '';
+    function goToVerifyFromScan(decodedText) {
+      var u = String(decodedText).trim();
+      if (u.match(/^[0-9]{4,6}$/)) return '../verify.php?ref=' + encodeURIComponent(u);
+      var m = u.match(/session_id=([a-zA-Z0-9_]+)/);
+      if (m) return '../verify.php?session_id=' + encodeURIComponent(m[1]);
+      if (u.indexOf('http') === 0 && u.indexOf('verify') !== -1) return u;
+      return null;
+    }
+    function openQrModal() {
+      var modal = document.getElementById('qr-modal');
+      var status = document.getElementById('qr-status');
+      status.classList.add('hidden');
+      status.textContent = '';
+      qrLastScanned = '';
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+      var ScannerClass = (typeof Html5QrcodeScanner !== 'undefined' && Html5QrcodeScanner) || (window.__Html5QrcodeLibrary__ && window.__Html5QrcodeLibrary__.Html5QrcodeScanner);
+      if (!ScannerClass) {
+        status.textContent = 'Scanner not loaded. Ensure html5-qrcode-master/minified/html5-qrcode.min.js is accessible.';
+        status.classList.remove('hidden');
+        status.classList.add('text-amber-400');
+        return;
+      }
+      var readerEl = document.getElementById('qr-reader');
+      readerEl.innerHTML = '';
+      qrScanner = new ScannerClass('qr-reader', { fps: 12, qrbox: 250, rememberLastUsedCamera: false });
+      qrScanner.render(
+        function onSuccess(decodedText) {
+          if (!decodedText || decodedText === qrLastScanned) return;
+          qrLastScanned = decodedText;
+          var target = goToVerifyFromScan(decodedText);
+          if (target) {
+            status.textContent = 'Found! Loading…';
+            status.classList.remove('hidden');
+            status.classList.add('text-green-400');
+            qrScanner.clear().catch(function() {});
+            qrScanner = null;
+            window.location.href = target;
+          } else {
+            status.textContent = 'Unknown format. Scan the receipt QR code.';
+            status.classList.remove('hidden');
+            status.classList.add('text-amber-400');
+          }
+        },
+        function onError() {}
+      );
+    }
+
+    function closeQrModal() {
+      var modal = document.getElementById('qr-modal');
+      if (qrScanner) {
+        qrScanner.clear().catch(function() {});
+        qrScanner = null;
+      }
+      document.getElementById('qr-reader').innerHTML = '';
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+    }
+
+    document.getElementById('btn-scan-qr').addEventListener('click', openQrModal);
+    document.getElementById('qr-close').addEventListener('click', closeQrModal);
+    document.getElementById('qr-modal').addEventListener('click', function(e) {
+      if (e.target.id === 'qr-modal') closeQrModal();
+    });
+
     function markCashPaid(ref) {
       var fd = new FormData();
       fd.append('action', 'cash_paid');
@@ -356,6 +438,10 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
   <style>
   .driver-marker { filter: hue-rotate(45deg) saturate(1.5); }
   #map.leaflet-container { background: #27272a !important; }
+  #qr-reader video, #qr-reader img, #qr-reader canvas { border-radius: 0.75rem; object-fit: cover; max-width: 100%; }
+  #qr-reader__scan_region { background: #000 !important; }
+  #qr-reader .html5-qrcode-element { color: #e4e4e7; }
+  #qr-reader button { background: #fede00 !important; color: #000 !important; font-weight: 600 !important; border: none !important; padding: 0.5rem 1rem !important; border-radius: 0.5rem !important; cursor: pointer !important; }
   </style>
 </body>
 </html>
