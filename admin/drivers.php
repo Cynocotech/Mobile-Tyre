@@ -215,7 +215,7 @@ require_once __DIR__ . '/header.php';
           var sourceBadge = source === 'connect' ? '<span class="px-2 py-0.5 rounded text-xs bg-safety/20 text-safety">Connect</span>' : '<span class="px-2 py-0.5 rounded text-xs bg-zinc-700 text-zinc-400">Admin</span>';
           var blockCountDisplay = blockCount > 0 ? '<span class="font-medium' + (blacklisted ? ' text-red-300' : ' text-zinc-400') + '">' + blockCount + '</span>' : '<span class="text-zinc-500">0</span>';
           var unread = unreadCounts[d.id] || 0;
-          var msgBtn = '<button type="button" class="btn-message px-2 py-1 rounded bg-safety/20 text-safety text-xs relative inline-flex items-center gap-1" data-id="' + escape(d.id||'') + '" data-name="' + escape(d.name||'') + '">Message' + (unread > 0 ? '<span class="ml-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">' + (unread > 99 ? '99+' : unread) + '</span>' : '') + '</button>';
+          var msgBtn = '<button type="button" class="btn-message px-2 py-1 rounded bg-safety/20 text-safety text-xs relative inline-flex items-center gap-1 shrink-0" data-id="' + escape(d.id||'') + '" data-name="' + escape(d.name||'') + '">Message' + (unread > 0 ? '<span class="ml-0.5 min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold inline-flex items-center justify-center shrink-0">' + (unread > 99 ? '99+' : unread) + '</span>' : '') + '</button>';
           var actionBtns = '<div class="flex flex-wrap gap-1 justify-end">' +
             msgBtn +
             '<button type="button" class="btn-edit-driver px-2 py-1 rounded bg-zinc-700 text-zinc-300 text-xs" data-id="' + escape(d.id||'') + '">Edit</button>' +

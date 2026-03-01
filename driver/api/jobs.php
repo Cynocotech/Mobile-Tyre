@@ -67,9 +67,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
   $configPath = $base . '/dynamic.json';
   $config = is_file($configPath) ? @json_decode(file_get_contents($configPath), true) : [];
   $googleReviewUrl = trim($config['googleReviewUrl'] ?? '');
+  $unreadMessages = 0;
+  $messagesPath = $base . '/database/driver_messages.json';
+  if (is_file($messagesPath)) {
+    $all = @json_decode(file_get_contents($messagesPath), true);
+    if (is_array($all) && isset($all[$driverId]) && is_array($all[$driverId])) {
+      $unreadMessages = count(array_filter($all[$driverId], fn($m) => empty($m['read'])));
+    }
+  }
   echo json_encode([
     'jobs' => $mine,
     'googleReviewUrl' => $googleReviewUrl,
+    'unreadMessages' => $unreadMessages,
     'driver' => [
       'is_online' => !empty($driverRecord['is_online']),
       'driver_lat' => $driverRecord['driver_lat'] ?? null,

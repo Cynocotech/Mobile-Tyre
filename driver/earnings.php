@@ -65,8 +65,11 @@ require_once __DIR__ . '/auth.php';
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         <span class="text-xs">Earnings</span>
       </a>
-      <a href="inbox.php" class="flex flex-col items-center justify-center gap-1 flex-1 py-2 app-text-muted hover:app-text transition-colors">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"/></svg>
+      <a href="inbox.php" class="flex flex-col items-center justify-center gap-1 flex-1 py-2 app-text-muted hover:opacity-80 transition-colors relative">
+        <span class="relative">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"/></svg>
+          <span id="inbox-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center z-10 leading-none">0</span>
+        </span>
         <span class="text-xs">Inbox</span>
       </a>
       <a href="dashboard.php" class="flex flex-col items-center justify-center gap-1 flex-1 py-2 app-text-muted hover:app-text transition-colors">
@@ -88,6 +91,11 @@ require_once __DIR__ . '/auth.php';
         document.getElementById('earnings-loading').classList.add('hidden');
         var wallet = (d.driver && d.driver.wallet_earned) ? d.driver.wallet_earned : 0;
         document.getElementById('wallet-amount').textContent = '£' + Number(wallet).toFixed(2);
+        var badge = document.getElementById('inbox-badge');
+        if (badge) {
+          var u = (typeof d.unreadMessages === 'number') ? d.unreadMessages : 0;
+          if (u > 0) { badge.textContent = u > 99 ? '99+' : u; badge.classList.remove('hidden'); }
+        }
       })
       .catch(function() {
         document.getElementById('earnings-loading').textContent = 'Failed to load.';
