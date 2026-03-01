@@ -44,9 +44,16 @@ require_once __DIR__ . '/header.php';
 
   function loadJobs() {
     fetch('api/drivers.php?action=jobs')
-      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        if (!r.ok) throw new Error('Server error ' + r.status);
+        return r.json();
+      })
       .then(function(jobs) {
-        if (!Array.isArray(jobs)) { jobsTbody.innerHTML = '<tr><td colspan="6" class="py-8 text-zinc-500">No jobs</td></tr>'; return; }
+        if (!Array.isArray(jobs)) {
+          var err = (jobs && jobs.error) ? jobs.error : 'Unexpected response';
+          jobsTbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-red-400">' + String(err).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</td></tr>';
+          return;
+        }
         if (jobs.length === 0) {
           jobsTbody.innerHTML = '<tr><td colspan="6" class="py-12 text-center text-zinc-500">No jobs yet</td></tr>';
           return;
@@ -70,8 +77,8 @@ require_once __DIR__ . '/header.php';
           row.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showJobDetail(row.getAttribute('data-ref')); } });
         });
       })
-      .catch(function() {
-        jobsTbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-red-400">Failed to load jobs.</td></tr>';
+      .catch(function(err) {
+        jobsTbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-red-400">Failed to load jobs. Check your connection and try again.</td></tr>';
       });
   }
 
@@ -86,10 +93,17 @@ require_once __DIR__ . '/header.php';
     content.classList.add('hidden');
     loading.classList.remove('hidden');
     fetch('api/order.php?ref=' + encodeURIComponent(ref))
-      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        if (!r.ok) throw new Error('Server error ' + r.status);
+        return r.json();
+      })
       .then(function(o) {
         loading.classList.add('hidden');
         content.classList.remove('hidden');
+        if (o && o.error) {
+          content.innerHTML = '<p class="text-red-400">' + (o.error || 'Job not found').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>';
+          return null;
+        }
         var esc = function(s) { if (s == null || s === '') return '—'; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); };
         var proofHtml = o.proof_url
           ? '<div class="rounded-lg border border-zinc-600 overflow-hidden"><a href="api/proof.php?ref=' + encodeURIComponent(ref) + '" target="_blank" class="block"><img src="api/proof.php?ref=' + encodeURIComponent(ref) + '" alt="Proof" class="w-full max-h-64 object-contain bg-zinc-900"></a><p class="text-zinc-500 text-xs p-2">Completion proof' + (o.proof_uploaded_at ? ' – ' + esc(o.proof_uploaded_at) : '') + '</p></div>'

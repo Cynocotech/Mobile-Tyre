@@ -54,12 +54,7 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
     </div>
   </div>
 
-  <!-- Blocked driver banner -->
-  <div id="blocked-banner" class="hidden bg-red-900/90 border-b border-red-700 text-white px-4 py-3">
-    <p class="font-semibold">Your account has been blocked.</p>
-    <p id="blocked-reason-text" class="text-sm text-red-200 mt-0.5"></p>
-    <p class="text-xs text-red-300 mt-1">Contact the office to resolve this.</p>
-  </div>
+  <?php require_once __DIR__ . '/includes/blocked-banner.php'; ?>
 
   <!-- App-style header with status -->
   <header class="sticky top-0 z-40 app-surface/95 backdrop-blur border-b app-border">
@@ -350,14 +345,6 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       if (!d) return;
       document.getElementById('jobs-loading').classList.add('hidden');
       driverData = d.driver || {};
-      var blockedBanner = document.getElementById('blocked-banner');
-      var blockedReason = document.getElementById('blocked-reason-text');
-      if (driverData.blacklisted && blockedBanner && blockedReason) {
-        blockedBanner.classList.remove('hidden');
-        blockedReason.textContent = (driverData.blocked_reason || '').trim() || 'No reason provided.';
-      } else if (blockedBanner) {
-        blockedBanner.classList.add('hidden');
-      }
       var unread = d.unreadMessages != null ? d.unreadMessages : -1;
       if (unread < 0) {
         fetch(API_BASE + 'api/messages.php', { credentials: 'same-origin' })
@@ -790,12 +777,18 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
     } else {
       onReady();
     }
+    var pollInterval = null;
     if (typeof EventSource !== 'undefined') {
       var evtSrc = new EventSource(API_BASE + 'api/stream.php');
       evtSrc.addEventListener('update', function(e) {
         try { applyDriverData(JSON.parse(e.data)); } catch (_) {}
       });
-      evtSrc.onerror = function() { evtSrc.close(); };
+      evtSrc.onerror = function() {
+        evtSrc.close();
+        if (!pollInterval) pollInterval = setInterval(loadJobs, 45000);
+      };
+    } else {
+      pollInterval = setInterval(loadJobs, 45000);
     }
   })();
   </script>

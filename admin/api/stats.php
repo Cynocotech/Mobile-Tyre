@@ -13,12 +13,33 @@ $quotesPath = $dbFolder . '/quotes.json';
 
 $deposits = [];
 $jobs = [];
-$quotes = [];
 
-if (is_file($csvPath)) {
+// Use jobs.json for deposits (faster than CSV – single parse). Fall back to CSV if empty.
+if (is_file($jobsPath)) {
+  $jobsRaw = @json_decode(file_get_contents($jobsPath), true) ?: [];
+  foreach ($jobsRaw as $k => $v) {
+    if (!is_array($v) || str_starts_with((string) $k, '_')) continue;
+    $jobs[] = $v;
+    $ref = (string) $k;
+    $deposits[] = [
+      'date' => $v['date'] ?? $v['created_at'] ?? '',
+      'reference' => $v['reference'] ?? $ref,
+      'session_id' => $v['session_id'] ?? '',
+      'email' => $v['email'] ?? '',
+      'name' => $v['name'] ?? '',
+      'phone' => $v['phone'] ?? '',
+      'postcode' => $v['postcode'] ?? '',
+      'estimate_total' => $v['estimate_total'] ?? '',
+      'amount_paid' => $v['amount_paid'] ?? '',
+      'payment_status' => $v['payment_status'] ?? 'paid',
+    ];
+  }
+}
+
+if (empty($deposits) && is_file($csvPath)) {
   $h = fopen($csvPath, 'r');
   if ($h) {
-    $header = fgetcsv($h);
+    fgetcsv($h);
     while (($row = fgetcsv($h)) !== false) {
       if (count($row) >= 21) {
         $deposits[] = [
@@ -37,12 +58,6 @@ if (is_file($csvPath)) {
     }
     fclose($h);
   }
-}
-
-if (is_file($jobsPath)) {
-  $jobs = @json_decode(file_get_contents($jobsPath), true) ?: [];
-  $jobs = array_filter($jobs, function ($v, $k) { return !str_starts_with((string)$k, '_'); }, ARRAY_FILTER_USE_BOTH);
-  $jobs = array_values($jobs);
 }
 
 if (is_file($quotesPath)) {
@@ -112,7 +127,10 @@ echo json_encode([
   'deposits' => ['count' => $paidCount, 'total' => round($totalDeposits, 2), 'last7' => count($last7), 'last30' => count($last30), 'last7Revenue' => round($last7Revenue, 2), 'last30Revenue' => round($last30Revenue, 2)],
   'jobs' => count($jobs),
   'quotes' => count($quotes),
-  'recentDeposits' => array_slice(array_reverse($deposits), 0, 10),
+  'recentDeposits' => (function() use ($deposits) {
+    usort($deposits, fn($a, $b) => (strtotime($b['date'] ?? '') ?: 0) - (strtotime($a['date'] ?? '') ?: 0));
+    return array_slice($deposits, 0, 10);
+  })(),
   'driverLocations' => $driverLocations,
   'drivers' => $driversAll,
 ]);

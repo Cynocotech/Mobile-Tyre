@@ -43,7 +43,30 @@ function buildStats(string $dbFolder): array {
   $adminDriversPath = dirname(__DIR__) . '/data/drivers.json';
 
   $deposits = [];
-  if (is_file($csvPath)) {
+  $jobs = [];
+  if (is_file($jobsPath)) {
+    $raw = @json_decode((string) file_get_contents($jobsPath), true);
+    if (is_array($raw)) {
+      foreach ($raw as $k => $v) {
+        if (!is_array($v) || str_starts_with((string) $k, '_')) continue;
+        $jobs[] = $v;
+        $ref = (string) $k;
+        $deposits[] = [
+          'date' => $v['date'] ?? $v['created_at'] ?? '',
+          'reference' => $v['reference'] ?? $ref,
+          'session_id' => $v['session_id'] ?? '',
+          'email' => $v['email'] ?? '',
+          'name' => $v['name'] ?? '',
+          'phone' => $v['phone'] ?? '',
+          'postcode' => $v['postcode'] ?? '',
+          'estimate_total' => $v['estimate_total'] ?? '',
+          'amount_paid' => $v['amount_paid'] ?? '',
+          'payment_status' => $v['payment_status'] ?? 'paid',
+        ];
+      }
+    }
+  }
+  if (empty($deposits) && is_file($csvPath)) {
     $h = fopen($csvPath, 'r');
     if ($h) {
       fgetcsv($h);
@@ -64,18 +87,6 @@ function buildStats(string $dbFolder): array {
         }
       }
       fclose($h);
-    }
-  }
-
-  $jobs = [];
-  if (is_file($jobsPath)) {
-    $raw = @json_decode((string) file_get_contents($jobsPath), true);
-    if (is_array($raw)) {
-      foreach ($raw as $k => $v) {
-        if (is_array($v) && !str_starts_with((string) $k, '_')) {
-          $jobs[] = $v;
-        }
-      }
     }
   }
 
@@ -139,7 +150,10 @@ function buildStats(string $dbFolder): array {
     ],
     'jobs' => count($jobs),
     'quotes' => count($quotes),
-    'recentDeposits' => array_slice(array_reverse($deposits), 0, 10),
+    'recentDeposits' => (function() use ($deposits) {
+      usort($deposits, fn($a, $b) => (strtotime($b['date'] ?? '') ?: 0) - (strtotime($a['date'] ?? '') ?: 0));
+      return array_slice($deposits, 0, 10);
+    })(),
     'driverLocations' => $driverLocations,
     'drivers' => $driversAll,
   ];

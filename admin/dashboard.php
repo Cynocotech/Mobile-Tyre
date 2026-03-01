@@ -166,6 +166,7 @@ require_once __DIR__ . '/header.php';
   }
 
   function renderStats(data) {
+    if (!data || typeof data !== 'object') return;
     document.getElementById('stats-loading').classList.add('hidden');
     document.getElementById('stats-content').classList.remove('hidden');
     initAdminMap(data.driverLocations || []);
@@ -218,10 +219,22 @@ require_once __DIR__ . '/header.php';
 
   function fetchStats() {
     fetch('api/stats.php')
-      .then(function(r) { return r.json(); })
-      .then(renderStats)
+      .then(function(r) {
+        if (!r.ok) throw new Error('Server error ' + r.status);
+        return r.json();
+      })
+      .then(function(data) {
+        if (data && data.error) {
+          document.getElementById('stats-loading').textContent = data.error || 'Failed to load stats.';
+          document.getElementById('stats-content').classList.add('hidden');
+          return;
+        }
+        renderStats(data);
+      })
       .catch(function() {
+        document.getElementById('stats-loading').classList.remove('hidden');
         document.getElementById('stats-loading').textContent = 'Failed to load stats.';
+        document.getElementById('stats-content').classList.add('hidden');
       });
   }
 
@@ -253,10 +266,17 @@ require_once __DIR__ . '/header.php';
     loadingEl.classList.remove('hidden');
     if (modalContent) modalContent.scrollTop = 0;
     fetch('api/order.php?ref=' + encodeURIComponent(ref))
-      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        if (!r.ok) throw new Error('Server error ' + r.status);
+        return r.json();
+      })
       .then(function(o) {
         loadingEl.classList.add('hidden');
         detailEl.classList.remove('hidden');
+        if (o && o.error) {
+          detailEl.innerHTML = '<p class="text-red-400">' + (o.error || 'Order not found').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>';
+          return null;
+        }
         var bal = '';
         if (o.estimate_total && o.amount_paid) {
           var est = parseFloat(String(o.estimate_total).replace(/[^0-9.]/g, ''));

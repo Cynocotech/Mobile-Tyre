@@ -97,6 +97,8 @@ function buildDriverPayload(string $driverId): array {
       'identity_verified' => !empty($driverRecord['identity_verified']),
       'kyc_verified' => $verified,
       'wallet_earned' => round($walletEarned, 2),
+      'blacklisted' => !empty($driverRecord['blacklisted']),
+      'blocked_reason' => trim($driverRecord['blocked_reason'] ?? ''),
     ],
     'googleReviewUrl' => $googleReviewUrl,
     'unreadMessages' => $unreadCount,
