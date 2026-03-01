@@ -63,6 +63,10 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
           <p id="status-sub" class="app-text-muted text-sm mt-0.5">Ready to go?</p>
         </div>
         <div class="flex items-center gap-2">
+          <a href="inbox.php" class="relative p-2.5 rounded-full app-border border app-text-muted hover:app-text transition-colors" aria-label="Inbox">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"/></svg>
+            <span id="header-inbox-badge" class="hidden absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center z-10 leading-none">0</span>
+          </a>
           <a href="profile.php" class="p-2.5 rounded-full app-border border app-text-muted hover:app-text transition-colors" aria-label="Profile">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
           </a>
@@ -123,8 +127,11 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
   <!-- Bottom navigation -->
   <nav class="fixed bottom-0 left-0 right-0 z-40 app-surface border-t app-border safe-area-pb">
     <div class="max-w-2xl mx-auto flex items-center justify-around h-16 px-2">
-      <a href="dashboard.php" class="flex flex-col items-center justify-center gap-1 flex-1 py-2 font-medium" style="color: var(--app-accent);">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <a href="dashboard.php" class="flex flex-col items-center justify-center gap-1 flex-1 py-2 font-medium relative" style="color: var(--app-accent);">
+        <span class="relative inline-block">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          <span id="home-inbox-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center z-10 leading-none">0</span>
+        </span>
         <span class="text-xs">Home</span>
       </a>
       <a href="earnings.php" id="nav-earnings" class="flex flex-col items-center justify-center gap-1 flex-1 py-2 app-text-muted hover:opacity-80 transition-colors">
@@ -238,6 +245,7 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
     </div>
   </div>
 
+  <script>window.DRIVER_API_BASE = <?php echo json_encode(rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/driver/'), '/') . '/'); ?>;</script>
   <script>
   (function() {
     var currentLat, currentLng, currentRef;
@@ -246,11 +254,12 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
 
     function initMap() {
       if (map) return;
-      map = L.map('map').setView([51.5074, -0.1278], 10);
+      map = L.map('map', { center: [51.5074, -0.1278], zoom: 10 });
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19
       }).addTo(map);
+      setTimeout(function() { if (map) map.invalidateSize(); }, 100);
     }
 
     function updateMap(jobs, driver) {
@@ -319,10 +328,9 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       }
     }
 
-    var API_BASE = (function() {
-      var p = window.location.pathname;
-      return p.replace(/[^/]+$/, '');
-    })();
+    var API_BASE = (typeof window.DRIVER_API_BASE === 'string' && window.DRIVER_API_BASE)
+      ? window.DRIVER_API_BASE
+      : (function() { var p = window.location.pathname; var d = p.replace(/[^/]+$/, ''); return d.endsWith('/') ? d : d + '/'; })();
 
     function applyDriverData(d) {
       if (!d) return;
@@ -341,11 +349,13 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
         updateInboxBadge(unread);
       }
       function updateInboxBadge(u) {
-        var badge = document.getElementById('inbox-badge');
-        if (badge) {
-          if (u > 0) { badge.textContent = u > 99 ? '99+' : String(u); badge.classList.remove('hidden'); }
-          else { badge.classList.add('hidden'); }
-        }
+        ['inbox-badge', 'home-inbox-badge', 'header-inbox-badge'].forEach(function(id) {
+          var badge = document.getElementById(id);
+          if (badge) {
+            if (u > 0) { badge.textContent = u > 99 ? '99+' : String(u); badge.classList.remove('hidden'); }
+            else { badge.classList.add('hidden'); }
+          }
+        });
       }
       var googleReviewUrl = (d.googleReviewUrl || '').trim();
       var jobs = d.jobs || [];
@@ -419,16 +429,38 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
     }
 
     function loadJobs() {
-      fetch(API_BASE + 'api/jobs.php', { credentials: 'same-origin' })
+      var loadingEl = document.getElementById('jobs-loading');
+      var emptyEl = document.getElementById('jobs-empty');
+      var listEl = document.getElementById('jobs-list');
+      var oppEl = document.getElementById('opportunities-text');
+      function showError() {
+        loadingEl.classList.add('hidden');
+        listEl.classList.add('hidden');
+        if (emptyEl) {
+          emptyEl.classList.remove('hidden');
+          emptyEl.innerHTML = '<p class="text-lg">Could not load jobs</p><p class="text-sm mt-2">Check your connection and refresh. Make sure you are logged in.</p><button type="button" onclick="location.reload()" class="mt-4 px-4 py-2 rounded-xl bg-safety text-zinc-900 font-medium text-sm">Refresh</button>';
+        }
+        if (oppEl) oppEl.textContent = 'Pull down to refresh.';
+        initMap();
+        if (map) map.setView([51.5074, -0.1278], 10);
+      }
+      var controller = new AbortController();
+      var timeoutId = setTimeout(function() { controller.abort(); }, 15000);
+      fetch(API_BASE + 'api/jobs.php', { credentials: 'same-origin', signal: controller.signal })
         .then(function(r) {
+          clearTimeout(timeoutId);
           if (!r.ok) throw new Error('Server error ' + r.status);
           return r.json();
         })
-        .then(applyDriverData)
+        .then(function(d) {
+          clearTimeout(timeoutId);
+          if (d && typeof d === 'object') applyDriverData(d);
+          else showError();
+        })
         .catch(function(err) {
-          document.getElementById('jobs-loading').textContent = 'Failed to load. Try refreshing.';
-          document.getElementById('opportunities-text').textContent = 'Could not load. Pull down to refresh.';
+          clearTimeout(timeoutId);
           console.error('loadJobs:', err);
+          showError();
         });
     }
 
@@ -707,6 +739,7 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       });
     }
 
+    initMap();
     loadJobs();
     if (typeof EventSource !== 'undefined') {
       var evtSrc = new EventSource(API_BASE + 'api/stream.php');
