@@ -3,10 +3,9 @@
    Load after Tailwind CDN
    ============================================ */
 
-/* Page transition: fade in on load, fade out before navigate */
+/* Page transition: fade out before navigate (LCP-friendly: body visible immediately) */
 body {
-  opacity: 0;
-  transition: opacity 0.25s ease-out;
+  opacity: 1;
 }
 body.page-loaded {
   opacity: 1;
@@ -16,6 +15,8 @@ body.page-leaving {
   transition-duration: 0.2s;
 }
 
+/* Fallback colors before Tailwind loads (LCP) */
+body { background-color: #18181b; color: #e4e4e7; }
 /* Brand color (also in Tailwind config) */
 :root {
   --color-safety: #fede00;
