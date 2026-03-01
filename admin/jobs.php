@@ -155,11 +155,15 @@ require_once __DIR__ . '/header.php';
     fetch('api/drivers-list.php').then(function(r) { return r.json(); }).then(function(d) {
       var sel = document.getElementById('assign-driver-select');
       if (!sel) return;
-      var drivers = d.drivers || [];
-      sel.innerHTML = '<option value="">Assign driver…</option>' + drivers.map(function(drv) {
+      var drivers = (d.drivers || []).filter(function(drv) { return drv.source === 'connect'; });
+      if (drivers.length === 0) {
+        sel.innerHTML = '<option value="">No registered drivers – drivers must complete onboarding to receive jobs</option>';
+      } else {
+        sel.innerHTML = '<option value="">Assign driver…</option>' + drivers.map(function(drv) {
         var selAttr = (assignedDriverId && drv.id === assignedDriverId) ? ' selected' : '';
         return '<option value="' + drv.id + '"' + selAttr + '>' + (drv.name || drv.email) + ' – ' + (drv.van_make || '') + ' ' + (drv.van_reg || '') + '</option>';
       }).join('');
+      }
       var btn = document.getElementById('assign-driver-btn');
       if (btn) btn.onclick = function() {
         var did = sel.value;
