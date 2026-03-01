@@ -11,36 +11,13 @@ if (!$ref) {
 }
 
 $base = dirname(__DIR__);
-$dbFolder = $base . '/database';
-$jobsPath = $dbFolder . '/jobs.json';
-$csvPath = $dbFolder . '/customers.csv';
-$order = null;
+require_once $base . '/includes/jobs.php';
 
-if (is_file($csvPath)) {
-  $h = fopen($csvPath, 'r');
-  if ($h) {
-    fgetcsv($h);
-    while (($row = fgetcsv($h)) !== false) {
-      if ((string)($row[1] ?? '') === (string)$ref) {
-        $order = [
-          'date' => $row[0] ?? '', 'reference' => $row[1] ?? '', 'session_id' => $row[2] ?? '',
-          'email' => $row[3] ?? '', 'name' => $row[4] ?? '', 'phone' => $row[5] ?? '',
-          'postcode' => $row[6] ?? '', 'lat' => $row[7] ?? '', 'lng' => $row[8] ?? '',
-          'vrm' => $row[9] ?? '', 'make' => $row[10] ?? '', 'model' => $row[11] ?? '',
-          'tyre_size' => $row[15] ?? '', 'wheels' => $row[16] ?? '',
-          'estimate_total' => $row[18] ?? '', 'amount_paid' => $row[19] ?? '',
-          'payment_status' => $row[21] ?? '',
-        ];
-        break;
-      }
-    }
-    fclose($h);
-  }
-}
+$refPadded = strlen($ref) <= 6 ? str_pad($ref, 6, '0', STR_PAD_LEFT) : $ref;
+$order = jobsGetByRef($refPadded);
 
-if (!$order && is_file($jobsPath)) {
-  $jobs = @json_decode(file_get_contents($jobsPath), true) ?: [];
-  if (isset($jobs[$ref]) && is_array($jobs[$ref])) $order = $jobs[$ref];
+if ($order) {
+  $ref = $order['reference'] ?? $ref;
 }
 
 if (!$order) {

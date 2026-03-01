@@ -18,8 +18,6 @@ if (!$driverId) {
 ignore_user_abort(false);
 
 $base = dirname(__DIR__, 2);
-$jobsPath = $base . '/database/jobs.json';
-$messagesPath = $base . '/database/driver_messages.json';
 
 header('Content-Type: text/event-stream');
 header('Cache-Control: no-cache');
@@ -36,40 +34,30 @@ function sendEvent(string $event, mixed $data): void {
 
 function buildDriverPayload(string $driverId): array {
   $base = dirname(__DIR__, 2);
-  $jobsPath = $base . '/database/jobs.json';
-  $messagesPath = $base . '/database/driver_messages.json';
-  $driversPath = $base . '/database/drivers.json';
   $configPath = $base . '/dynamic.json';
+  require_once $base . '/includes/jobs.php';
+  require_once $base . '/driver/config.php';
 
   $jobs = [];
   $walletEarned = 0.0;
-  if (is_file($jobsPath)) {
-    $raw = @json_decode((string) file_get_contents($jobsPath), true);
-    if (is_array($raw)) {
-      foreach ($raw as $ref => $job) {
-        if (!is_array($job) || str_starts_with((string) $ref, '_')) continue;
-        if (($job['assigned_driver_id'] ?? '') !== $driverId) continue;
-        $job['reference'] = $ref;
-        $est = (float) preg_replace('/[^0-9.]/', '', $job['estimate_total'] ?? '0');
-        $paid = (float) preg_replace('/[^0-9.]/', '', $job['amount_paid'] ?? '0');
-        $job['balance_due'] = $est > 0 ? '£' . number_format(max(0.0, $est - $paid), 2) : '—';
-        $jobs[] = $job;
-        if (!empty($job['job_completed_at']) && ($job['payment_method'] ?? '') !== 'cash' && $paid > 0) {
-          $walletEarned += $paid * 0.8;
-        }
-        if (!empty($job['job_completed_at']) && ($job['payment_method'] ?? '') === 'cash' && $est > 0) {
-          $walletEarned += $est * 0.8;
-        }
-      }
+  $jobsAll = jobsGetAll();
+  foreach ($jobsAll as $ref => $job) {
+    if (!is_array($job) || ($job['assigned_driver_id'] ?? '') !== $driverId) continue;
+    $job['reference'] = $job['reference'] ?? $ref;
+    $est = (float) preg_replace('/[^0-9.]/', '', $job['estimate_total'] ?? '0');
+    $paid = (float) preg_replace('/[^0-9.]/', '', $job['amount_paid'] ?? '0');
+    $job['balance_due'] = $est > 0 ? '£' . number_format(max(0.0, $est - $paid), 2) : '—';
+    $jobs[] = $job;
+    if (!empty($job['job_completed_at']) && ($job['payment_method'] ?? '') !== 'cash' && $paid > 0) {
+      $walletEarned += $paid * 0.8;
+    }
+    if (!empty($job['job_completed_at']) && ($job['payment_method'] ?? '') === 'cash' && $est > 0) {
+      $walletEarned += $est * 0.8;
     }
   }
   usort($jobs, fn($a, $b) => strcmp($b['date'] ?? $b['created_at'] ?? '', $a['date'] ?? $a['created_at'] ?? ''));
 
-  $driverDb = [];
-  if (is_file($driversPath)) {
-    $driverDb = @json_decode((string) file_get_contents($driversPath), true) ?: [];
-  }
-  $driverRecord = $driverDb[$driverId] ?? [];
+  $driverRecord = getDriverById($driverId) ?? [];
   $verified = !empty($driverRecord['identity_verified']) || !empty($driverRecord['stripe_onboarding_complete']);
   $googleReviewUrl = '';
   if (is_file($configPath)) {
@@ -77,15 +65,9 @@ function buildDriverPayload(string $driverId): array {
     $googleReviewUrl = trim($cfg['googleReviewUrl'] ?? '');
   }
 
-  $messages = [];
-  $unreadCount = 0;
-  if (is_file($messagesPath)) {
-    $all = @json_decode((string) file_get_contents($messagesPath), true);
-    if (is_array($all) && isset($all[$driverId]) && is_array($all[$driverId])) {
-      $messages = $all[$driverId];
-      $unreadCount = count(array_filter($messages, fn($m) => empty($m['read'])));
-    }
-  }
+  require_once $base . '/includes/messages.php';
+  $messages = messagesGetByDriver($driverId);
+  $unreadCount = count(array_filter($messages, fn($m) => empty($m['read'])));
 
   return [
     'jobs' => $jobs,
@@ -111,16 +93,23 @@ $maxTime = time() + 50;
 
 sendEvent('update', buildDriverPayload($driverId));
 
+$configPath = $base . '/config/db.php';
+$useDb = false;
+if (is_file($configPath)) {
+  require_once $configPath;
+  $useDb = function_exists('useDatabase') && useDatabase();
+}
+$messagesPath = $base . '/database/driver_messages.json';
 while (time() < $maxTime && connection_status() === CONNECTION_NORMAL) {
-  $mtime = max(
-    is_file($jobsPath) ? filemtime($jobsPath) : 0,
-    is_file($messagesPath) ? filemtime($messagesPath) : 0,
-  );
-  if (is_file($base . '/database/drivers.json')) {
-    $mtime = max($mtime, filemtime($base . '/database/drivers.json'));
+  $mtime = (!$useDb && is_file($messagesPath)) ? filemtime($messagesPath) : 0;
+  if (!$useDb) {
+    $jobsPath = $base . '/database/jobs.json';
+    $driversPath = $base . '/database/drivers.json';
+    if (is_file($jobsPath)) $mtime = max($mtime, filemtime($jobsPath));
+    if (is_file($driversPath)) $mtime = max($mtime, filemtime($driversPath));
   }
-  if ($mtime > $lastMtime) {
-    $lastMtime = $mtime;
+  if ($useDb || $mtime > $lastMtime) {
+    $lastMtime = $useDb ? time() : $mtime;
     sendEvent('update', buildDriverPayload($driverId));
   }
   echo ": keepalive\n\n";

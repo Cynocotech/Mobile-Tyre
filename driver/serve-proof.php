@@ -7,9 +7,9 @@ $ref = isset($_GET['ref']) ? preg_replace('/[^0-9]/', '', $_GET['ref']) : '';
 if (!$ref) { http_response_code(400); exit; }
 
 $base = dirname(__DIR__);
-$jobsPath = $base . '/database/jobs.json';
-$jobs = is_file($jobsPath) ? json_decode(file_get_contents($jobsPath), true) : [];
-$job = $jobs[$ref] ?? null;
+require_once $base . '/includes/jobs.php';
+$refPadded = strlen($ref) <= 6 ? str_pad($ref, 6, '0', STR_PAD_LEFT) : $ref;
+$job = jobsGetByRef($refPadded);
 if (!$job || ($job['assigned_driver_id'] ?? '') !== $_SESSION[DRIVER_SESSION_KEY]) {
   http_response_code(404);
   exit;

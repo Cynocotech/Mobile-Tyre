@@ -12,31 +12,12 @@ if (empty($_SESSION['admin_ok'])) {
 header('Content-Type: application/json');
 
 $base = dirname(__DIR__, 2);
-$path = $base . '/database/driver_messages.json';
-
-function loadMessages($p) {
-  if (!is_file($p)) return [];
-  $d = @json_decode(file_get_contents($p), true);
-  return is_array($d) ? $d : [];
-}
-
-function saveMessages($p, $data) {
-  $dir = dirname($p);
-  if (!is_dir($dir)) @mkdir($dir, 0755, true);
-  return file_put_contents($p, json_encode($data, JSON_PRETTY_PRINT), LOCK_EX) !== false;
-}
+require_once $base . '/includes/messages.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
   $countsOnly = !empty($_GET['counts']);
   if ($countsOnly) {
-    $all = loadMessages($path);
-    $counts = [];
-    foreach ($all as $did => $msgs) {
-      if (!is_array($msgs)) continue;
-      $unread = count(array_filter($msgs, fn($m) => empty($m['read'])));
-      if ($unread > 0) $counts[$did] = $unread;
-    }
-    echo json_encode(['counts' => $counts]);
+    echo json_encode(['counts' => messagesGetCounts()]);
     exit;
   }
   $driverId = trim($_GET['driver_id'] ?? '');
@@ -45,11 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     echo json_encode(['error' => 'driver_id required']);
     exit;
   }
-  $all = loadMessages($path);
-  $messages = isset($all[$driverId]) && is_array($all[$driverId]) ? $all[$driverId] : [];
-  usort($messages, function ($a, $b) {
-    return strcmp($b['created_at'] ?? '', $a['created_at'] ?? '');
-  });
+  $messages = messagesGetByDriver($driverId);
   echo json_encode(['messages' => $messages]);
   exit;
 }
@@ -70,21 +47,8 @@ if (!$driverId || !$body) {
   exit;
 }
 
-$all = loadMessages($path);
-if (!isset($all[$driverId]) || !is_array($all[$driverId])) {
-  $all[$driverId] = [];
-}
-
-$msg = [
-  'id' => 'm_' . bin2hex(random_bytes(8)),
-  'from' => 'admin',
-  'body' => $body,
-  'created_at' => date('Y-m-d H:i:s'),
-  'read' => false,
-];
-$all[$driverId][] = $msg;
-
-if (saveMessages($path, $all)) {
+$msg = messagesAdd($driverId, $body);
+if ($msg) {
   echo json_encode(['ok' => true, 'message' => $msg]);
 } else {
   http_response_code(500);

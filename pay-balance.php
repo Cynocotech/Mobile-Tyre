@@ -12,13 +12,14 @@ if ($sessionId !== '' && !preg_match('/^cs_[a-zA-Z0-9_]+$/', $sessionId)) {
   $sessionId = '';
 }
 
-$jobsPath = __DIR__ . '/database/jobs.json';
-$jobs = is_file($jobsPath) ? @json_decode(file_get_contents($jobsPath), true) : [];
+require_once __DIR__ . '/includes/jobs.php';
 $job = null;
-if ($ref && isset($jobs[$ref])) {
-  $job = $jobs[$ref];
-} elseif ($sessionId && preg_match('/^cs_[a-zA-Z0-9_]+$/', $sessionId) && isset($jobs['_session_' . $sessionId])) {
-  $job = $jobs['_session_' . $sessionId];
+if ($ref) {
+  $refPadded = strlen($ref) <= 6 ? str_pad($ref, 6, '0', STR_PAD_LEFT) : $ref;
+  $job = jobsGetByRef($refPadded);
+}
+if (!$job && $sessionId && preg_match('/^cs_[a-zA-Z0-9_]+$/', $sessionId)) {
+  $job = jobsGetBySession($sessionId);
 }
 
 if (!$job) {
@@ -47,13 +48,11 @@ $assignedDriverId = $job['assigned_driver_id'] ?? '';
 $stripeAccountId = null;
 $driverRate = 80;
 if ($assignedDriverId) {
-  $driversPath = __DIR__ . '/database/drivers.json';
-  if (is_file($driversPath)) {
-    $drivers = @json_decode(file_get_contents($driversPath), true);
-    if (is_array($drivers) && isset($drivers[$assignedDriverId]) && !empty($drivers[$assignedDriverId]['stripe_account_id']) && !empty($drivers[$assignedDriverId]['stripe_onboarding_complete'])) {
-      $stripeAccountId = $drivers[$assignedDriverId]['stripe_account_id'];
-      $driverRate = isset($drivers[$assignedDriverId]['driver_rate']) ? max(1, min(100, (int)$drivers[$assignedDriverId]['driver_rate'])) : 80;
-    }
+  require_once __DIR__ . '/driver/config.php';
+  $driver = getDriverById($assignedDriverId);
+  if ($driver && !empty($driver['stripe_account_id']) && !empty($driver['stripe_onboarding_complete'])) {
+    $stripeAccountId = $driver['stripe_account_id'];
+    $driverRate = isset($driver['driver_rate']) ? max(1, min(100, (int)$driver['driver_rate'])) : 80;
   }
 }
 

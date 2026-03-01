@@ -43,80 +43,43 @@ if (is_file($configPath)) {
   }
 }
 
-// Option 1: Look up in jobs.json (fast, by ref or session_id)
+// Option 1: Look up via jobs abstraction (JSON or database)
 $dbFolder = __DIR__ . '/database';
-$jobsPath = $dbFolder . '/jobs.json';
-if (!$found && is_file($jobsPath)) {
-  $jobs = @json_decode(file_get_contents($jobsPath), true);
-  if (is_array($jobs)) {
-    $job = null;
-    if ($ref !== '' && strlen($ref) <= 6) {
-      $ref = str_pad($ref, 6, '0', STR_PAD_LEFT);
-      $job = $jobs[$ref] ?? null;
-    }
-    if (!$job && $sessionId !== '') {
-      $job = $jobs['_session_' . $sessionId] ?? null;
-    }
-    if ($job && is_array($job)) {
-      $found = true;
-      $reference = $job['reference'] ?? '';
-      $customerEmail = $job['email'] ?? '';
-      $customerName = $job['name'] ?? '';
-      $customerPhone = $job['phone'] ?? '';
-      $customerPostcode = $job['postcode'] ?? '';
-      $customerLat = $job['lat'] ?? '';
-      $customerLng = $job['lng'] ?? '';
-      $vehicleVrm = $job['vrm'] ?? '';
-      $vehicleMake = $job['make'] ?? '';
-      $vehicleModel = $job['model'] ?? '';
-      $vehicleColour = $job['colour'] ?? '';
-      $vehicleYear = $job['year'] ?? '';
-      $vehicleFuel = $job['fuel'] ?? '';
-      $vehicleTyreSize = $job['tyre_size'] ?? '';
-      $vehicleWheels = $job['wheels'] ?? '';
-      $estimateTotal = $job['estimate_total'] ?? '';
-      $amountFormatted = $job['amount_paid'] ?? '';
-      $paymentStatus = $job['payment_status'] ?? '';
-    }
+require_once __DIR__ . '/includes/jobs.php';
+if (!$found) {
+  $job = null;
+  if ($ref !== '' && strlen($ref) <= 6) {
+    $refPadded = str_pad($ref, 6, '0', STR_PAD_LEFT);
+    $job = jobsGetByRef($refPadded);
+    $ref = $refPadded;
+  }
+  if (!$job && $sessionId !== '') {
+    $job = jobsGetBySession($sessionId);
+  }
+  if ($job && is_array($job)) {
+    $found = true;
+    $reference = $job['reference'] ?? '';
+    $customerEmail = $job['email'] ?? '';
+    $customerName = $job['name'] ?? '';
+    $customerPhone = $job['phone'] ?? '';
+    $customerPostcode = $job['postcode'] ?? '';
+    $customerLat = $job['lat'] ?? '';
+    $customerLng = $job['lng'] ?? '';
+    $vehicleVrm = $job['vrm'] ?? '';
+    $vehicleMake = $job['make'] ?? '';
+    $vehicleModel = $job['model'] ?? '';
+    $vehicleColour = $job['colour'] ?? '';
+    $vehicleYear = $job['year'] ?? '';
+    $vehicleFuel = $job['fuel'] ?? '';
+    $vehicleTyreSize = $job['tyre_size'] ?? '';
+    $vehicleWheels = $job['wheels'] ?? '';
+    $estimateTotal = $job['estimate_total'] ?? '';
+    $amountFormatted = $job['amount_paid'] ?? '';
+    $paymentStatus = $job['payment_status'] ?? '';
   }
 }
 
-// Option 2: Fallback to CSV if jobs.json miss
-$dbCsvPath = $dbFolder . '/customers.csv';
-if (!$found && $ref !== '' && strlen($ref) <= 6 && is_file($dbCsvPath)) {
-  $ref = str_pad($ref, 6, '0', STR_PAD_LEFT);
-  $rows = array_map('str_getcsv', file($dbCsvPath));
-  $header = array_shift($rows);
-  $refIdx = array_search('reference', $header);
-  if ($refIdx !== false) {
-    foreach ($rows as $row) {
-      if (isset($row[$refIdx]) && trim($row[$refIdx]) === $ref) {
-        $found = true;
-        $reference = $ref;
-        $customerEmail = $row[array_search('email', $header)] ?? '';
-        $customerName = $row[array_search('name', $header)] ?? '';
-        $customerPhone = $row[array_search('phone', $header)] ?? '';
-        $customerPostcode = $row[array_search('postcode', $header)] ?? '';
-        $customerLat = $row[array_search('lat', $header)] ?? '';
-        $customerLng = $row[array_search('lng', $header)] ?? '';
-        $vehicleVrm = $row[array_search('vrm', $header)] ?? '';
-        $vehicleMake = $row[array_search('make', $header)] ?? '';
-        $vehicleModel = $row[array_search('model', $header)] ?? '';
-        $vehicleColour = $row[array_search('colour', $header)] ?? '';
-        $vehicleYear = $row[array_search('year', $header)] ?? '';
-        $vehicleFuel = $row[array_search('fuel', $header)] ?? '';
-        $vehicleTyreSize = $row[array_search('tyre_size', $header)] ?? '';
-        $vehicleWheels = $row[array_search('wheels', $header)] ?? '';
-        $estimateTotal = $row[array_search('estimate_total', $header)] ?? '';
-        $amountFormatted = $row[array_search('amount_paid', $header)] ?? '';
-        $paymentStatus = $row[array_search('payment_status', $header)] ?? '';
-        break;
-      }
-    }
-  }
-}
-
-// Option 3: Fetch from Stripe by session_id
+// Option 2: Fetch from Stripe by session_id
 if (!$found && $sessionId && preg_match('/^cs_[a-zA-Z0-9_]+$/', $sessionId) && $stripeSecretKey) {
   $ch = curl_init('https://api.stripe.com/v1/checkout/sessions/' . $sessionId);
   curl_setopt_array($ch, [

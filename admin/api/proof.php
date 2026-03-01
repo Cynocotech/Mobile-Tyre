@@ -11,9 +11,9 @@ $ref = isset($_GET['ref']) ? preg_replace('/[^0-9]/', '', (string) $_GET['ref'])
 if (!$ref) { http_response_code(400); exit; }
 
 $base = dirname(__DIR__, 2);
-$jobsPath = $base . '/database/jobs.json';
-$jobs = is_file($jobsPath) ? json_decode(file_get_contents($jobsPath), true) : [];
-$job = $jobs[$ref] ?? null;
+require_once $base . '/includes/jobs.php';
+$refPadded = strlen($ref) <= 6 ? str_pad($ref, 6, '0', STR_PAD_LEFT) : $ref;
+$job = jobsGetByRef($refPadded);
 if (!$job || empty($job['proof_url']) || !preg_match('#^database/[a-zA-Z0-9_\-/]+\.(jpg|jpeg|png)$#i', $job['proof_url'])) {
   http_response_code(404);
   exit;

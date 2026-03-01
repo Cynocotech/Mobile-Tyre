@@ -226,89 +226,39 @@ if ($paymentStatus === 'paid' && $sessionId && !empty($customerEmail)) {
   }
 }
 
-// Save customer & car details to database/customers.csv (once per paid session)
-$dbFolder = __DIR__ . '/database';
-$dbCsvPath = $dbFolder . '/customers.csv';
-$dbSentLogPath = __DIR__ . '/.stripe-db-saved';
+// Save job to database (once per paid session – jobsSave handles dedupe by reference)
 if ($paymentStatus === 'paid' && $sessionId) {
-  if (!is_dir($dbFolder)) {
-    @mkdir($dbFolder, 0755, true);
-  }
-  if (is_dir($dbFolder)) {
-    $dbSentIds = is_file($dbSentLogPath) ? array_filter(explode("\n", file_get_contents($dbSentLogPath))) : [];
-    if (!in_array($sessionId, $dbSentIds, true)) {
-      $amountFormatted = '£' . number_format($amountTotal / 100, 2);
-      $vehicleDesc = trim($vehicleMake . ' ' . $vehicleModel);
-      if ($vehicleDesc === '' && $vehicleVrm !== '') $vehicleDesc = $vehicleVrm;
-      elseif ($vehicleVrm !== '') $vehicleDesc .= ' (' . $vehicleVrm . ')';
-      $row = [
-        date('Y-m-d H:i:s'),
-        $reference,
-        $sessionId,
-        $customerEmail,
-        $customerName,
-        $customerPhone,
-        $customerPostcode,
-        $customerLat,
-        $customerLng,
-        $vehicleVrm,
-        $vehicleMake,
-        $vehicleModel,
-        $vehicleColour,
-        $vehicleYear,
-        $vehicleFuel,
-        $vehicleTyreSize,
-        $vehicleWheels,
-        $vehicleDesc,
-        $estimateTotal,
-        $amountFormatted,
-        $currency,
-        $paymentStatus,
-      ];
-      $newFile = !is_file($dbCsvPath);
-      $fp = @fopen($dbCsvPath, 'a');
-      if ($fp) {
-        if ($newFile) {
-          fputcsv($fp, ['date', 'reference', 'session_id', 'email', 'name', 'phone', 'postcode', 'lat', 'lng', 'vrm', 'make', 'model', 'colour', 'year', 'fuel', 'tyre_size', 'wheels', 'vehicle_desc', 'estimate_total', 'amount_paid', 'currency', 'payment_status']);
-        }
-        fputcsv($fp, $row);
-        fclose($fp);
-        file_put_contents($dbSentLogPath, $sessionId . "\n", FILE_APPEND | LOCK_EX);
-
-        // Also save to jobs.json for fast verify lookups (ref + session_id index)
-        $jobsPath = $dbFolder . '/jobs.json';
-        $jobs = [];
-        if (is_file($jobsPath)) {
-          $jobs = @json_decode(file_get_contents($jobsPath), true) ?: [];
-        }
-        $job = [
-          'reference' => $reference,
-          'session_id' => $sessionId,
-          'email' => $customerEmail,
-          'name' => $customerName,
-          'phone' => $customerPhone,
-          'postcode' => $customerPostcode,
-          'lat' => $customerLat,
-          'lng' => $customerLng,
-          'vrm' => $vehicleVrm,
-          'make' => $vehicleMake,
-          'model' => $vehicleModel,
-          'colour' => $vehicleColour,
-          'year' => $vehicleYear,
-          'fuel' => $vehicleFuel,
-          'tyre_size' => $vehicleTyreSize,
-          'wheels' => $vehicleWheels,
-          'vehicle_desc' => $vehicleDesc,
-          'estimate_total' => $estimateTotal,
-          'amount_paid' => $amountFormatted,
-          'currency' => $currency,
-          'payment_status' => $paymentStatus,
-        ];
-        $jobs[$reference] = $job;
-        $jobs['_session_' . $sessionId] = $job;
-        @file_put_contents($jobsPath, json_encode($jobs, JSON_PRETTY_PRINT), LOCK_EX);
-      }
-    }
+  require_once __DIR__ . '/includes/jobs.php';
+  $job = jobsGetBySession($sessionId) ?? jobsGetByRef($reference);
+  if (!$job) {
+    $amountFormatted = '£' . number_format($amountTotal / 100, 2);
+    $vehicleDesc = trim($vehicleMake . ' ' . $vehicleModel);
+    if ($vehicleDesc === '' && $vehicleVrm !== '') $vehicleDesc = $vehicleVrm;
+    elseif ($vehicleVrm !== '') $vehicleDesc .= ' (' . $vehicleVrm . ')';
+    jobsSave([
+      'reference' => $reference,
+      'session_id' => $sessionId,
+      'date' => date('Y-m-d H:i:s'),
+      'email' => $customerEmail,
+      'name' => $customerName,
+      'phone' => $customerPhone,
+      'postcode' => $customerPostcode,
+      'lat' => $customerLat,
+      'lng' => $customerLng,
+      'vrm' => $vehicleVrm,
+      'make' => $vehicleMake,
+      'model' => $vehicleModel,
+      'colour' => $vehicleColour,
+      'year' => $vehicleYear,
+      'fuel' => $vehicleFuel,
+      'tyre_size' => $vehicleTyreSize,
+      'wheels' => $vehicleWheels,
+      'vehicle_desc' => $vehicleDesc,
+      'estimate_total' => $estimateTotal,
+      'amount_paid' => $amountFormatted,
+      'currency' => $currency,
+      'payment_status' => $paymentStatus,
+    ]);
   }
 }
 

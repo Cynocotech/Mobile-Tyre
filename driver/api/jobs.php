@@ -4,6 +4,7 @@
  */
 session_start();
 require_once __DIR__ . '/../config.php';
+require_once dirname(__DIR__, 2) . '/includes/jobs.php';
 header('Content-Type: application/json');
 
 $driverId = $_SESSION[DRIVER_SESSION_KEY] ?? null;
@@ -15,30 +16,10 @@ if (!$driver) {
 }
 
 $base = dirname(__DIR__, 2);
-$jobsPath = $base . '/database/jobs.json';
 $uploadsDir = $base . '/database/proofs';
 
-function loadJobs($path) {
-  if (!is_file($path)) return [];
-  $j = @json_decode(file_get_contents($path), true) ?: [];
-  $out = [];
-  foreach ($j as $k => $v) {
-    if (is_array($v) && !str_starts_with((string)$k, '_')) $out[$k] = $v;
-  }
-  return $out;
-}
-
-function saveJob($path, $ref, $updates) {
-  $j = @json_decode(file_get_contents($path), true) ?: [];
-  if (!isset($j[$ref])) return false;
-  $j[$ref] = array_merge($j[$ref], $updates);
-  $sid = $j[$ref]['session_id'] ?? '';
-  if ($sid) $j['_session_' . $sid] = $j[$ref];
-  return file_put_contents($path, json_encode($j, JSON_PRETTY_PRINT), LOCK_EX) !== false;
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-  $jobs = loadJobs($jobsPath);
+  $jobs = jobsGetAll();
   $mine = [];
   $walletEarned = 0;
   foreach ($jobs as $ref => $job) {
@@ -67,14 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
   $configPath = $base . '/dynamic.json';
   $config = is_file($configPath) ? @json_decode(file_get_contents($configPath), true) : [];
   $googleReviewUrl = trim($config['googleReviewUrl'] ?? '');
-  $unreadMessages = 0;
-  $messagesPath = $base . '/database/driver_messages.json';
-  if (is_file($messagesPath)) {
-    $all = @json_decode(file_get_contents($messagesPath), true);
-    if (is_array($all) && isset($all[$driverId]) && is_array($all[$driverId])) {
-      $unreadMessages = count(array_filter($all[$driverId], fn($m) => empty($m['read'])));
-    }
-  }
+  require_once $base . '/includes/messages.php';
+  $messages = messagesGetByDriver($driverId);
+  $unreadMessages = count(array_filter($messages, fn($m) => empty($m['read'])));
   echo json_encode([
     'jobs' => $mine,
     'googleReviewUrl' => $googleReviewUrl,
@@ -112,22 +88,21 @@ switch ($action) {
     $lat = trim($input['lat'] ?? '');
     $lng = trim($input['lng'] ?? '');
     $ref = trim($input['reference'] ?? '');
-    $jobs = loadJobs($jobsPath);
-    if (!$ref || !isset($jobs[$ref]) || ($jobs[$ref]['assigned_driver_id'] ?? '') !== $driverId) {
+    $job = jobsGetByRef($ref);
+    if (!$ref || !$job || ($job['assigned_driver_id'] ?? '') !== $driverId) {
       http_response_code(404);
       echo json_encode(['error' => 'Job not found']);
       exit;
     }
-    $jobs = loadJobs($jobsPath);
     $updates = [
       'driver_lat' => $lat,
       'driver_lng' => $lng,
       'driver_location_updated_at' => date('Y-m-d H:i:s'),
     ];
-    if (empty($jobs[$ref]['job_started_at'])) {
+    if (empty($job['job_started_at'])) {
       $updates['job_started_at'] = date('Y-m-d H:i:s');
     }
-    saveJob($jobsPath, $ref, $updates);
+    jobsUpdate($ref, $updates);
     $db = getDriverDb();
     if (isset($db[$driverId])) {
       $db[$driverId]['driver_lat'] = $lat;
@@ -141,8 +116,8 @@ switch ($action) {
 
   case 'proof':
     $ref = trim($input['reference'] ?? '');
-    $jobs = loadJobs($jobsPath);
-    if (!$ref || !isset($jobs[$ref]) || ($jobs[$ref]['assigned_driver_id'] ?? '') !== $driverId) {
+    $job = jobsGetByRef($ref);
+    if (!$ref || !$job || ($job['assigned_driver_id'] ?? '') !== $driverId) {
       http_response_code(404);
       echo json_encode(['error' => 'Job not found']);
       exit;
@@ -164,7 +139,7 @@ switch ($action) {
       exit;
     }
     $proofUrl = 'database/proofs/' . $filename;
-    saveJob($jobsPath, $ref, [
+    jobsUpdate($ref, [
       'proof_url' => $proofUrl,
       'proof_uploaded_at' => date('Y-m-d H:i:s'),
       'job_completed_at' => date('Y-m-d H:i:s'),
@@ -212,29 +187,29 @@ switch ($action) {
       echo json_encode(['error' => 'Verify your identity (license/ID) and complete payout setup before starting jobs. Complete onboarding and verify in Profile.']);
       exit;
     }
-    $jobs = loadJobs($jobsPath);
-    if (!$ref || !isset($jobs[$ref]) || ($jobs[$ref]['assigned_driver_id'] ?? '') !== $driverId) {
+    $job = jobsGetByRef($ref);
+    if (!$ref || !$job || ($job['assigned_driver_id'] ?? '') !== $driverId) {
       http_response_code(404);
       echo json_encode(['error' => 'Job not found']);
       exit;
     }
-    if (!empty($jobs[$ref]['job_started_at'])) {
+    if (!empty($job['job_started_at'])) {
       echo json_encode(['ok' => true]);
       exit;
     }
-    saveJob($jobsPath, $ref, ['job_started_at' => date('Y-m-d H:i:s')]);
+    jobsUpdate($ref, ['job_started_at' => date('Y-m-d H:i:s')]);
     echo json_encode(['ok' => true]);
     break;
 
   case 'cash_paid':
     $ref = trim($input['reference'] ?? '');
-    $jobs = loadJobs($jobsPath);
-    if (!$ref || !isset($jobs[$ref]) || ($jobs[$ref]['assigned_driver_id'] ?? '') !== $driverId) {
+    $job = jobsGetByRef($ref);
+    if (!$ref || !$job || ($job['assigned_driver_id'] ?? '') !== $driverId) {
       http_response_code(404);
       echo json_encode(['error' => 'Job not found']);
       exit;
     }
-    saveJob($jobsPath, $ref, [
+    jobsUpdate($ref, [
       'payment_method' => 'cash',
       'cash_paid_at' => date('Y-m-d H:i:s'),
       'cash_paid_by' => $driverId,

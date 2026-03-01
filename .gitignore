@@ -4,6 +4,7 @@
 # Customer database (contains personal data – do not commit)
 database/*.csv
 database/jobs.json
+database/mobile_tyre.sqlite
 database/quotes.json
 database/drivers.json
 database/products.json

@@ -12,45 +12,27 @@ if (empty($_SESSION['admin_ok'])) {
 header('Content-Type: application/json');
 
 $base = dirname(__DIR__, 2);
-$dbFolder = $base . '/database';
-$csvPath = $dbFolder . '/customers.csv';
-$jobsPath = $dbFolder . '/jobs.json';
-$quotesPath = $dbFolder . '/quotes.json';
+require_once $base . '/includes/jobs.php';
+require_once $base . '/includes/quotes.php';
 
 $deposits = [];
-if (is_file($csvPath)) {
-  $h = fopen($csvPath, 'r');
-  if ($h) {
-    fgetcsv($h);
-    while (($row = fgetcsv($h)) !== false) {
-      if (count($row) >= 21) {
-        $deposits[] = [
-          'date' => $row[0] ?? '',
-          'reference' => $row[1] ?? '',
-          'email' => $row[3] ?? '',
-          'name' => $row[4] ?? '',
-          'postcode' => $row[6] ?? '',
-          'estimate_total' => $row[18] ?? '',
-          'amount_paid' => $row[19] ?? '',
-          'payment_status' => $row[21] ?? '',
-        ];
-      }
-    }
-    fclose($h);
-  }
+$jobsAll = jobsGetAll();
+foreach ($jobsAll as $ref => $v) {
+  if (!is_array($v)) continue;
+  $deposits[] = [
+    'date' => $v['date'] ?? $v['created_at'] ?? '',
+    'reference' => $v['reference'] ?? $ref,
+    'email' => $v['email'] ?? '',
+    'name' => $v['name'] ?? '',
+    'postcode' => $v['postcode'] ?? '',
+    'estimate_total' => $v['estimate_total'] ?? '',
+    'amount_paid' => $v['amount_paid'] ?? '',
+    'payment_status' => $v['payment_status'] ?? 'paid',
+  ];
 }
+$jobsCount = count($jobsAll);
 
-$jobsCount = 0;
-if (is_file($jobsPath)) {
-  $jobs = @json_decode(file_get_contents($jobsPath), true) ?: [];
-  $jobsCount = count(array_filter(array_keys($jobs), fn($k) => !str_starts_with((string)$k, '_')));
-}
-
-$quotesCount = 0;
-if (is_file($quotesPath)) {
-  $quotes = @json_decode(file_get_contents($quotesPath), true) ?: [];
-  $quotesCount = is_array($quotes) ? count($quotes) : 0;
-}
+$quotesCount = count(quotesGetAll());
 
 $totalRevenue = array_sum(array_map(function ($d) {
   return (float) preg_replace('/[^0-9.]/', '', $d['amount_paid'] ?? 0);

@@ -40,5 +40,9 @@
   "vatNumber": "",
   "vatRate": 20,
   "driverScannerUrl": "https://no5tyreandmot.co.uk/test/driver-scanner.html",
-  "vrmApiToken": "85dca976faf339b9d37f8b4f6e3219f7"
+  "vrmApiToken": "85dca976faf339b9d37f8b4f6e3219f7",
+  "useDatabase": true,
+  "databaseDsn": "mysql:host=localhost;dbname=no5tyreandmotco_db;charset=utf8mb4",
+  "databaseUser": "no5tyreandmotco_db",
+  "databasePass": "$@V&NG&=8N5wq$dz"
 }
