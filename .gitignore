@@ -5,5 +5,7 @@
 database/*.csv
 database/jobs.json
 database/quotes.json
+database/drivers.json
+database/proofs/
 admin/config.json
 .stripe-db-saved

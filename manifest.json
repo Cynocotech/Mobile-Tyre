@@ -1,0 +1,18 @@
+{
+  "name": "No 5 Tyre Driver",
+  "short_name": "No5 Driver",
+  "description": "Driver app for mobile tyre fitting jobs",
+  "start_url": "/driver/dashboard.php",
+  "display": "standalone",
+  "background_color": "#18181b",
+  "theme_color": "#18181b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

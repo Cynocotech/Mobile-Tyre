@@ -15,7 +15,19 @@ if ($vrm === '') {
   exit;
 }
 
-$apiKey = '85dca976faf339b9d37f8b4f6e3219f7';
+$apiKey = getenv('VRM_API_TOKEN');
+if (!$apiKey || trim($apiKey) === '') {
+  $configPath = __DIR__ . '/dynamic.json';
+  if (is_file($configPath)) {
+    $config = @json_decode(file_get_contents($configPath), true);
+    if (!empty($config['vrmApiToken'])) {
+      $apiKey = trim((string) $config['vrmApiToken']);
+    }
+  }
+}
+if (!$apiKey) {
+  $apiKey = '85dca976faf339b9d37f8b4f6e3219f7';
+}
 $url = 'https://api.checkcardetails.co.uk/vehicledata/vehicleregistration?apikey=' . urlencode($apiKey) . '&vrm=' . urlencode(strtoupper($vrm));
 
 $ctx = stream_context_create([

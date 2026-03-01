@@ -57,7 +57,13 @@ require_once __DIR__ . '/header.php';
   <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-800 p-6">
     <div class="flex justify-between items-start mb-6">
       <h2 class="text-xl font-bold text-white">Order #<span id="order-ref">—</span></h2>
-      <button type="button" id="order-modal-close" class="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-700">×</button>
+      <div class="flex items-center gap-2">
+        <a id="print-invoice-btn" href="#" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-safety text-zinc-900 font-bold text-sm hover:bg-[#e5c900] no-underline">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+          Print invoice
+        </a>
+        <button type="button" id="order-modal-close" class="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-700">×</button>
+      </div>
     </div>
     <div id="order-loading" class="text-zinc-500 py-8 text-center">Loading…</div>
     <div id="order-detail" class="hidden space-y-6"></div>
@@ -106,7 +112,8 @@ require_once __DIR__ . '/header.php';
     var modal = document.getElementById('order-modal');
     var detailEl = document.getElementById('order-detail');
     var loadingEl = document.getElementById('order-loading');
-    document.getElementById('order-ref').textContent = ref;
+        document.getElementById('order-ref').textContent = ref;
+        document.getElementById('print-invoice-btn').href = 'invoice.php?ref=' + encodeURIComponent(ref);
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
     detailEl.classList.add('hidden');
@@ -152,6 +159,18 @@ require_once __DIR__ . '/header.php';
             '<a href="../verify.php?session_id=' + encodeURIComponent(o.session_id) + '" target="_blank" class="inline-flex items-center gap-2 text-safety text-sm font-medium hover:underline">View verify page (driver scan)</a>' +
           '</div>' : '') +
           '<div class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">' +
+            '<h3 class="text-sm font-semibold text-zinc-400 mb-3">Driver</h3>' +
+            '<div class="flex flex-wrap items-center gap-2">' +
+              '<span class="text-white">' + (o.assigned_driver_name || '—') + '</span>' +
+              '<select id="assign-driver-select" class="px-3 py-1.5 rounded bg-zinc-700 border border-zinc-600 text-white text-sm">' +
+                '<option value="">Assign driver…</option>' +
+              '</select>' +
+              '<button type="button" id="assign-driver-btn" class="px-3 py-1.5 rounded bg-safety text-zinc-900 text-sm font-medium">Assign</button>' +
+            '</div>' +
+            (o.payment_method === 'cash' ? '<p class="text-amber-400 text-xs mt-2">Paid in cash' + (o.cash_paid_at ? ' at ' + o.cash_paid_at : '') + '</p>' : '') +
+            (o.proof_url ? '<p class="text-green-400 text-xs mt-1">Proof uploaded</p>' : '') +
+          '</div>' +
+          '<div class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">' +
             '<h3 class="text-sm font-semibold text-zinc-400 mb-3">Vehicle</h3>' +
             '<dl class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">' +
               '<dt class="text-zinc-500">VRM</dt><dd class="text-white font-mono">' + (o.vrm || '—') + '</dd>' +
@@ -162,11 +181,36 @@ require_once __DIR__ . '/header.php';
             '</dl>' +
           '</div>';
       })
+      .then(function() {
+        loadDriversForAssign(ref);
+      })
       .catch(function() {
         loadingEl.classList.add('hidden');
         detailEl.classList.remove('hidden');
         detailEl.innerHTML = '<p class="text-red-400">Failed to load order details.</p>';
       });
+  }
+
+  function loadDriversForAssign(ref) {
+    fetch('api/drivers-list.php').then(function(r) { return r.json(); }).then(function(d) {
+      var sel = document.getElementById('assign-driver-select');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">Assign driver…</option>' + (d.drivers || []).map(function(drv) {
+        return '<option value="' + drv.id + '">' + (drv.name || drv.email) + ' – ' + (drv.van_make || '') + ' ' + (drv.van_reg || '') + '</option>';
+      }).join('');
+      var btn = document.getElementById('assign-driver-btn');
+      if (btn) btn.onclick = function() {
+        var did = sel.value;
+        if (!did) return;
+        fetch('api/assign-driver.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reference: ref, driver_id: did })
+        }).then(function(r) { return r.json(); }).then(function(res) {
+          if (res.ok) showOrder(ref); else alert(res.error || 'Failed');
+        });
+      };
+    });
   }
 
   document.getElementById('order-modal-close').addEventListener('click', function() {

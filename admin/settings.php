@@ -101,6 +101,11 @@ require_once __DIR__ . '/header.php';
     <h2 class="text-lg font-semibold text-white mb-4">Driver & Misc</h2>
     <div class="space-y-4">
       <div>
+        <label for="vrmApiToken" class="block text-sm font-medium text-zinc-300 mb-1">VRM API token (CheckCarDetails)</label>
+        <input type="password" id="vrmApiToken" name="vrmApiToken" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none font-mono text-sm" placeholder="API key for vehicle lookup">
+        <p class="text-zinc-500 text-xs mt-1">Used by Check vehicle and Add driver lookup. Leave blank to keep current.</p>
+      </div>
+      <div>
         <label for="driverScannerUrl" class="block text-sm font-medium text-zinc-300 mb-1">Driver scanner URL</label>
         <input type="url" id="driverScannerUrl" name="driverScannerUrl" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="https://.../driver-scanner.html">
       </div>
@@ -141,6 +146,7 @@ require_once __DIR__ . '/header.php';
       document.getElementById('smtp_encryption').value = smtp.encryption || 'ssl';
       document.getElementById('vatNumber').value = data.vatNumber || '';
       document.getElementById('vatRate').value = data.vatRate ?? '';
+      document.getElementById('vrmApiToken').value = data.vrmApiToken || '';
       document.getElementById('driverScannerUrl').value = data.driverScannerUrl || '';
       document.getElementById('gtmContainerId').value = data.gtmContainerId || '';
     })
@@ -159,6 +165,7 @@ require_once __DIR__ . '/header.php';
       vatRate: parseInt(document.getElementById('vatRate').value, 10) || 0,
       driverScannerUrl: document.getElementById('driverScannerUrl').value,
       gtmContainerId: document.getElementById('gtmContainerId').value,
+      vrmApiToken: document.getElementById('vrmApiToken').value,
       smtp: {
         host: document.getElementById('smtp_host').value,
         port: parseInt(document.getElementById('smtp_port').value, 10) || 465,
@@ -172,6 +179,8 @@ require_once __DIR__ . '/header.php';
     if (sk) payload.stripeSecretKey = sk;
     var pass = document.getElementById('smtp_pass').value;
     if (pass) payload.smtp.pass = pass;
+    var vrm = document.getElementById('vrmApiToken').value;
+    if (vrm) payload.vrmApiToken = vrm;
     status.textContent = 'Saving…';
     fetch('api/settings.php', {
       method: 'POST',

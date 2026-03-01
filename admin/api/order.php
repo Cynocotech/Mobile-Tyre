@@ -57,11 +57,22 @@ if (is_file($csvPath)) {
   }
 }
 
-if (!$order && is_file($jobsPath)) {
+$driversPath = $dbFolder . '/drivers.json';
+$drivers = is_file($driversPath) ? json_decode(file_get_contents($driversPath), true) : [];
+
+if (is_file($jobsPath)) {
   $jobs = @json_decode(file_get_contents($jobsPath), true) ?: [];
   if (isset($jobs[$ref]) && is_array($jobs[$ref])) {
-    $order = $jobs[$ref];
-    if (empty($order['date'])) $order['date'] = '';
+    $jobData = $jobs[$ref];
+    if ($order) {
+      $order = array_merge($order, array_intersect_key($jobData, array_flip(['assigned_driver_id', 'payment_method', 'cash_paid_at', 'proof_url', 'driver_lat', 'driver_lng'])));
+    } else {
+      $order = $jobData;
+      if (empty($order['date'])) $order['date'] = '';
+    }
+    if (!empty($order['assigned_driver_id']) && isset($drivers[$order['assigned_driver_id']])) {
+      $order['assigned_driver_name'] = $drivers[$order['assigned_driver_id']]['name'] ?? '';
+    }
   }
 }
 

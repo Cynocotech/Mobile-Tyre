@@ -30,12 +30,15 @@ require_once __DIR__ . '/header.php';
             <input type="tel" id="driver-phone" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none">
           </div>
           <div>
-            <label for="driver-van" class="block text-sm font-medium text-zinc-300 mb-1">Van / vehicle</label>
-            <input type="text" id="driver-van" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="e.g. Ford Transit">
+            <label for="driver-vanReg" class="block text-sm font-medium text-zinc-300 mb-1">Van registration</label>
+            <div class="flex gap-2">
+              <input type="text" id="driver-vanReg" class="flex-1 px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="AB12 CDE">
+              <button type="button" id="driver-lookup-vrm" class="px-3 py-2 rounded-lg bg-zinc-600 text-zinc-200 text-sm whitespace-nowrap hover:bg-zinc-600/80">Look up</button>
+            </div>
           </div>
           <div>
-            <label for="driver-vanReg" class="block text-sm font-medium text-zinc-300 mb-1">Van registration</label>
-            <input type="text" id="driver-vanReg" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="AB12 CDE">
+            <label for="driver-van" class="block text-sm font-medium text-zinc-300 mb-1">Van / vehicle</label>
+            <input type="text" id="driver-van" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="e.g. Ford Transit (auto-filled from lookup)">
           </div>
           <div>
             <label for="driver-notes" class="block text-sm font-medium text-zinc-300 mb-1">Notes</label>
@@ -173,6 +176,27 @@ require_once __DIR__ . '/header.php';
   document.getElementById('btn-add-driver').addEventListener('click', function() { openDriverModal(); });
   document.getElementById('driver-modal-cancel').addEventListener('click', closeDriverModal);
   modal.addEventListener('click', function(e) { if (e.target === modal) closeDriverModal(); });
+
+  document.getElementById('driver-lookup-vrm').addEventListener('click', function() {
+    var vrm = document.getElementById('driver-vanReg').value.trim().replace(/\s+/g, '');
+    if (!vrm || vrm.length < 2) { alert('Enter a registration to look up'); return; }
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Looking up…';
+    fetch('../vehicle-check.php?vrm=' + encodeURIComponent(vrm))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.registrationNumber || data.make || data.model) {
+          var make = (data.make || '').trim();
+          var model = (data.model || '').trim();
+          document.getElementById('driver-van').value = [make, model].filter(Boolean).join(' ') || document.getElementById('driver-van').value;
+        } else {
+          alert(data.error || 'Vehicle not found');
+        }
+      })
+      .catch(function() { alert('Lookup failed'); })
+      .finally(function() { btn.disabled = false; btn.textContent = 'Look up'; });
+  });
 
   form.addEventListener('submit', function(e) {
     e.preventDefault();

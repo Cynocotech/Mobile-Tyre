@@ -29,7 +29,7 @@ if (!is_array($current)) $current = [];
 $merge = [
   'laborPrice', 'images', 'prices', 'telegramBotToken', 'telegramChatIds',
   'stripePublishableKey', 'stripeSecretKey', 'smtp', 'vatNumber', 'vatRate',
-  'driverScannerUrl', 'gtmContainerId', 'services'
+  'driverScannerUrl', 'gtmContainerId', 'vrmApiToken', 'services'
 ];
 foreach ($merge as $k) {
   if (array_key_exists($k, $input)) {
