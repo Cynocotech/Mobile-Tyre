@@ -23,8 +23,11 @@ function dbGetJobByRef(string $ref): ?array {
   $ref = preg_replace('/[^0-9]/', '', $ref);
   if (!$ref) return null;
   $refPadded = strlen($ref) <= 6 ? str_pad($ref, 6, '0', STR_PAD_LEFT) : $ref;
-  $st = $pdo->prepare("SELECT * FROM jobs WHERE reference = ? OR reference = ?");
-  $st->execute([$ref, $refPadded]);
+  // Try both padded and unpadded (e.g. "000123" and "123")
+  $refTrimmed = ltrim($refPadded, '0');
+  $refTrimmed = $refTrimmed === '' ? '0' : $refTrimmed;
+  $st = $pdo->prepare("SELECT * FROM jobs WHERE reference = ? OR reference = ? OR reference = ?");
+  $st->execute([$ref, $refPadded, $refTrimmed]);
   $r = $st->fetch(PDO::FETCH_ASSOC);
   return $r ? dbRowToJob($r) : null;
 }
@@ -67,7 +70,11 @@ function dbSaveJob(array $job): bool {
 function dbUpdateJob(string $ref, array $updates): bool {
   $job = dbGetJobByRef($ref);
   if (!$job) return false;
-  return dbSaveJob(array_merge($job, $updates, ['reference' => $ref]));
+  // Keep the existing reference from DB for the WHERE clause – do not overwrite with padded form
+  $merged = array_merge($job, $updates);
+  unset($merged['reference']);
+  $merged['reference'] = $job['reference'] ?? $ref;
+  return dbSaveJob($merged);
 }
 
 function dbAssignDriver(string $ref, string $driverId): bool {

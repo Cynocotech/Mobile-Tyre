@@ -3,8 +3,11 @@ session_start();
 if (empty($_SESSION['admin_ok'])) { http_response_code(403); header('Content-Type: application/json'); echo json_encode(['error' => 'Unauthorized']); exit; }
 header('Content-Type: application/json');
 
-require_once dirname(__DIR__, 2) . '/includes/jobs.php';
-require_once dirname(__DIR__, 2) . '/driver/config.php';
+$base = dirname(__DIR__, 2);
+require_once $base . '/config/db.php';
+require_once $base . '/config/db-helpers.php';
+require_once $base . '/includes/jobs.php';
+require_once $base . '/driver/config.php';
 
 $input = json_decode(file_get_contents('php://input'), true) ?: [];
 $ref = preg_replace('/[^0-9]/', '', trim((string) ($input['reference'] ?? '')));
