@@ -4,10 +4,11 @@ if (empty($_SESSION['admin_ok'])) { http_response_code(403); header('Content-Typ
 header('Content-Type: application/json');
 
 $input = json_decode(file_get_contents('php://input'), true) ?: [];
-$ref = trim((string) ($input['reference'] ?? ''));
+$ref = preg_replace('/[^0-9]/', '', trim((string) ($input['reference'] ?? '')));
+$refPadded = $ref !== '' ? str_pad($ref, 6, '0', STR_PAD_LEFT) : '';
 $driverId = trim((string) ($input['driver_id'] ?? ''));
 
-if (!$ref || !$driverId) {
+if (!$refPadded || !$driverId) {
   http_response_code(400);
   echo json_encode(['error' => 'Reference and driver_id required']);
   exit;
@@ -45,16 +46,19 @@ if (!$driverValid) {
 $jobs = is_file($jobsPath) ? json_decode(file_get_contents($jobsPath), true) : [];
 if (!is_array($jobs)) $jobs = [];
 
-if (!isset($jobs[$ref])) {
+$jobKey = isset($jobs[$ref]) ? $ref : (isset($jobs[$refPadded]) ? $refPadded : null);
+if ($jobKey === null) {
   $jobFromCsv = null;
   if (is_file($csvPath)) {
     $h = fopen($csvPath, 'r');
     if ($h) {
       $header = fgetcsv($h);
       while (($row = fgetcsv($h)) !== false) {
-        if ((string)($row[1] ?? '') === (string)$ref) {
+        $rowRef = preg_replace('/[^0-9]/', '', (string)($row[1] ?? ''));
+        $rowRefPadded = $rowRef !== '' ? str_pad($rowRef, 6, '0', STR_PAD_LEFT) : '';
+        if ($rowRefPadded === $refPadded || (string)($row[1] ?? '') === (string)$ref) {
           $jobFromCsv = [
-            'reference' => $row[1] ?? '',
+            'reference' => $refPadded,
             'session_id' => $row[2] ?? '',
             'email' => $row[3] ?? '',
             'name' => $row[4] ?? '',
@@ -80,13 +84,15 @@ if (!isset($jobs[$ref])) {
     echo json_encode(['error' => 'Job not found. Ensure the deposit exists in the system.']);
     exit;
   }
-  $jobs[$ref] = $jobFromCsv;
+  $jobs[$refPadded] = $jobFromCsv;
+  $jobKey = $refPadded;
 }
 
-$jobs[$ref]['assigned_driver_id'] = $driverId;
-$jobs[$ref]['assigned_at'] = date('Y-m-d H:i:s');
-$sid = $jobs[$ref]['session_id'] ?? '';
-if ($sid) $jobs['_session_' . $sid] = $jobs[$ref];
+$jobKey = $jobKey ?? $refPadded ?? $ref;
+$jobs[$jobKey]['assigned_driver_id'] = $driverId;
+$jobs[$jobKey]['assigned_at'] = date('Y-m-d H:i:s');
+$sid = $jobs[$jobKey]['session_id'] ?? '';
+if ($sid) $jobs['_session_' . $sid] = $jobs[$jobKey];
 
 $jobsDir = dirname($jobsPath);
 if (!is_dir($jobsDir)) @mkdir($jobsDir, 0755, true);

@@ -20,7 +20,7 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
   <script>tailwind.config = { theme: { extend: { colors: { safety: '#fede00' } } } }</script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="../html5-qrcode-master/minified/html5-qrcode.min.js" onerror="this.remove();var s=document.createElement('script');s.src='https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';document.head.appendChild(s);"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body class="bg-zinc-900 text-zinc-200 antialiased min-h-screen">
   <header class="sticky top-0 z-40 bg-zinc-900/95 backdrop-blur border-b border-zinc-700">
@@ -76,13 +76,34 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
     </div>
   </main>
 
-  <!-- QR Scanner modal -->
+  <!-- QR Scanner modal (same template as driver-scanner) -->
   <div id="qr-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 overflow-y-auto" style="display: none;">
     <div class="w-full max-w-lg rounded-2xl border border-zinc-700 bg-zinc-800 p-6 my-4">
-      <h3 class="text-lg font-bold text-white mb-2">Scan job receipt</h3>
-      <p class="text-zinc-500 text-sm mb-4">Point your camera at the customer's receipt QR code</p>
-      <div id="qr-reader" class="rounded-xl overflow-hidden bg-black mb-4" style="width: 100%; min-height: 280px;"></div>
-      <p id="qr-status" class="text-sm text-zinc-400 mb-4 hidden"></p>
+      <div class="text-center mb-6">
+        <h3 class="text-xl font-bold text-white mb-1">Scan job receipt</h3>
+        <p class="text-zinc-500 text-sm">Point your camera at the customer's receipt QR code, or enter reference below</p>
+      </div>
+      <div class="scanner-frame mb-6 bg-black rounded-2xl p-4">
+        <div id="qr-reader" class="rounded-xl overflow-hidden" style="width: 100%; min-height: 260px;"></div>
+      </div>
+      <div class="relative flex items-center gap-4 mb-6">
+        <div class="flex-1 h-px bg-zinc-700"></div>
+        <span class="text-zinc-500 text-xs font-medium">or enter reference</span>
+        <div class="flex-1 h-px bg-zinc-700"></div>
+      </div>
+      <div class="rounded-2xl border border-zinc-700 bg-zinc-800/50 p-4 mb-4">
+        <form id="qr-ref-form" class="flex gap-3">
+          <div class="flex-1 relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-mono text-lg">#</span>
+            <input type="text" id="qr-ref-input" placeholder="123456" maxlength="6" pattern="[0-9]*" inputmode="numeric" class="w-full pl-8 pr-4 py-3 rounded-xl bg-zinc-700/80 border-2 border-zinc-600 text-white font-mono text-xl placeholder-zinc-600 focus:border-safety focus:ring-2 focus:ring-safety/20 focus:outline-none transition-colors">
+          </div>
+          <button type="submit" class="px-5 py-3 bg-safety text-zinc-900 font-bold rounded-xl hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-800 shrink-0 flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            View
+          </button>
+        </form>
+      </div>
+      <p id="qr-status" class="text-center text-sm py-3 rounded-lg hidden mb-4"></p>
       <button type="button" id="qr-close" class="w-full px-4 py-2 border border-zinc-600 text-zinc-300 rounded-lg text-sm hover:bg-zinc-700">Close</button>
     </div>
   </div>
@@ -281,17 +302,24 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
     });
 
     document.getElementById('btn-online').addEventListener('click', function() {
+      var btn = this;
       var wantOnline = !driverData.is_online;
+      btn.disabled = true;
       fetch('api/jobs.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'set_online', online: wantOnline })
-      }).then(function(r) { return r.json(); }).then(function(d) {
+      }).then(function(r) {
+        if (!r.ok) return r.json().then(function(d) { throw new Error(d.error || 'Request failed'); });
+        return r.json();
+      }).then(function(d) {
         if (d.ok) {
           driverData.is_online = d.is_online;
           setOnlineBtn(d.is_online);
-        } else alert(d.error || 'Failed');
-      });
+        } else throw new Error(d.error || 'Failed');
+      }).catch(function(err) {
+        alert(err.message || 'Could not update. Check connection.');
+      }).finally(function() { btn.disabled = false; });
     });
 
     document.getElementById('location-confirm').addEventListener('click', function() {
@@ -340,45 +368,66 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       var status = document.getElementById('qr-status');
       status.classList.add('hidden');
       status.textContent = '';
+      status.classList.remove('text-green-400', 'text-amber-400', 'bg-green-500/10', 'bg-amber-500/10');
+      document.getElementById('qr-ref-input').value = '';
       qrLastScanned = '';
       modal.classList.remove('hidden');
       modal.style.display = 'flex';
-      var ScannerClass = (typeof Html5QrcodeScanner !== 'undefined' && Html5QrcodeScanner) || (window.__Html5QrcodeLibrary__ && window.__Html5QrcodeLibrary__.Html5QrcodeScanner);
-      if (!ScannerClass) {
-        status.textContent = 'Scanner not loaded. Ensure html5-qrcode-master/minified/html5-qrcode.min.js is accessible.';
+      var Html5QrcodeClass = (typeof Html5Qrcode !== 'undefined' && Html5Qrcode) || (window.__Html5QrcodeLibrary__ && window.__Html5QrcodeLibrary__.Html5Qrcode);
+      if (!Html5QrcodeClass) {
+        status.textContent = 'Scanner not loaded. Enter reference below.';
         status.classList.remove('hidden');
-        status.classList.add('text-amber-400');
+        status.classList.add('text-amber-400', 'bg-amber-500/10');
         return;
       }
       var readerEl = document.getElementById('qr-reader');
       readerEl.innerHTML = '';
-      qrScanner = new ScannerClass('qr-reader', { fps: 12, qrbox: 250, rememberLastUsedCamera: false });
-      qrScanner.render(
-        function onSuccess(decodedText) {
-          if (!decodedText || decodedText === qrLastScanned) return;
-          qrLastScanned = decodedText;
-          var target = goToVerifyFromScan(decodedText);
-          if (target) {
-            status.textContent = 'Found! Loading…';
-            status.classList.remove('hidden');
-            status.classList.add('text-green-400');
-            qrScanner.clear().catch(function() {});
-            qrScanner = null;
-            window.location.href = target;
-          } else {
-            status.textContent = 'Unknown format. Scan the receipt QR code.';
-            status.classList.remove('hidden');
-            status.classList.add('text-amber-400');
-          }
-        },
-        function onError() {}
-      );
+      status.textContent = 'Starting camera…';
+      status.classList.remove('hidden');
+      status.classList.add('text-zinc-500');
+      qrScanner = new Html5QrcodeClass('qr-reader');
+      var scanConfig = { fps: 20, qrbox: 220, disableFlip: true, experimentalFeatures: { useBarCodeDetectorIfSupported: true } };
+      function onScan(decodedText) {
+        if (!decodedText || decodedText === qrLastScanned) return;
+        qrLastScanned = decodedText;
+        var target = goToVerifyFromScan(decodedText);
+        if (target) {
+          status.textContent = 'Found! Loading job…';
+          status.classList.remove('hidden', 'text-amber-400', 'bg-amber-500/10');
+          status.classList.add('text-green-400', 'bg-green-500/10');
+          qrScanner.stop().then(function() { qrScanner = null; }).catch(function() { qrScanner = null; });
+          window.location.href = target;
+        } else {
+          status.textContent = 'Unknown format. Scan the receipt QR or enter the 6-digit reference.';
+          status.classList.remove('hidden', 'text-green-400', 'bg-green-500/10');
+          status.classList.add('text-amber-400', 'bg-amber-500/10');
+        }
+      }
+      function tryStart(c) {
+        return qrScanner.start(c, scanConfig, onScan, function() {}).then(function() { return c; });
+      }
+      tryStart({ facingMode: 'environment' }).catch(function() {
+        return tryStart({ facingMode: 'user' }).catch(function() {
+          return Html5QrcodeClass.getCameras().then(function(cams) {
+            if (!cams || cams.length === 0) throw new Error('No camera');
+            var cam = cams.find(function(c) { return /back|rear|environment/i.test(c.label); }) || cams[0];
+            return tryStart(cam.id);
+          });
+        });
+      }).then(function() {
+        status.classList.add('hidden');
+        status.classList.remove('text-zinc-500');
+      }).catch(function() {
+        status.textContent = 'Camera denied. Enter reference below.';
+        status.classList.remove('hidden', 'text-green-400', 'bg-green-500/10');
+        status.classList.add('text-amber-400', 'bg-amber-500/10');
+      });
     }
 
     function closeQrModal() {
       var modal = document.getElementById('qr-modal');
       if (qrScanner) {
-        qrScanner.clear().catch(function() {});
+        qrScanner.stop().catch(function() {});
         qrScanner = null;
       }
       document.getElementById('qr-reader').innerHTML = '';
@@ -390,6 +439,21 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
     document.getElementById('qr-close').addEventListener('click', closeQrModal);
     document.getElementById('qr-modal').addEventListener('click', function(e) {
       if (e.target.id === 'qr-modal') closeQrModal();
+    });
+    document.getElementById('qr-ref-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var ref = document.getElementById('qr-ref-input').value.replace(/\D/g, '');
+      if (ref.length >= 4) {
+        window.location.href = '../verify.php?ref=' + encodeURIComponent(ref);
+      } else {
+        var st = document.getElementById('qr-status');
+        st.textContent = 'Enter at least 4 digits of the reference.';
+        st.classList.remove('hidden');
+        st.classList.add('text-amber-400', 'bg-amber-500/10');
+      }
+    });
+    document.getElementById('qr-ref-input').addEventListener('input', function() {
+      this.value = this.value.replace(/\D/g, '').slice(0, 6);
     });
 
     function markCashPaid(ref) {
@@ -438,10 +502,13 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
   <style>
   .driver-marker { filter: hue-rotate(45deg) saturate(1.5); }
   #map.leaflet-container { background: #27272a !important; }
-  #qr-reader video, #qr-reader img, #qr-reader canvas { border-radius: 0.75rem; object-fit: cover; max-width: 100%; }
+  .scanner-frame { position: relative; border-radius: 1.5rem; overflow: visible; box-shadow: 0 0 0 4px rgba(254, 222, 0, 0.15), 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+  #qr-reader { border-radius: 1rem; overflow: hidden; }
+  #qr-reader video, #qr-reader img, #qr-reader canvas { border-radius: 1rem; object-fit: cover; }
   #qr-reader__scan_region { background: #000 !important; }
-  #qr-reader .html5-qrcode-element { color: #e4e4e7; }
-  #qr-reader button { background: #fede00 !important; color: #000 !important; font-weight: 600 !important; border: none !important; padding: 0.5rem 1rem !important; border-radius: 0.5rem !important; cursor: pointer !important; }
+  #qr-reader__dashboard { margin-top: 0.5rem !important; }
+  #qr-reader__dashboard_section { padding: 0.5rem 0 !important; }
+  #qr-reader__dashboard_section_csr button, #qr-reader button { background: #fede00 !important; color: #000 !important; border: none !important; padding: 0.5rem 1rem !important; border-radius: 0.5rem !important; font-weight: 600 !important; cursor: pointer !important; }
   </style>
 </body>
 </html>

@@ -3,6 +3,8 @@ $pageTitle = 'Dashboard';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/header.php';
 ?>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <h1 class="text-2xl font-bold text-white mb-8">Dashboard</h1>
 
 <div id="stats-loading" class="text-zinc-500">Loading stats…</div>
@@ -28,6 +30,14 @@ require_once __DIR__ . '/header.php';
       <p id="stat-quotes" class="text-2xl font-bold text-white mt-1">0</p>
       <p class="text-zinc-400 text-xs mt-1">requests</p>
     </div>
+  </div>
+
+  <div class="rounded-xl border border-zinc-700 bg-zinc-800/50 overflow-hidden">
+    <h2 class="text-lg font-semibold text-white px-6 py-4 border-b border-zinc-700">Driver locations</h2>
+    <div id="admin-map-container" class="w-full" style="height: 320px; min-height: 240px;">
+      <div id="admin-map" class="w-full h-full bg-zinc-800"></div>
+    </div>
+    <p id="admin-map-empty" class="hidden px-6 py-4 text-zinc-500 text-sm">No drivers with location data yet. Drivers appear here when they go online and update their location.</p>
   </div>
 
   <div class="rounded-xl border border-zinc-700 bg-zinc-800/50 overflow-hidden">
@@ -72,11 +82,47 @@ require_once __DIR__ . '/header.php';
 
 <script>
 (function() {
+  var adminMap, adminMarkers = [];
+
+  function initAdminMap(locations) {
+    var container = document.getElementById('admin-map-container');
+    var emptyMsg = document.getElementById('admin-map-empty');
+    if (!locations || locations.length === 0) {
+      if (container) container.classList.add('hidden');
+      if (emptyMsg) emptyMsg.classList.remove('hidden');
+      return;
+    }
+    if (container) container.classList.remove('hidden');
+    if (emptyMsg) emptyMsg.classList.add('hidden');
+    if (!adminMap) {
+      adminMap = L.map('admin-map').setView([51.5074, -0.1278], 10);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 19
+      }).addTo(adminMap);
+    }
+    adminMarkers.forEach(function(m) { adminMap.removeLayer(m); });
+    adminMarkers = [];
+    var bounds = [];
+    locations.forEach(function(d) {
+      var lat = parseFloat(d.lat), lng = parseFloat(d.lng);
+      if (isNaN(lat) || isNaN(lng)) return;
+      var popup = (d.name || 'Driver') + (d.is_online ? ' <span class="text-green-400">• Online</span>' : '');
+      var m = L.marker([lat, lng]).addTo(adminMap).bindPopup(popup);
+      adminMarkers.push(m);
+      bounds.push([lat, lng]);
+    });
+    if (bounds.length > 0) {
+      adminMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
+    }
+  }
+
   fetch('api/stats.php')
     .then(function(r) { return r.json(); })
     .then(function(data) {
       document.getElementById('stats-loading').classList.add('hidden');
       document.getElementById('stats-content').classList.remove('hidden');
+      initAdminMap(data.driverLocations || []);
       if (data.deposits) {
         document.getElementById('stat-deposits-total').textContent = '£' + (data.deposits.total || 0).toFixed(2);
         document.getElementById('stat-deposits-count').textContent = data.deposits.count || 0;
@@ -110,14 +156,16 @@ require_once __DIR__ . '/header.php';
   function showOrder(ref) {
     if (!ref) return;
     var modal = document.getElementById('order-modal');
+    var modalContent = modal && modal.firstElementChild ? modal.firstElementChild : null;
     var detailEl = document.getElementById('order-detail');
     var loadingEl = document.getElementById('order-loading');
-        document.getElementById('order-ref').textContent = ref;
-        document.getElementById('print-invoice-btn').href = 'invoice.php?ref=' + encodeURIComponent(ref);
+    document.getElementById('order-ref').textContent = ref;
+    document.getElementById('print-invoice-btn').href = 'invoice.php?ref=' + encodeURIComponent(ref);
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
     detailEl.classList.add('hidden');
     loadingEl.classList.remove('hidden');
+    if (modalContent) modalContent.scrollTop = 0;
     fetch('api/order.php?ref=' + encodeURIComponent(ref))
       .then(function(r) { return r.json(); })
       .then(function(o) {
@@ -180,9 +228,10 @@ require_once __DIR__ . '/header.php';
               '<dt class="text-zinc-500">Wheels</dt><dd class="text-white">' + (o.wheels || '—') + '</dd>' +
             '</dl>' +
           '</div>';
+        return o;
       })
-      .then(function() {
-        loadDriversForAssign(ref);
+      .then(function(o) {
+        if (o) loadDriversForAssign(ref, o.assigned_driver_id);
       })
       .catch(function() {
         loadingEl.classList.add('hidden');
@@ -191,12 +240,14 @@ require_once __DIR__ . '/header.php';
       });
   }
 
-  function loadDriversForAssign(ref) {
+  function loadDriversForAssign(ref, assignedDriverId) {
     fetch('api/drivers-list.php').then(function(r) { return r.json(); }).then(function(d) {
       var sel = document.getElementById('assign-driver-select');
       if (!sel) return;
-      sel.innerHTML = '<option value="">Assign driver…</option>' + (d.drivers || []).map(function(drv) {
-        return '<option value="' + drv.id + '">' + (drv.name || drv.email) + ' – ' + (drv.van_make || '') + ' ' + (drv.van_reg || '') + '</option>';
+      var drivers = d.drivers || [];
+      sel.innerHTML = '<option value="">Assign driver…</option>' + drivers.map(function(drv) {
+        var selAttr = (assignedDriverId && drv.id === assignedDriverId) ? ' selected' : '';
+        return '<option value="' + drv.id + '"' + selAttr + '>' + (drv.name || drv.email) + ' – ' + (drv.van_make || '') + ' ' + (drv.van_reg || '') + '</option>';
       }).join('');
       var btn = document.getElementById('assign-driver-btn');
       if (btn) btn.onclick = function() {

@@ -62,9 +62,29 @@ $last30 = array_filter($deposits, function ($d) {
   return $t && $t >= strtotime('-30 days');
 });
 
+$driversPath = $dbFolder . '/drivers.json';
+$driverLocations = [];
+$db = [];
+if (is_file($driversPath)) {
+  $db = @json_decode(file_get_contents($driversPath), true) ?: [];
+  foreach ($db as $id => $d) {
+    if (is_array($d) && !empty($d['driver_lat']) && !empty($d['driver_lng']) && empty($d['blacklisted'])) {
+      $driverLocations[] = [
+        'id' => $id,
+        'name' => $d['name'] ?? '',
+        'lat' => (float) $d['driver_lat'],
+        'lng' => (float) $d['driver_lng'],
+        'is_online' => !empty($d['is_online']),
+        'updated_at' => $d['driver_location_updated_at'] ?? '',
+      ];
+    }
+  }
+}
+
 echo json_encode([
   'deposits' => ['count' => $paidCount, 'total' => round($totalDeposits, 2), 'last7' => count($last7), 'last30' => count($last30)],
   'jobs' => count($jobs),
   'quotes' => count($quotes),
   'recentDeposits' => array_slice(array_reverse($deposits), 0, 10),
+  'driverLocations' => $driverLocations,
 ]);

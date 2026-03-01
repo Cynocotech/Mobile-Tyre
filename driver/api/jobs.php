@@ -156,9 +156,18 @@ switch ($action) {
   case 'set_online':
     $db = getDriverDb();
     if (!isset($db[$driverId])) {
-      http_response_code(404);
-      echo json_encode(['error' => 'Driver not found']);
-      exit;
+      $adminPath = dirname(__DIR__, 2) . '/admin/data/drivers.json';
+      $driver = null;
+      if (is_file($adminPath)) {
+        $admin = json_decode(file_get_contents($adminPath), true) ?: [];
+        foreach (is_array($admin) ? $admin : [] as $d) {
+          if (($d['id'] ?? '') === $driverId) {
+            $driver = array_merge($d, ['id' => $driverId]);
+            break;
+          }
+        }
+      }
+      $db[$driverId] = $driver ? array_merge($driver, ['is_online' => false, 'updated_at' => date('Y-m-d H:i:s')]) : ['id' => $driverId, 'is_online' => false, 'updated_at' => date('Y-m-d H:i:s')];
     }
     $v = $input['online'] ?? true;
     $online = ($v === true || $v === 'true' || $v === 1 || $v === '1');
