@@ -8,8 +8,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?php echo htmlspecialchars($pageTitle ?? 'Admin'); ?> | No 5 Tyre Admin</title>
   <link rel="preconnect" href="https://cdn.tailwindcss.com" crossorigin>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config = { theme: { extend: { colors: { safety: '#fede00' } } } }</script>
+  <style>body{background-color:#18181b;color:#e4e4e7}</style>
   <script src="js/admin-api.js"></script>
 </head>
 <body class="bg-zinc-900 text-zinc-200 antialiased min-h-screen">
