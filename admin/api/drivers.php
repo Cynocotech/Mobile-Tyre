@@ -101,6 +101,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'active' => isset($d['active']) ? (bool)$d['active'] : true,
             'blacklisted' => !empty($d['blacklisted']),
             'blocked_reason' => trim($d['blocked_reason'] ?? ''),
+            'block_history' => isset($d['block_history']) && is_array($d['block_history']) ? $d['block_history'] : [],
+            'block_count' => isset($d['block_count']) ? (int)$d['block_count'] : 0,
             'stripe_onboarding_complete' => !empty($d['stripe_onboarding_complete']),
             'driver_rate' => isset($d['driver_rate']) ? (int)$d['driver_rate'] : 80,
             'insurance_url' => $d['insurance_url'] ?? null,
@@ -118,6 +120,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $d['active'] = isset($d['active']) ? (bool)$d['active'] : true;
         $d['blacklisted'] = !empty($d['blacklisted']);
         $d['blocked_reason'] = trim($d['blocked_reason'] ?? '');
+        $d['block_history'] = isset($d['block_history']) && is_array($d['block_history']) ? $d['block_history'] : [];
+        $d['block_count'] = isset($d['block_count']) ? (int)$d['block_count'] : 0;
         $d['driver_rate'] = isset($d['driver_rate']) ? (int)$d['driver_rate'] : 80;
         $all[] = $d;
       }

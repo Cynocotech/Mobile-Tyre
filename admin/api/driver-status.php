@@ -33,6 +33,10 @@ if (is_file($dbPath)) {
       $db[$driverId]['active'] = false;
       $db[$driverId]['blocked_reason'] = $blockReason;
       $db[$driverId]['blocked_at'] = date('Y-m-d H:i:s');
+      $history = isset($db[$driverId]['block_history']) && is_array($db[$driverId]['block_history']) ? $db[$driverId]['block_history'] : [];
+      $history[] = ['reason' => $blockReason, 'blocked_at' => date('Y-m-d H:i:s')];
+      $db[$driverId]['block_history'] = $history;
+      $db[$driverId]['block_count'] = count($history);
     }
     elseif ($action === 'unblock') { $db[$driverId]['blacklisted'] = false; unset($db[$driverId]['blocked_reason'], $db[$driverId]['blocked_at']); }
     $db[$driverId]['updated_at'] = date('Y-m-d H:i:s');
@@ -49,8 +53,17 @@ if (!$updated && is_file($adminPath)) {
       if (($d['id'] ?? '') === $driverId) {
         if ($action === 'activate') { $admin[$i]['active'] = true; $admin[$i]['blacklisted'] = false; unset($admin[$i]['blocked_reason']); }
         elseif ($action === 'deactivate') { $admin[$i]['active'] = false; }
-        elseif ($action === 'block') { $admin[$i]['blacklisted'] = true; $admin[$i]['active'] = false; $admin[$i]['blocked_reason'] = $blockReason; }
-        elseif ($action === 'unblock') { $admin[$i]['blacklisted'] = false; unset($admin[$i]['blocked_reason']); }
+        elseif ($action === 'block') {
+          $admin[$i]['blacklisted'] = true;
+          $admin[$i]['active'] = false;
+          $admin[$i]['blocked_reason'] = $blockReason;
+          $admin[$i]['blocked_at'] = date('Y-m-d H:i:s');
+          $hist = isset($admin[$i]['block_history']) && is_array($admin[$i]['block_history']) ? $admin[$i]['block_history'] : [];
+          $hist[] = ['reason' => $blockReason, 'blocked_at' => date('Y-m-d H:i:s')];
+          $admin[$i]['block_history'] = $hist;
+          $admin[$i]['block_count'] = count($hist);
+        }
+        elseif ($action === 'unblock') { $admin[$i]['blacklisted'] = false; unset($admin[$i]['blocked_reason'], $admin[$i]['blocked_at']); }
         if (file_put_contents($adminPath, json_encode($admin, JSON_PRETTY_PRINT), LOCK_EX)) {
           $updated = true;
         }

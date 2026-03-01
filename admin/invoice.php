@@ -83,7 +83,7 @@ $balance = $est > 0 ? max(0, $est - $paid) : 0;
   <div id="invoice-content" class="invoice">
     <div class="header">
       <div>
-        <div class="logo">No 5 Tyre &amp; MOT</div>
+        <img src="../logo.php" alt="No 5 Tyre &amp; MOT" class="logo" style="max-height: 32px; width: auto;">
         <p style="margin: 4px 0 0 0; color: #71717a;">Mobile Tyre Fitting London</p>
         <p style="margin: 4px 0 0 0;">07895 859505</p>
       </div>

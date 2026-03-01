@@ -1,6 +1,6 @@
 <?php
 /**
- * Driver job verification: view job details by scanning QR code or entering reference.
+ * Driver job verification: view job details by entering reference number.
  * Accepts: session_id (Stripe) or ref (6-digit reference).
  * Displays: reference, customer, vehicle, location, amounts for driver to verify match.
  */
@@ -177,7 +177,7 @@ elseif ($vehicleVrm !== '') $vehicleDesc .= ' (' . $vehicleVrm . ')';
   <header class="bg-zinc-900 border-b border-zinc-700 py-4">
     <div class="max-w-lg mx-auto px-4 flex items-center justify-between">
       <h1 class="text-lg font-bold text-white">Driver verification</h1>
-      <a href="driver-scanner.html" class="text-sm font-medium text-safety hover:underline">Scan QR</a>
+      <a href="verify.php" class="text-sm font-medium text-safety hover:underline">Enter reference</a>
     </div>
   </header>
 
@@ -185,13 +185,13 @@ elseif ($vehicleVrm !== '') $vehicleDesc .= ' (' . $vehicleVrm . ')';
     <?php if (!$found): ?>
     <div class="rounded-2xl border border-zinc-700 bg-zinc-800/50 p-8">
       <p class="text-red-400 font-medium mb-2 text-center">Job not found</p>
-      <p class="text-zinc-400 text-sm mb-6 text-center">Check the reference or scan the customer's receipt QR code again.</p>
+      <p class="text-zinc-400 text-sm mb-6 text-center">Check the reference number and try again.</p>
       <form method="get" action="verify.php" class="flex gap-2 mb-4">
         <input type="text" name="ref" placeholder="6-digit reference" maxlength="6" pattern="[0-9]*" inputmode="numeric" class="flex-1 px-4 py-3 rounded-lg bg-zinc-700 border-2 border-zinc-600 text-white font-mono placeholder-zinc-500 focus:border-safety focus:outline-none">
         <button type="submit" class="px-6 py-3 bg-safety text-zinc-900 font-bold rounded-lg shrink-0">View</button>
       </form>
       <div class="text-center">
-        <a href="driver-scanner.html" class="text-zinc-400 text-sm hover:text-safety">Open QR scanner</a>
+        <a href="verify.php" class="text-zinc-400 text-sm hover:text-safety">Try another reference</a>
       </div>
     </div>
     <?php else: ?>
@@ -253,7 +253,7 @@ elseif ($vehicleVrm !== '') $vehicleDesc .= ' (' . $vehicleVrm . ')';
     </div>
 
     <div class="mt-6 text-center">
-      <a href="driver-scanner.html" class="text-zinc-400 text-sm hover:text-safety">Scan another QR code</a>
+      <a href="verify.php" class="text-zinc-400 text-sm hover:text-safety">Verify another job</a>
     </div>
     <?php endif; ?>
   </main>

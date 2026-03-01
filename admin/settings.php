@@ -9,6 +9,22 @@ require_once __DIR__ . '/header.php';
 <div id="settings-loading" class="text-zinc-500">Loading…</div>
 <form id="settings-form" class="hidden space-y-8">
   <div class="rounded-xl border border-zinc-700 bg-zinc-800/50 p-6">
+    <h2 class="text-lg font-semibold text-white mb-4">Logo</h2>
+    <p class="text-zinc-500 text-sm mb-4">Site logo shown in headers across the website and admin. JPEG, PNG, GIF, WebP or SVG. Recommended: 370×105 px or similar aspect.</p>
+    <div class="flex flex-wrap items-center gap-6">
+      <div class="flex items-center gap-3">
+        <img id="logo-preview" src="../logo.php" alt="Logo" class="h-12 w-auto max-w-[200px] object-contain rounded border border-zinc-600 bg-zinc-800/50 p-2">
+        <div>
+          <input type="file" id="logo-input" accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml" class="hidden">
+          <button type="button" id="logo-upload-btn" class="px-4 py-2 bg-zinc-700 text-zinc-200 rounded-lg hover:bg-zinc-600 text-sm">Upload logo</button>
+          <button type="button" id="logo-remove-btn" class="px-4 py-2 border border-zinc-600 text-zinc-400 rounded-lg hover:bg-zinc-700 text-sm">Use default</button>
+          <p id="logo-status" class="text-zinc-500 text-xs mt-1"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rounded-xl border border-zinc-700 bg-zinc-800/50 p-6">
     <h2 class="text-lg font-semibold text-white mb-4">Prices</h2>
     <p class="text-zinc-500 text-sm mb-4">All prices in £. Used for estimates, price list and calculator on the website.</p>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -131,12 +147,17 @@ require_once __DIR__ . '/header.php';
         <p class="text-zinc-500 text-xs mt-1">Used by Check vehicle and Add driver lookup. Leave blank to keep current.</p>
       </div>
       <div>
-        <label for="driverScannerUrl" class="block text-sm font-medium text-zinc-300 mb-1">Driver scanner URL</label>
+        <label for="driverScannerUrl" class="block text-sm font-medium text-zinc-300 mb-1">Driver reference URL</label>
         <input type="url" id="driverScannerUrl" name="driverScannerUrl" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="https://.../driver-scanner.html">
       </div>
       <div>
         <label for="gtmContainerId" class="block text-sm font-medium text-zinc-300 mb-1">GTM container ID (optional)</label>
         <input type="text" id="gtmContainerId" name="gtmContainerId" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="GTM-XXXXXXX">
+      </div>
+      <div>
+        <label for="googleReviewUrl" class="block text-sm font-medium text-zinc-300 mb-1">Google Review URL</label>
+        <input type="url" id="googleReviewUrl" name="googleReviewUrl" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="https://g.page/your-business/review">
+        <p class="text-zinc-500 text-xs mt-1">Shown to drivers after job completion – customer scans QR to leave a review. Get from Google Business Profile.</p>
       </div>
     </div>
   </div>
@@ -151,6 +172,41 @@ require_once __DIR__ . '/header.php';
 (function() {
   var form = document.getElementById('settings-form');
   var status = document.getElementById('save-status');
+
+  document.getElementById('logo-upload-btn').addEventListener('click', function() { document.getElementById('logo-input').click(); });
+  document.getElementById('logo-remove-btn').addEventListener('click', function() {
+    var status = document.getElementById('logo-status');
+    var preview = document.getElementById('logo-preview');
+    status.textContent = 'Removing…';
+    fetch('api/logo-upload.php', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'remove=1' })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        status.textContent = d.ok ? 'Using default logo.' : (d.error || 'Failed');
+        status.classList.toggle('text-green-400', d.ok);
+        status.classList.toggle('text-red-400', !d.ok);
+        if (d.ok) preview.src = '../logo.php?v=' + Date.now();
+      })
+      .catch(function() { status.textContent = 'Failed.'; status.classList.add('text-red-400'); });
+  });
+  document.getElementById('logo-input').addEventListener('change', function() {
+    var input = this;
+    if (!input.files || !input.files[0]) return;
+    var fd = new FormData();
+    fd.append('logo', input.files[0]);
+    var status = document.getElementById('logo-status');
+    var preview = document.getElementById('logo-preview');
+    status.textContent = 'Uploading…';
+    fetch('api/logo-upload.php', { method: 'POST', credentials: 'same-origin', body: fd })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        status.textContent = d.ok ? 'Logo updated.' : (d.error || 'Failed');
+        status.classList.toggle('text-green-400', d.ok);
+        status.classList.toggle('text-red-400', !d.ok);
+        if (d.ok) preview.src = '../logo.php?v=' + Date.now();
+      })
+      .catch(function() { status.textContent = 'Upload failed.'; status.classList.add('text-red-400'); });
+    input.value = '';
+  });
 
   fetch('api/settings.php')
     .then(function(r) { return r.json(); })
@@ -181,6 +237,7 @@ require_once __DIR__ . '/header.php';
       document.getElementById('vrmApiToken').value = data.vrmApiToken || '';
       document.getElementById('driverScannerUrl').value = data.driverScannerUrl || '';
       document.getElementById('gtmContainerId').value = data.gtmContainerId || '';
+      document.getElementById('googleReviewUrl').value = data.googleReviewUrl || '';
     })
     .catch(function() {
       document.getElementById('settings-loading').textContent = 'Failed to load.';
@@ -205,6 +262,8 @@ require_once __DIR__ . '/header.php';
       vatRate: parseInt(document.getElementById('vatRate').value, 10) || 0,
       driverScannerUrl: document.getElementById('driverScannerUrl').value,
       gtmContainerId: document.getElementById('gtmContainerId').value,
+      googleReviewUrl: document.getElementById('googleReviewUrl').value,
+      googleReviewUrl: document.getElementById('googleReviewUrl').value,
       vrmApiToken: document.getElementById('vrmApiToken').value,
       smtp: {
         host: document.getElementById('smtp_host').value,

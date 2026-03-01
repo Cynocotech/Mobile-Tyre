@@ -3,59 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scan job QR | No 5 Tyre Driver</title>
+  <title>Enter job reference | No 5 Tyre Driver</title>
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#18181b">
-  <link rel="icon" type="image/png" href="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png" sizes="any">
+  <link rel="icon" type="image/png" href="logo.php" sizes="any">
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { theme: { extend: { colors: { safety: '#fede00' } } } };</script>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <style>
-    #reader { border-radius: 1rem; overflow: hidden; }
-    #reader video { border-radius: 1rem; object-fit: cover; }
-    #reader__scan_region { background: #000 !important; }
-    #reader__dashboard { margin-top: 0.5rem !important; }
-    #reader__dashboard_section { padding: 0.5rem 0 !important; }
-    #reader__dashboard_section_csr button { background: #fede00 !important; color: #000 !important; border: none !important; padding: 0.5rem 1rem !important; border-radius: 0.5rem !important; font-weight: 600 !important; cursor: pointer !important; }
-    .scanner-frame { position: relative; border-radius: 1.5rem; overflow: visible; box-shadow: 0 0 0 4px rgba(254, 222, 0, 0.15), 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-  </style>
 </head>
 <body class="bg-zinc-900 text-zinc-200 antialiased min-h-screen">
   <header class="sticky top-0 z-50 bg-zinc-900/95 backdrop-blur-sm border-b border-zinc-700 shadow-lg">
     <div class="max-w-lg mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
       <div class="flex items-center gap-3">
-        <img src="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png" alt="No 5 Tyre" class="h-8 w-auto object-contain" loading="lazy">
+        <img src="logo.php" alt="No 5 Tyre" class="h-8 w-auto object-contain" loading="lazy">
         <span class="text-zinc-500 text-xs font-medium hidden sm:inline">Driver</span>
       </div>
       <a href="verify.php" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-zinc-400 hover:text-safety hover:bg-zinc-800/80 font-medium text-sm transition-colors">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-        Enter ref
+        View job
       </a>
     </div>
   </header>
 
   <main class="max-w-lg mx-auto px-4 sm:px-6 py-8 pb-12">
-    <div class="text-center mb-6">
-      <h1 class="text-xl sm:text-2xl font-bold text-white mb-1">Scan job receipt</h1>
-      <p class="text-zinc-500 text-sm">Point your camera at the customer's receipt QR code, or upload an image</p>
-    </div>
-
-    <div class="scanner-frame mb-8 bg-black rounded-2xl p-4">
-      <div id="reader"></div>
-    </div>
-
-    <div class="relative flex items-center gap-4 mb-8">
-      <div class="flex-1 h-px bg-zinc-700"></div>
-      <span class="text-zinc-500 text-xs font-medium">or enter reference</span>
-      <div class="flex-1 h-px bg-zinc-700"></div>
+    <div class="text-center mb-8">
+      <h1 class="text-xl sm:text-2xl font-bold text-white mb-1">Enter job reference</h1>
+      <p class="text-zinc-500 text-sm">Enter the 4–6 digit reference number from the job receipt</p>
     </div>
 
     <div class="rounded-2xl border border-zinc-700 bg-zinc-800/50 p-6 mb-6">
-      <form id="ref-form" class="flex gap-3">
+      <form id="ref-form" class="flex gap-3" action="verify.php" method="get">
         <div class="flex-1 relative">
           <span class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-mono text-lg">#</span>
-          <input type="text" id="ref-input" placeholder="123456" maxlength="6" pattern="[0-9]*" inputmode="numeric" class="w-full pl-8 pr-4 py-4 rounded-xl bg-zinc-700/80 border-2 border-zinc-600 text-white font-mono text-xl placeholder-zinc-600 focus:border-safety focus:ring-2 focus:ring-safety/20 focus:outline-none transition-colors">
+          <input type="text" name="ref" id="ref-input" placeholder="123456" maxlength="6" pattern="[0-9]*" inputmode="numeric" class="w-full pl-8 pr-4 py-4 rounded-xl bg-zinc-700/80 border-2 border-zinc-600 text-white font-mono text-xl placeholder-zinc-600 focus:border-safety focus:ring-2 focus:ring-safety/20 focus:outline-none transition-colors">
         </div>
         <button type="submit" class="px-6 py-4 bg-safety text-zinc-900 font-bold rounded-xl hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900 transition-colors shrink-0 flex items-center gap-2">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
@@ -64,10 +43,10 @@
       </form>
     </div>
 
-    <p id="scan-status" class="text-center text-sm py-3 rounded-lg hidden"></p>
+    <p id="ref-status" class="text-center text-sm py-3 rounded-lg hidden mb-4"></p>
 
     <div class="mt-8 text-center">
-      <a href="verify.php" class="text-zinc-500 text-sm hover:text-safety transition-colors">I know the reference – skip to enter</a>
+      <a href="driver/dashboard.php" class="text-zinc-500 text-sm hover:text-safety transition-colors">Driver dashboard</a>
     </div>
   </main>
 
@@ -75,82 +54,15 @@
     (function() {
       var refForm = document.getElementById('ref-form');
       var refInput = document.getElementById('ref-input');
-      var scanStatus = document.getElementById('scan-status');
-      var lastScanned = '';
-
-      function showStatus(msg, type) {
-        scanStatus.textContent = msg;
-        scanStatus.classList.remove('hidden', 'text-green-400', 'text-amber-400', 'bg-green-500/10', 'bg-amber-500/10');
-        if (type === 'success') scanStatus.classList.add('text-green-400', 'bg-green-500/10');
-        else if (type === 'error') scanStatus.classList.add('text-amber-400', 'bg-amber-500/10');
-        else scanStatus.classList.add('text-zinc-500');
-      }
-
-      function goToVerify(urlOrRef) {
-        var u = String(urlOrRef).trim();
-        if (u.match(/^[0-9]{4,6}$/)) {
-          window.location.href = 'verify.php?ref=' + encodeURIComponent(u);
-          return;
-        }
-        if (u.indexOf('verify.php') !== -1 || u.indexOf('session_id=') !== -1) {
-          var m = u.match(/session_id=([a-zA-Z0-9_]+)/);
-          if (m) {
-            window.location.href = 'verify.php?session_id=' + encodeURIComponent(m[1]);
-            return;
-          }
-          if (u.indexOf('verify.php') !== -1) {
-            window.location.href = u;
-            return;
-          }
-        }
-        showStatus('Unknown format. Scan the receipt QR or enter the 6-digit reference.', 'error');
-      }
-
-      function startScanner() {
-        if (typeof Html5Qrcode === 'undefined') {
-          showStatus('Scanner not loaded. Enter reference below.', 'error');
-          return;
-        }
-        var scanner = new Html5Qrcode('reader');
-        var scanConfig = {
-          fps: 20,
-          qrbox: 220,
-          disableFlip: true,
-          experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-        };
-        function onScan(decodedText) {
-          if (decodedText && decodedText !== lastScanned) {
-            lastScanned = decodedText;
-            showStatus('Found! Loading job…', 'success');
-            goToVerify(decodedText);
-          }
-        }
-        function tryStart(constraint) {
-          return scanner.start(constraint, scanConfig, onScan, function() {}).then(function() {
-            return constraint;
-          });
-        }
-        tryStart({ facingMode: 'environment' }).catch(function() {
-          return tryStart({ facingMode: 'user' }).catch(function() {
-            return Html5Qrcode.getCameras().then(function(cams) {
-              if (!cams || cams.length === 0) throw new Error('No camera');
-              var cam = cams.find(function(c) { return /back|rear|environment/i.test(c.label); }) || cams[0];
-              return tryStart(cam.id);
-            });
-          });
-        }).catch(function() {
-          showStatus('Camera denied. Enter reference below.', 'error');
-        });
-      }
-      startScanner();
+      var refStatus = document.getElementById('ref-status');
 
       refForm.addEventListener('submit', function(e) {
-        e.preventDefault();
         var ref = refInput.value.replace(/\D/g, '');
-        if (ref.length >= 4) {
-          goToVerify(ref);
-        } else {
-          showStatus('Enter at least 4 digits of the reference.', 'error');
+        if (ref.length < 4) {
+          e.preventDefault();
+          refStatus.textContent = 'Enter at least 4 digits of the reference.';
+          refStatus.classList.remove('hidden');
+          refStatus.classList.add('text-amber-400', 'bg-amber-500/10');
         }
       });
 
@@ -159,6 +71,5 @@
       });
     })();
   </script>
-  <script>document.body.classList.add('page-loaded');</script>
 </body>
 </html>

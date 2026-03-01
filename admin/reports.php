@@ -10,10 +10,16 @@ require_once __DIR__ . '/header.php';
 <div id="reports-content" class="hidden space-y-8">
   <div class="flex flex-wrap items-center justify-between gap-4">
     <p class="text-zinc-400">Revenue and deposit summary. Export to PDF for records.</p>
-    <button type="button" id="export-pdf-btn" class="px-4 py-2 bg-safety text-zinc-900 font-bold rounded-lg hover:bg-[#e5c900] text-sm inline-flex items-center gap-2">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-      Export PDF
-    </button>
+    <div class="flex gap-2">
+      <button type="button" id="export-csv-btn" class="px-4 py-2 border border-zinc-600 text-zinc-300 rounded-lg hover:bg-zinc-800 text-sm inline-flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Export CSV
+      </button>
+      <button type="button" id="export-pdf-btn" class="px-4 py-2 bg-safety text-zinc-900 font-bold rounded-lg hover:bg-[#e5c900] text-sm inline-flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Export PDF
+      </button>
+    </div>
   </div>
 
   <div id="report-stats" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -89,6 +95,7 @@ require_once __DIR__ . '/header.php';
           <th style="text-align:left;padding:8px 0;color:#71717a;">Customer</th>
           <th style="text-align:left;padding:8px 0;color:#71717a;">Postcode</th>
           <th style="text-align:right;padding:8px 0;color:#71717a;">Amount</th>
+          <th style="text-align:right;padding:8px 0;color:#71717a;">Est. total</th>
         </tr>
       </thead>
       <tbody id="pdf-deposits-body"></tbody>
@@ -104,6 +111,13 @@ require_once __DIR__ . '/header.php';
     if (s == null || s === '') return '—';
     var x = String(s);
     return x.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function formatCurrency(v) {
+    if (v == null || v === '') return '—';
+    var s = String(v).trim();
+    var num = parseFloat(String(v).replace(/[^0-9.-]/g, ''));
+    if (isNaN(num)) return s.indexOf('£') >= 0 ? s : '£' + s;
+    return '£' + num.toFixed(2);
   }
 
   function loadReports() {
@@ -134,8 +148,8 @@ require_once __DIR__ . '/header.php';
               '<td class="py-3 px-4 font-mono text-safety">' + escape(d.reference) + '</td>' +
               '<td class="py-3 px-4 text-zinc-300">' + escape(d.name || d.email) + '</td>' +
               '<td class="py-3 px-4 text-zinc-400">' + escape(d.postcode) + '</td>' +
-              '<td class="py-3 px-4 text-right font-semibold text-white">' + escape(d.amount_paid) + '</td>' +
-              '<td class="py-3 px-4 text-right text-zinc-400">' + escape(d.estimate_total) + '</td>' +
+              '<td class="py-3 px-4 text-right font-semibold text-white">' + formatCurrency(d.amount_paid) + '</td>' +
+              '<td class="py-3 px-4 text-right text-zinc-400">' + formatCurrency(d.estimate_total) + '</td>' +
             '</tr>';
           }).join('');
         }
@@ -166,11 +180,12 @@ require_once __DIR__ . '/header.php';
         '<td style="padding:6px 0;font-family:monospace">' + escape(d.reference) + '</td>' +
         '<td style="padding:6px 0">' + escape(d.name || d.email) + '</td>' +
         '<td style="padding:6px 0">' + escape(d.postcode) + '</td>' +
-        '<td style="padding:6px 0;text-align:right;font-weight:600">' + escape(d.amount_paid) + '</td>' +
+        '<td style="padding:6px 0;text-align:right;font-weight:600">' + formatCurrency(d.amount_paid) + '</td>' +
+        '<td style="padding:6px 0;text-align:right">' + formatCurrency(d.estimate_total) + '</td>' +
       '</tr>';
     }).join('');
     if (rows.length === 0) {
-      pdfTbody.innerHTML = '<tr><td colspan="5" style="padding:12px;text-align:center;color:#71717a">No deposits</td></tr>';
+      pdfTbody.innerHTML = '<tr><td colspan="6" style="padding:12px;text-align:center;color:#71717a">No deposits</td></tr>';
     }
 
     var pdfEl = document.getElementById('report-pdf-content');
@@ -179,26 +194,51 @@ require_once __DIR__ . '/header.php';
     pdfEl.style.left = '-9999px';
     pdfEl.style.width = '210mm';
 
+    var filename = 'revenue-report-' + (reportData.generatedAt ? reportData.generatedAt.replace(/[^0-9]/g, '').substring(0, 8) : new Date().toISOString().slice(0, 10).replace(/-/g, '')) + '.pdf';
     var opt = {
       margin: [10, 10],
-      filename: 'revenue-report-' + (reportData.generatedAt ? reportData.generatedAt.replace(/[^0-9]/g, '').substring(0, 8) : new Date().toISOString().slice(0, 10).replace(/-/g, '')) + '.pdf',
+      filename: filename,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    html2pdf().set(opt).from(pdfEl).save().then(function() {
+    function cleanup() {
       pdfEl.classList.add('hidden');
       pdfEl.style.position = '';
       pdfEl.style.left = '';
       btn.disabled = false;
       btn.innerHTML = origHtml;
-    }).catch(function() {
-      pdfEl.classList.add('hidden');
-      pdfEl.style.position = '';
-      btn.disabled = false;
-      btn.innerHTML = origHtml;
+    }
+
+    html2pdf().set(opt).from(pdfEl).save().then(cleanup).catch(function(err) {
+      console.error('PDF export failed:', err);
+      cleanup();
     });
+  });
+
+  document.getElementById('export-csv-btn').addEventListener('click', function() {
+    if (!reportData) return;
+    var rows = reportData.recentDeposits || [];
+    var csvHeader = 'Date,Reference,Customer,Postcode,Amount paid,Est. total\n';
+    var csvRows = rows.map(function(d) {
+      var amt = (d.amount_paid || '').toString().replace(/[,\n"]/g, '');
+      var est = (d.estimate_total || '').toString().replace(/[,\n"]/g, '');
+      if (amt && amt.indexOf('£') < 0) amt = '£' + amt;
+      if (est && est.indexOf('£') < 0) est = '£' + est;
+      return '"' + (d.date || '').replace(/"/g, '""') + '","' + (d.reference || '').replace(/"/g, '""') + '","' + (d.name || d.email || '').replace(/"/g, '""') + '","' + (d.postcode || '').replace(/"/g, '""') + '","' + amt + '","' + est + '"';
+    }).join('\n');
+    var csv = csvHeader + csvRows;
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'revenue-report-' + (reportData.generatedAt ? reportData.generatedAt.replace(/[^0-9]/g, '').substring(0, 8) : new Date().toISOString().slice(0, 10).replace(/-/g, '')) + '.csv';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   });
 
   loadReports();

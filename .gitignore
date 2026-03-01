@@ -9,4 +9,5 @@ database/drivers.json
 database/proofs/
 database/insurance/
 admin/config.json
+uploads/
 .stripe-db-saved

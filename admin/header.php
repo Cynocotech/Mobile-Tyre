@@ -13,7 +13,10 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
 <body class="bg-zinc-900 text-zinc-200 antialiased min-h-screen">
   <header class="sticky top-0 z-50 bg-zinc-900/95 backdrop-blur border-b border-zinc-700 shadow">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
-      <a href="dashboard.php" class="font-bold text-white">No 5 Tyre Admin</a>
+      <a href="dashboard.php" class="flex items-center gap-2 font-bold text-white">
+        <img src="../logo.php" alt="Logo" class="h-8 w-auto object-contain" loading="lazy">
+        <span class="hidden sm:inline">No 5 Tyre Admin</span>
+      </a>
       <nav class="flex items-center gap-2">
         <a href="dashboard.php" class="px-3 py-2 rounded-lg text-sm font-medium <?php echo $currentPage === 'dashboard' ? 'bg-zinc-800 text-safety' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'; ?>">Dashboard</a>
         <a href="services.php" class="px-3 py-2 rounded-lg text-sm font-medium <?php echo $currentPage === 'services' ? 'bg-zinc-800 text-safety' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'; ?>">Services</a>

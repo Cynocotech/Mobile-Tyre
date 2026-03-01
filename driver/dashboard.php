@@ -4,117 +4,200 @@ require_once __DIR__ . '/auth.php';
 $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
 ?>
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en-GB" id="html-theme">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?php echo htmlspecialchars($pageTitle); ?> | No 5 Tyre Driver</title>
   <link rel="manifest" href="manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="No5 Driver">
-  <link rel="apple-touch-icon" href="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png">
+  <link rel="apple-touch-icon" href="../logo.php">
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('../sw.js', { scope: '/' }).catch(function() {});
     }
+    (function() {
+      var s = localStorage.getItem('driver-theme');
+      var theme = s === 'light' || s === 'dark' ? s : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      document.documentElement.setAttribute('data-theme', theme);
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', theme === 'light' ? '#ffffff' : '#18181b');
+    })();
   </script>
   <meta name="theme-color" content="#18181b">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config = { theme: { extend: { colors: { safety: '#fede00' } } } }</script>
+  <script>tailwind.config = { theme: { extend: { colors: { safety: '#fede00', primary: '#2563eb' } } } }</script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    [data-theme="light"] { --app-bg: #f4f4f5; --app-surface: #ffffff; --app-border: #e4e4e7; --app-text: #18181b; --app-text-muted: #71717a; --app-accent: #2563eb; --app-accent-hover: #1d4ed8; --app-online: #16a34a; --app-map-bg: #e4e4e7; }
+    [data-theme="dark"] { --app-bg: #09090b; --app-surface: #18181b; --app-border: #3f3f46; --app-text: #fafafa; --app-text-muted: #a1a1aa; --app-accent: #3b82f6; --app-accent-hover: #2563eb; --app-online: #22c55e; --app-map-bg: #27272a; }
+    body { background: var(--app-bg); color: var(--app-text); }
+    .app-surface { background-color: var(--app-surface) !important; }
+    .app-border { border-color: var(--app-border) !important; }
+    .app-text { color: var(--app-text) !important; }
+    .app-text-muted { color: var(--app-text-muted) !important; }
+    .app-accent { color: var(--app-accent) !important; }
+    .app-map-bg { background-color: var(--app-map-bg) !important; }
+    .safe-area-pb { padding-bottom: env(safe-area-inset-bottom, 0); }
+    @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .animate-slide-up { animation: slide-up 0.3s ease-out; }
+  </style>
 </head>
-<body class="bg-zinc-900 text-zinc-200 antialiased min-h-screen">
-  <div id="pwa-install-banner" class="hidden fixed bottom-4 left-4 right-4 z-50 max-w-2xl mx-auto px-4 py-3 rounded-xl bg-zinc-800 border border-zinc-600 shadow-lg flex items-center justify-between gap-4">
-    <p class="text-sm text-zinc-300">Install app for best experience</p>
+<body class="antialiased min-h-screen transition-colors duration-200">
+  <div id="pwa-install-banner" class="hidden fixed bottom-20 left-4 right-4 z-50 max-w-2xl mx-auto px-4 py-3 rounded-xl app-surface border app-border shadow-lg flex items-center justify-between gap-4">
+    <p class="text-sm app-text-muted">Install app for best experience</p>
     <div class="flex gap-2">
       <button type="button" id="pwa-install-btn" class="px-3 py-1.5 rounded-lg bg-safety text-zinc-900 font-semibold text-sm">Install</button>
-      <button type="button" id="pwa-install-dismiss" class="px-3 py-1.5 rounded-lg text-zinc-400 text-sm hover:bg-zinc-700">Later</button>
+      <button type="button" id="pwa-install-dismiss" class="px-3 py-1.5 rounded-lg app-text-muted text-sm hover:opacity-80">Later</button>
     </div>
   </div>
-  <header class="sticky top-0 z-40 bg-zinc-900/95 backdrop-blur border-b border-zinc-700">
-    <div class="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-      <div>
-        <h1 class="text-lg font-bold text-white"><?php echo htmlspecialchars($driver['name'] ?? 'Driver'); ?></h1>
-        <p class="text-zinc-500 text-xs">My jobs</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <a href="profile.php" class="px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 text-sm">Profile</a>
-        <a href="logout.php" class="px-3 py-2 rounded-lg text-zinc-500 hover:text-red-400 text-sm">Logout</a>
+
+  <!-- App-style header with status -->
+  <header class="sticky top-0 z-40 app-surface/95 backdrop-blur border-b app-border">
+    <div class="max-w-2xl mx-auto px-4 py-5">
+      <div class="flex items-start justify-between">
+        <div>
+          <h1 id="status-heading" class="text-2xl font-bold app-text">You're offline</h1>
+          <p id="status-sub" class="app-text-muted text-sm mt-0.5">Ready to go?</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="profile.php" class="p-2.5 rounded-full app-border border app-text-muted hover:app-text transition-colors" aria-label="Profile">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          </a>
+          <button type="button" id="btn-menu" class="p-2.5 rounded-full app-border border app-text-muted hover:app-text transition-colors" aria-label="Menu">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+        </div>
       </div>
     </div>
   </header>
 
-  <main class="max-w-2xl mx-auto px-4 py-6 pb-28">
-    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-      <div class="flex items-center gap-3">
-        <div id="wallet-card" class="rounded-xl border border-zinc-700 bg-zinc-800/50 px-4 py-3">
-          <p class="text-zinc-500 text-xs">Wallet earned</p>
-          <p id="wallet-amount" class="text-safety font-bold text-xl">£0.00</p>
-        </div>
-        <button type="button" id="btn-location" class="px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-zinc-300 text-sm hover:bg-zinc-700 whitespace-nowrap">
-          Update my location
-        </button>
-        <button type="button" id="btn-scan-qr" class="px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-zinc-300 text-sm hover:bg-zinc-700 whitespace-nowrap">
-          Scan receipt QR
-        </button>
+  <main class="max-w-2xl mx-auto px-4 py-4 pb-36">
+    <!-- Map -->
+    <div id="map-container" class="relative rounded-2xl overflow-hidden mb-4 shadow-lg" style="height: 280px;">
+      <div id="map" class="w-full h-full" style="background: var(--app-map-bg);"></div>
+      <button type="button" id="btn-map-expand" class="absolute top-2 right-2 z-[400] w-9 h-9 rounded-full app-surface border app-border shadow flex items-center justify-center app-text-muted hover:opacity-80" aria-label="Expand map">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+      </button>
+    </div>
+
+    <!-- Earnings (for nav scroll) -->
+    <div id="earnings" class="rounded-2xl app-surface border app-border p-4 mb-4">
+      <p class="app-text-muted text-xs">Wallet earned</p>
+      <p id="wallet-amount" class="text-xl font-bold mt-0.5" style="color: var(--app-accent);">£0.00</p>
+    </div>
+
+    <!-- Opportunities -->
+    <div class="rounded-2xl app-surface border app-border p-4 mb-4 flex items-center justify-between gap-4">
+      <div class="flex-1 min-w-0">
+        <h2 class="font-semibold app-text text-base flex items-center gap-2">
+          Opportunities
+          <svg class="w-4 h-4 app-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </h2>
+        <p id="opportunities-text" class="app-text-muted text-sm mt-1">Loading…</p>
+      </div>
+      <div class="w-16 h-16 rounded-xl overflow-hidden shrink-0 border app-border flex items-center justify-center app-map-bg">
+        <svg class="w-8 h-8 app-text-muted opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
       </div>
     </div>
 
-    <div id="map-container" class="rounded-xl border border-zinc-700 overflow-hidden mb-6" style="height: 240px;">
-      <div id="map" class="w-full h-full bg-zinc-800"></div>
-    </div>
+    <!-- Go online / Go offline button -->
+    <button type="button" id="btn-online" class="w-full py-4 px-6 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg" style="background: var(--app-accent); color: white;" title="Go online">
+      <svg id="btn-online-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+      <span id="online-label">Go online</span>
+    </button>
 
-    <div id="verification-banner" class="hidden rounded-xl border border-amber-700 bg-amber-900/30 p-4 mb-6">
-      <p class="text-amber-200 text-sm font-medium">Verify your identity (KYC)</p>
-      <p class="text-amber-300/80 text-xs mt-1">Complete payout setup (Stripe) and verify your license/ID with Stripe Identity before you can start jobs.</p>
+    <div id="verification-banner" class="hidden rounded-xl border border-amber-500/50 bg-amber-500/10 p-4 mt-4">
+      <p class="text-amber-700 dark:text-amber-300 text-sm font-medium">Verify your identity (KYC)</p>
+      <p class="text-amber-600/90 dark:text-amber-400/80 text-xs mt-1">Complete payout setup and verify your license/ID before you can start jobs.</p>
       <div class="flex flex-wrap gap-2 mt-2">
-        <button type="button" id="btn-verify-identity" class="px-3 py-1.5 rounded-lg bg-amber-600 text-amber-900 font-medium text-sm hover:bg-amber-500">Verify license/ID</button>
-        <a href="onboarding.html" class="px-3 py-1.5 rounded-lg bg-zinc-700 text-zinc-200 text-sm hover:bg-zinc-600">Complete payout setup</a>
+        <button type="button" id="btn-verify-identity" class="px-3 py-1.5 rounded-lg bg-amber-600 text-white font-medium text-sm">Verify license/ID</button>
+        <a href="onboarding.html" class="px-3 py-1.5 rounded-lg bg-zinc-600 text-zinc-200 text-sm">Complete payout setup</a>
       </div>
     </div>
 
-    <div id="jobs-loading" class="text-zinc-500 py-8 text-center">Loading jobs…</div>
-    <div id="jobs-list" class="space-y-4 hidden pb-24"></div>
-    <div id="jobs-empty" class="hidden text-center py-12 text-zinc-500 pb-24">
+    <div id="jobs-loading" class="app-text-muted py-8 text-center">Loading jobs…</div>
+    <div id="jobs-list" class="space-y-4 hidden mt-6 pb-8"></div>
+    <div id="jobs-empty" class="hidden text-center py-12 app-text-muted">
       <p class="text-lg">No jobs assigned yet.</p>
       <p class="text-sm mt-2">Jobs will appear here when assigned by the office.</p>
     </div>
   </main>
 
-  <!-- Floating Go online button -->
-  <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center justify-center">
-    <div class="relative">
-      <div class="absolute inset-0 rounded-full bg-safety animate-ping opacity-40"></div>
-      <button type="button" id="btn-online" class="relative w-24 h-24 rounded-full bg-safety text-zinc-900 font-bold text-sm shadow-xl shadow-black/40 hover:bg-[#e5c900] active:scale-95 transition-all flex items-center justify-center ring-4 ring-safety/30" title="Go online">
-        <span id="online-label" class="text-center text-sm font-bold leading-tight">Go<br>online</span>
+  <!-- Bottom navigation -->
+  <nav class="fixed bottom-0 left-0 right-0 z-40 app-surface border-t app-border safe-area-pb">
+    <div class="max-w-2xl mx-auto flex items-center justify-around h-16 px-2">
+      <a href="dashboard.php" class="flex flex-col items-center justify-center gap-1 flex-1 py-2 font-medium" style="color: var(--app-accent);">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        <span class="text-xs">Home</span>
+      </a>
+      <a href="#earnings" id="nav-earnings" class="flex flex-col items-center justify-center gap-1 flex-1 py-2 app-text-muted hover:opacity-80 transition-colors">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span class="text-xs">Earnings</span>
+      </a>
+      <a href="#" class="flex flex-col items-center justify-center gap-1 flex-1 py-2 app-text-muted hover:app-text transition-colors relative">
+        <span class="relative">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"/></svg>
+          <span id="inbox-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">9+</span>
+        </span>
+        <span class="text-xs">Inbox</span>
+      </a>
+      <button type="button" id="nav-menu" class="flex flex-col items-center justify-center gap-1 flex-1 py-2 app-text-muted hover:app-text transition-colors bg-transparent border-none cursor-pointer">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        <span class="text-xs">Menu</span>
       </button>
+    </div>
+  </nav>
+
+  <!-- Menu sheet -->
+  <div id="menu-sheet" class="fixed inset-0 z-50 hidden" style="display: none;">
+    <div id="menu-backdrop" class="absolute inset-0 bg-black/40" onclick="document.getElementById('menu-sheet').classList.add('hidden'); document.getElementById('menu-sheet').style.display='none';"></div>
+    <div class="absolute bottom-0 left-0 right-0 rounded-t-3xl app-surface border-t app-border max-h-[70vh] overflow-y-auto animate-slide-up">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-lg font-bold app-text">Menu</h3>
+          <button type="button" onclick="document.getElementById('menu-sheet').classList.add('hidden'); document.getElementById('menu-sheet').style.display='none';" class="p-2 -m-2 app-text-muted hover:app-text">×</button>
+        </div>
+        <div class="space-y-2">
+          <a href="profile.php" class="flex items-center gap-3 p-3 rounded-xl app-border border app-text hover:opacity-90">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            Profile
+          </a>
+          <button type="button" id="menu-btn-location" class="w-full flex items-center gap-3 p-3 rounded-xl app-border border app-text hover:opacity-90 text-left">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+            Update my location
+          </button>
+          <button type="button" id="menu-btn-ref" class="w-full flex items-center gap-3 p-3 rounded-xl app-border border app-text hover:opacity-90 text-left">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>
+            Enter reference
+          </button>
+          <button type="button" id="menu-btn-theme" class="w-full flex items-center gap-3 p-3 rounded-xl app-border border app-text hover:opacity-90 text-left">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+            <span id="theme-label">Switch to light mode</span>
+          </button>
+          <a href="logout.php" class="flex items-center gap-3 p-3 rounded-xl border border-red-500/30 text-red-500 hover:bg-red-500/10">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            Logout
+          </a>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- QR Scanner modal (same template as driver-scanner) -->
-  <div id="qr-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 overflow-y-auto" style="display: none;">
-    <div class="w-full max-w-lg rounded-2xl border border-zinc-700 bg-zinc-800 p-6 my-4">
+  <!-- Reference entry modal -->
+  <div id="ref-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 overflow-y-auto" style="display: none;">
+    <div class="w-full max-w-lg rounded-2xl app-surface border app-border p-6 my-4">
       <div class="text-center mb-6">
-        <h3 class="text-xl font-bold text-white mb-1">Scan job receipt</h3>
-        <p class="text-zinc-500 text-sm">Point your camera at the receipt QR, or enter reference below</p>
-        <p id="qr-ios-hint" class="hidden text-amber-400/90 text-xs mt-2">Camera not working? Open in Safari first: <a href="#" id="qr-open-safari" class="underline">Open this page in Safari</a></p>
-      </div>
-      <div class="scanner-frame mb-6 bg-black rounded-2xl p-4">
-        <div id="qr-reader" class="rounded-xl overflow-hidden" style="width: 100%; min-height: 260px;"></div>
-      </div>
-      <div class="relative flex items-center gap-4 mb-6">
-        <div class="flex-1 h-px bg-zinc-700"></div>
-        <span class="text-zinc-500 text-xs font-medium">or enter reference</span>
-        <div class="flex-1 h-px bg-zinc-700"></div>
+        <h3 class="text-xl font-bold text-white mb-1">Enter job reference</h3>
+        <p class="text-zinc-500 text-sm">Enter the 4–6 digit reference number from the job receipt</p>
       </div>
       <div class="rounded-2xl border border-zinc-700 bg-zinc-800/50 p-4 mb-4">
-        <form id="qr-ref-form" class="flex gap-3">
+        <form id="ref-form" class="flex gap-3">
           <div class="flex-1 relative">
             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 font-mono text-lg">#</span>
-            <input type="text" id="qr-ref-input" placeholder="123456" maxlength="6" pattern="[0-9]*" inputmode="numeric" class="w-full pl-8 pr-4 py-3 rounded-xl bg-zinc-700/80 border-2 border-zinc-600 text-white font-mono text-xl placeholder-zinc-600 focus:border-safety focus:ring-2 focus:ring-safety/20 focus:outline-none transition-colors">
+            <input type="text" id="ref-input" placeholder="123456" maxlength="6" pattern="[0-9]*" inputmode="numeric" class="w-full pl-8 pr-4 py-3 rounded-xl bg-zinc-700/80 border-2 border-zinc-600 text-white font-mono text-xl placeholder-zinc-600 focus:border-safety focus:ring-2 focus:ring-safety/20 focus:outline-none transition-colors">
           </div>
           <button type="submit" class="px-5 py-3 bg-safety text-zinc-900 font-bold rounded-xl hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-800 shrink-0 flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
@@ -122,14 +205,27 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
           </button>
         </form>
       </div>
-      <p id="qr-status" class="text-center text-sm py-3 rounded-lg hidden mb-4"></p>
-      <button type="button" id="qr-close" class="w-full px-4 py-2 border border-zinc-600 text-zinc-300 rounded-lg text-sm hover:bg-zinc-700">Close</button>
+      <p id="ref-status" class="text-center text-sm py-3 rounded-lg hidden mb-4"></p>
+      <button type="button" id="ref-close" class="w-full px-4 py-2 border border-zinc-600 text-zinc-300 rounded-lg text-sm hover:bg-zinc-700">Close</button>
+    </div>
+  </div>
+
+  <!-- Google Review QR modal -->
+  <div id="review-qr-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 overflow-y-auto" style="display: none;">
+    <div class="w-full max-w-sm rounded-2xl app-surface border app-border p-6 my-4">
+      <h3 class="text-lg font-bold text-white mb-1">Leave a review</h3>
+      <p class="text-zinc-500 text-sm mb-4">Scan to leave a Google review</p>
+      <div class="bg-white rounded-xl p-4 mb-4 flex justify-center">
+        <img id="review-qr-img" src="" alt="QR code" class="w-48 h-48 object-contain">
+      </div>
+      <a id="review-qr-link" href="#" target="_blank" rel="noopener" class="block text-center text-safety text-sm font-medium hover:underline mb-4">Or open review link</a>
+      <button type="button" id="review-qr-close" class="w-full px-4 py-2 border border-zinc-600 text-zinc-300 rounded-lg text-sm hover:bg-zinc-700">Close</button>
     </div>
   </div>
 
   <!-- Location modal -->
   <div id="location-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70" style="display: none;">
-    <div class="w-full max-w-sm rounded-2xl border border-zinc-700 bg-zinc-800 p-6">
+    <div class="w-full max-w-sm rounded-2xl app-surface border app-border p-6">
       <h3 class="text-lg font-bold text-white mb-4">Update location</h3>
       <p id="location-status" class="text-sm text-zinc-400 mb-4">Getting your position…</p>
       <div class="flex flex-wrap gap-3">
@@ -184,18 +280,40 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
     function setOnlineBtn(online) {
       var btn = document.getElementById('btn-online');
       var lbl = document.getElementById('online-label');
-      var pingEl = btn && btn.previousElementSibling;
-      var baseClass = 'relative w-24 h-24 rounded-full font-bold text-sm shadow-xl shadow-black/40 active:scale-95 transition-all flex items-center justify-center';
+      var icon = document.getElementById('btn-online-icon');
+      var heading = document.getElementById('status-heading');
+      var sub = document.getElementById('status-sub');
+      var baseClass = 'w-full py-4 px-6 rounded-2xl font-bold text-base flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg';
       if (online) {
-        btn.className = baseClass + ' bg-green-500 text-white hover:bg-green-400 ring-4 ring-green-500/30';
-        lbl.innerHTML = 'Online';
-        btn.title = 'You are online';
-        if (pingEl) pingEl.classList.add('hidden');
+        btn.className = baseClass;
+        btn.style.background = 'var(--app-online)';
+        btn.style.color = 'white';
+        lbl.textContent = 'Go offline';
+        btn.title = 'Tap to go offline';
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 0v4m0-4V8"/>';
+        icon.setAttribute('viewBox', '0 0 24 24');
+        if (heading) heading.textContent = "You're online";
+        if (sub) sub.textContent = "You're visible to the office";
       } else {
-        btn.className = baseClass + ' bg-safety text-zinc-900 hover:bg-[#e5c900] ring-4 ring-safety/30';
-        lbl.innerHTML = 'Go<br>online';
-        btn.title = 'Go online';
-        if (pingEl) pingEl.classList.remove('hidden');
+        btn.className = baseClass;
+        btn.style.background = 'var(--app-accent)';
+        btn.style.color = 'white';
+        lbl.textContent = 'Go online';
+        btn.title = 'Tap to go online';
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>';
+        icon.setAttribute('viewBox', '0 0 24 24');
+        if (heading) heading.textContent = "You're offline";
+        if (sub) sub.textContent = 'Ready to go?';
+      }
+    }
+
+    function setOpportunitiesText(jobsCount, walletEarned) {
+      var el = document.getElementById('opportunities-text');
+      if (!el) return;
+      if (jobsCount > 0) {
+        el.textContent = jobsCount + ' job' + (jobsCount !== 1 ? 's' : '') + ' assigned. Complete them to earn.';
+      } else {
+        el.textContent = 'No jobs yet. Go online and jobs will appear when assigned.';
       }
     }
 
@@ -213,11 +331,13 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
         .then(function(d) {
           document.getElementById('jobs-loading').classList.add('hidden');
           driverData = d.driver || {};
+          var googleReviewUrl = (d.googleReviewUrl || '').trim();
           var jobs = d.jobs || [];
           var verified = driverData.kyc_verified;
           document.getElementById('verification-banner').classList.toggle('hidden', verified);
           document.getElementById('wallet-amount').textContent = '£' + (driverData.wallet_earned || 0).toFixed(2);
           setOnlineBtn(driverData.is_online);
+          setOpportunitiesText(jobs.length, driverData.wallet_earned);
           updateMap(jobs, driverData);
           var list = document.getElementById('jobs-list');
           var empty = document.getElementById('jobs-empty');
@@ -235,7 +355,9 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
             var proofBtn = j.proof_url ? '<span class="text-green-400 text-xs">Proof uploaded</span>' : '<button type="button" class="proof-btn px-2 py-1 rounded bg-zinc-700 text-xs" data-ref="' + j.reference + '">Upload proof</button>';
             var canStart = verified;
             var startBtn = j.job_started_at ? '<span class="text-green-400 text-xs">Started</span>' : (canStart ? '<button type="button" class="start-btn px-2 py-1 rounded bg-safety text-zinc-900 text-xs font-medium" data-ref="' + (j.reference||'') + '">Start job</button>' : '<span class="text-amber-400 text-xs">Verify first</span>');
-            return '<div class="rounded-xl border border-zinc-700 bg-zinc-800/50 p-4" data-ref="' + (j.reference||'') + '">' +
+            var jobDone = !!(j.proof_url || j.cash_paid_at || j.job_completed_at);
+            var reviewBtn = (jobDone && googleReviewUrl) ? '<button type="button" class="review-btn px-2 py-1 rounded bg-safety/20 text-safety text-xs font-medium" data-ref="' + (j.reference||'') + '">Leave review</button>' : '';
+            return '<div class="rounded-xl app-surface border app-border p-4" data-ref="' + (j.reference||'') + '">' +
               '<div class="flex justify-between items-start mb-2">' +
                 '<span class="font-mono font-bold text-safety">#' + (j.reference||'') + '</span>' +
                 '<span class="text-zinc-500 text-sm">' + (j.date||j.postcode||'') + '</span>' +
@@ -248,6 +370,7 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
                 '<button type="button" class="loc-btn px-2 py-1 rounded bg-zinc-700 text-xs" data-ref="' + (j.reference||'') + '">Update location</button>' +
                 proofBtn +
                 (j.payment_method !== 'cash' ? '<button type="button" class="cash-btn px-2 py-1 rounded bg-amber-900/50 text-amber-300 text-xs" data-ref="' + (j.reference||'') + '">Mark cash paid</button>' : '') +
+                reviewBtn +
               '</div>' +
             '</div>';
           }).join('');
@@ -275,9 +398,13 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
               if (confirm('Mark this job as paid in cash?')) markCashPaid(b.getAttribute('data-ref'));
             });
           });
+          list.querySelectorAll('.review-btn').forEach(function(b) {
+            b.addEventListener('click', function() { openReviewModal(googleReviewUrl); });
+          });
         })
         .catch(function(err) {
           document.getElementById('jobs-loading').textContent = 'Failed to load. Try refreshing.';
+          document.getElementById('opportunities-text').textContent = 'Could not load. Pull down to refresh.';
           console.error('loadJobs:', err);
         });
     }
@@ -334,10 +461,31 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       tryGetPosition(true);
     }
 
-    document.getElementById('btn-location').addEventListener('click', function() {
-      currentRef = null;
-      openLocationModal(null);
+    function openMenu() {
+      var sheet = document.getElementById('menu-sheet');
+      sheet.classList.remove('hidden');
+      sheet.style.display = 'block';
+    }
+    function closeMenu() {
+      var sheet = document.getElementById('menu-sheet');
+      sheet.classList.add('hidden');
+      sheet.style.display = 'none';
+    }
+    document.getElementById('btn-menu').addEventListener('click', openMenu);
+    document.getElementById('nav-menu').addEventListener('click', openMenu);
+    document.getElementById('menu-btn-location').addEventListener('click', function() { closeMenu(); currentRef = null; openLocationModal(null); });
+    document.getElementById('menu-btn-ref').addEventListener('click', function() { closeMenu(); openRefModal(); });
+    document.getElementById('menu-btn-theme').addEventListener('click', function() {
+      var html = document.documentElement;
+      var theme = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', theme);
+      localStorage.setItem('driver-theme', theme);
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', theme === 'light' ? '#ffffff' : '#18181b');
+      document.getElementById('theme-label').textContent = theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
     });
+    var html = document.documentElement;
+    document.getElementById('theme-label').textContent = (html.getAttribute('data-theme') === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+
 
     document.getElementById('btn-verify-identity').addEventListener('click', function() {
       var btn = this;
@@ -411,127 +559,63 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       document.getElementById('location-modal').style.display = 'none';
     }
 
-    var qrScanner = null;
-    var qrLastScanned = '';
-    function goToVerifyFromScan(decodedText) {
-      var u = String(decodedText).trim();
-      if (u.match(/^[0-9]{4,6}$/)) return '../verify.php?ref=' + encodeURIComponent(u);
-      var m = u.match(/session_id=([a-zA-Z0-9_]+)/);
-      if (m) return '../verify.php?session_id=' + encodeURIComponent(m[1]);
-      if (u.indexOf('http') === 0 && u.indexOf('verify') !== -1) return u;
-      return null;
-    }
-    function openQrModal() {
-      var modal = document.getElementById('qr-modal');
-      var status = document.getElementById('qr-status');
-      var iosHint = document.getElementById('qr-ios-hint');
-      if (iosHint) iosHint.classList.add('hidden');
-      status.classList.add('hidden');
-      status.textContent = '';
-      status.classList.remove('text-green-400', 'text-amber-400', 'bg-green-500/10', 'bg-amber-500/10');
-      document.getElementById('qr-ref-input').value = '';
-      qrLastScanned = '';
+    function openReviewModal(url) {
+      if (!url) { alert('Review link not configured. Ask the office to add it in Settings.'); return; }
+      var modal = document.getElementById('review-qr-modal');
+      var img = document.getElementById('review-qr-img');
+      var link = document.getElementById('review-qr-link');
+      img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=' + encodeURIComponent(url);
+      link.href = url;
+      link.textContent = 'Or open review link';
       modal.classList.remove('hidden');
       modal.style.display = 'flex';
-      if (!window.isSecureContext) {
-        status.textContent = 'Camera requires HTTPS. Open this app via https:// to scan.';
-        status.classList.remove('hidden');
-        status.classList.add('text-amber-400', 'bg-amber-500/10');
-        return;
-      }
-      var Html5QrcodeClass = (typeof Html5Qrcode !== 'undefined' && Html5Qrcode) || (window.__Html5QrcodeLibrary__ && window.__Html5QrcodeLibrary__.Html5Qrcode);
-      if (!Html5QrcodeClass) {
-        status.textContent = 'Scanner not loaded. Enter reference below.';
-        status.classList.remove('hidden');
-        status.classList.add('text-amber-400', 'bg-amber-500/10');
-        return;
-      }
-      var readerEl = document.getElementById('qr-reader');
-      readerEl.innerHTML = '';
-      status.textContent = 'Starting camera…';
-      status.classList.remove('hidden');
-      status.classList.add('text-zinc-500');
-      qrScanner = new Html5QrcodeClass('qr-reader');
-      var scanConfig = { fps: 15, qrbox: { width: 200, height: 200 }, disableFlip: false };
-      function onScan(decodedText) {
-        if (!decodedText || decodedText === qrLastScanned) return;
-        qrLastScanned = decodedText;
-        var target = goToVerifyFromScan(decodedText);
-        if (target) {
-          status.textContent = 'Found! Loading job…';
-          status.classList.remove('hidden', 'text-amber-400', 'bg-amber-500/10');
-          status.classList.add('text-green-400', 'bg-green-500/10');
-          qrScanner.stop().then(function() { qrScanner = null; }).catch(function() { qrScanner = null; });
-          window.location.href = target;
-        } else {
-          status.textContent = 'Unknown format. Scan the receipt QR or enter the 6-digit reference.';
-          status.classList.remove('hidden', 'text-green-400', 'bg-green-500/10');
-          status.classList.add('text-amber-400', 'bg-amber-500/10');
-        }
-      }
-      function tryStart(c) {
-        return qrScanner.start(c, scanConfig, onScan, function() {}).then(function() { return c; });
-      }
-      function showCameraError(showSafariHint) {
-        status.textContent = 'Camera not available. Enter reference below.';
-        status.classList.remove('hidden', 'text-green-400', 'bg-green-500/10');
-        status.classList.add('text-amber-400', 'bg-amber-500/10');
-        if (showSafariHint && iosHint && (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches)) {
-          iosHint.classList.remove('hidden');
-          var link = document.getElementById('qr-open-safari');
-          if (link) link.href = window.location.href;
-        }
-      }
-      tryStart({ facingMode: 'environment' }).catch(function() {
-        return tryStart({ facingMode: 'user' }).catch(function() {
-          return Html5QrcodeClass.getCameras ? Html5QrcodeClass.getCameras().then(function(cams) {
-            if (!cams || cams.length === 0) throw new Error('No camera');
-            var cam = cams.find(function(c) { return /back|rear|environment/i.test(c.label); }) || cams[0];
-            return tryStart(cam.id);
-          }) : Promise.reject(new Error('No camera'));
-        });
-      }).then(function() {
-        status.classList.add('hidden');
-        status.classList.remove('text-zinc-500');
-      }).catch(function() {
-        showCameraError(true);
-      });
     }
-
-    function closeQrModal() {
-      var modal = document.getElementById('qr-modal');
-      if (qrScanner) {
-        qrScanner.stop().catch(function() {});
-        qrScanner = null;
-      }
-      document.getElementById('qr-reader').innerHTML = '';
+    function closeReviewModal() {
+      var modal = document.getElementById('review-qr-modal');
       modal.classList.add('hidden');
       modal.style.display = 'none';
     }
+    document.getElementById('review-qr-close').addEventListener('click', closeReviewModal);
+    document.getElementById('review-qr-modal').addEventListener('click', function(e) {
+      if (e.target.id === 'review-qr-modal') closeReviewModal();
+    });
 
-    document.getElementById('btn-scan-qr').addEventListener('click', openQrModal);
-    document.getElementById('qr-close').addEventListener('click', closeQrModal);
-    var qrOpenSafari = document.getElementById('qr-open-safari');
-    if (qrOpenSafari) qrOpenSafari.addEventListener('click', function(e) {
-      e.preventDefault();
-      window.open(window.location.href, '_blank', 'noopener');
+    function openRefModal() {
+      var modal = document.getElementById('ref-modal');
+      var status = document.getElementById('ref-status');
+      status.classList.add('hidden');
+      status.textContent = '';
+      status.classList.remove('text-green-400', 'text-amber-400', 'bg-green-500/10', 'bg-amber-500/10');
+      document.getElementById('ref-input').value = '';
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+    }
+
+    function closeRefModal() {
+      document.getElementById('ref-modal').classList.add('hidden');
+      document.getElementById('ref-modal').style.display = 'none';
+    }
+
+    document.getElementById('btn-map-expand').addEventListener('click', function() {
+      document.getElementById('map-container').scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
-    document.getElementById('qr-modal').addEventListener('click', function(e) {
-      if (e.target.id === 'qr-modal') closeQrModal();
+    document.getElementById('ref-close').addEventListener('click', closeRefModal);
+    document.getElementById('ref-modal').addEventListener('click', function(e) {
+      if (e.target.id === 'ref-modal') closeRefModal();
     });
-    document.getElementById('qr-ref-form').addEventListener('submit', function(e) {
+    document.getElementById('ref-form').addEventListener('submit', function(e) {
       e.preventDefault();
-      var ref = document.getElementById('qr-ref-input').value.replace(/\D/g, '');
+      var ref = document.getElementById('ref-input').value.replace(/\D/g, '');
       if (ref.length >= 4) {
         window.location.href = '../verify.php?ref=' + encodeURIComponent(ref);
       } else {
-        var st = document.getElementById('qr-status');
+        var st = document.getElementById('ref-status');
         st.textContent = 'Enter at least 4 digits of the reference.';
         st.classList.remove('hidden');
         st.classList.add('text-amber-400', 'bg-amber-500/10');
       }
     });
-    document.getElementById('qr-ref-input').addEventListener('input', function() {
+    document.getElementById('ref-input').addEventListener('input', function() {
       this.value = this.value.replace(/\D/g, '').slice(0, 6);
     });
 
@@ -574,7 +658,7 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       alert('Verification could not be completed.');
       window.history.replaceState({}, '', window.location.pathname);
     }
-    if (urlParams.get('scan') === '1') setTimeout(openQrModal, 500);
+    if (urlParams.get('ref') === '1') setTimeout(function() { openRefModal(); }, 500);
 
     var installPrompt = null;
     var installBanner = document.getElementById('pwa-install-banner');
@@ -600,14 +684,7 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
   </script>
   <style>
   .driver-marker { filter: hue-rotate(45deg) saturate(1.5); }
-  #map.leaflet-container { background: #27272a !important; }
-  .scanner-frame { position: relative; border-radius: 1.5rem; overflow: visible; box-shadow: 0 0 0 4px rgba(254, 222, 0, 0.15), 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-  #qr-reader { border-radius: 1rem; overflow: hidden; }
-  #qr-reader video, #qr-reader img, #qr-reader canvas { border-radius: 1rem; object-fit: cover; }
-  #qr-reader__scan_region { background: #000 !important; }
-  #qr-reader__dashboard { margin-top: 0.5rem !important; }
-  #qr-reader__dashboard_section { padding: 0.5rem 0 !important; }
-  #qr-reader__dashboard_section_csr button, #qr-reader button { background: #fede00 !important; color: #000 !important; border: none !important; padding: 0.5rem 1rem !important; border-radius: 0.5rem !important; font-weight: 600 !important; cursor: pointer !important; }
+  #map.leaflet-container { background: var(--app-map-bg) !important; }
   </style>
 </body>
 </html>

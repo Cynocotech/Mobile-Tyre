@@ -64,8 +64,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
   $driverDb = getDriverDb();
   $driverRecord = $driverDb[$driverId] ?? [];
   $verified = !empty($driverRecord['identity_verified']) || !empty($driverRecord['stripe_onboarding_complete']);
+  $configPath = $base . '/dynamic.json';
+  $config = is_file($configPath) ? @json_decode(file_get_contents($configPath), true) : [];
+  $googleReviewUrl = trim($config['googleReviewUrl'] ?? '');
   echo json_encode([
     'jobs' => $mine,
+    'googleReviewUrl' => $googleReviewUrl,
     'driver' => [
       'is_online' => !empty($driverRecord['is_online']),
       'driver_lat' => $driverRecord['driver_lat'] ?? null,

@@ -8,25 +8,37 @@ $insuranceUrl = $driver['insurance_url'] ?? null;
 $insuranceUploadedAt = $driver['insurance_uploaded_at'] ?? null;
 ?>
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en-GB" id="html-theme">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?php echo htmlspecialchars($pageTitle); ?> | No 5 Tyre Driver</title>
+  <script>
+    (function() {
+      var s = localStorage.getItem('driver-theme');
+      var theme = s === 'light' || s === 'dark' ? s : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { theme: { extend: { colors: { safety: '#fede00' } } } }</script>
+  <style>
+    [data-theme="light"] { --app-bg: #f4f4f5; --app-surface: #ffffff; --app-border: #e4e4e7; --app-text: #18181b; --app-text-muted: #71717a; }
+    [data-theme="dark"] { --app-bg: #09090b; --app-surface: #18181b; --app-border: #3f3f46; --app-text: #fafafa; --app-text-muted: #a1a1aa; }
+    body { background: var(--app-bg); color: var(--app-text); transition: background-color 0.2s, color 0.2s; }
+  </style>
 </head>
-<body class="bg-zinc-900 text-zinc-200 antialiased min-h-screen">
-  <header class="bg-zinc-900 border-b border-zinc-700">
+<body class="antialiased min-h-screen">
+  <header class="border-b" style="background: var(--app-surface); border-color: var(--app-border);">
     <div class="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-      <a href="dashboard.php" class="text-zinc-400 hover:text-white text-sm">← Back</a>
+      <a href="dashboard.php" class="text-sm" style="color: var(--app-text-muted);">← Back</a>
     </div>
   </header>
 
   <main class="max-w-2xl mx-auto px-4 py-8">
-    <h1 class="text-2xl font-bold text-white mb-6">My profile</h1>
+    <h1 class="text-2xl font-bold mb-6" style="color: var(--app-text);">My profile</h1>
 
-    <div class="rounded-2xl border border-zinc-700 bg-zinc-800/50 overflow-hidden mb-6">
+    <div class="rounded-2xl overflow-hidden mb-6" style="background: var(--app-surface); border: 1px solid var(--app-border);">
       <h2 class="px-4 py-3 text-sm font-semibold text-zinc-400 border-b border-zinc-700 flex justify-between items-center">
         <span>Personal</span>
         <button type="button" id="btn-edit-details" class="text-safety text-xs font-medium hover:underline">Edit details</button>

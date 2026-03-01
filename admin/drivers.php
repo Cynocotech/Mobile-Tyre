@@ -6,14 +6,32 @@ require_once __DIR__ . '/header.php';
 <h1 class="text-2xl font-bold text-white mb-8">Drivers & Vans</h1>
 
 <div class="flex justify-between items-center mb-6">
-  <p class="text-zinc-500">Manage drivers and their vehicles. Click Edit to update details.</p>
+  <p class="text-zinc-500">Manage drivers and their vehicles. Click a row to view details or Edit to update.</p>
   <button type="button" id="btn-add-driver" class="px-4 py-2 bg-safety text-zinc-900 font-bold rounded-lg hover:bg-[#e5c900] text-sm">+ Add driver</button>
 </div>
-<div id="drivers-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-  <p class="text-zinc-500 col-span-full">Loading…</p>
+<div class="w-full rounded-xl border border-zinc-700 bg-zinc-800/50 overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-zinc-800">
+        <tr class="border-b border-zinc-700">
+          <th class="text-left py-4 px-4 text-zinc-400 font-medium">Name</th>
+          <th class="text-left py-4 px-4 text-zinc-400 font-medium">Phone</th>
+          <th class="text-left py-4 px-4 text-zinc-400 font-medium">Van / Reg</th>
+          <th class="text-left py-4 px-4 text-zinc-400 font-medium">Status</th>
+          <th class="text-left py-4 px-4 text-zinc-400 font-medium">Source</th>
+          <th class="text-left py-4 px-4 text-zinc-400 font-medium">Blocked</th>
+          <th class="text-left py-4 px-4 text-zinc-400 font-medium">Rate</th>
+          <th class="text-right py-4 px-4 text-zinc-400 font-medium">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="drivers-list">
+        <tr><td colspan="8" class="py-12 text-center text-zinc-500">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<!-- Driver modal (outside drivers-list so it survives innerHTML replacement) -->
+<!-- Driver modal -->
 <div id="driver-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70 overflow-y-auto" style="display: none;">
       <div class="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-800 p-6 my-8">
         <h3 id="driver-modal-title" class="text-lg font-bold text-white mb-4">Add driver</h3>
@@ -47,10 +65,11 @@ require_once __DIR__ . '/header.php';
               <button type="button" id="driver-lookup-vrm" class="px-3 py-2 rounded-lg bg-zinc-600 text-zinc-200 text-sm whitespace-nowrap hover:bg-zinc-600/80">Look up</button>
             </div>
             <input type="text" id="driver-van" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none mb-2" placeholder="Make & model (auto-filled from lookup)">
-            <div id="driver-vehicle-summary" class="hidden rounded-lg border border-zinc-600 bg-zinc-800/80 p-3 text-sm space-y-1">
+            <div id="driver-vehicle-summary" class="rounded-lg border border-zinc-600 bg-zinc-800/80 p-3 text-sm space-y-1">
               <div id="driver-vehicle-ok" class="hidden flex items-center gap-2 text-green-400"><svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg><span>Vehicle appears roadworthy</span></div>
               <div id="driver-vehicle-warn" class="hidden flex items-center gap-2 text-amber-400"><svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg><span>Check MOT & tax – vehicle may not be suitable</span></div>
               <dl id="driver-vehicle-dl" class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-zinc-400"></dl>
+              <p id="driver-vehicle-placeholder" class="text-zinc-500 text-sm">No vehicle details yet. Use Look up for full DVLA data.</p>
             </div>
           </div>
 
@@ -100,6 +119,11 @@ require_once __DIR__ . '/header.php';
             <label for="driver-notes" class="block text-sm font-medium text-zinc-300 mb-1">Notes</label>
             <textarea id="driver-notes" rows="2" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none"></textarea>
           </div>
+          <div id="driver-block-history-section" class="border-t border-zinc-700 pt-4 hidden">
+            <h4 class="text-sm font-semibold text-white mb-2">Block history</h4>
+            <p class="text-zinc-500 text-xs mb-2">This account has been blocked <strong id="driver-block-count" class="text-white">0</strong> time(s).</p>
+            <div id="driver-block-history-list" class="rounded-lg border border-zinc-600 bg-zinc-800/80 p-3 space-y-2 max-h-40 overflow-y-auto"></div>
+          </div>
           <div id="connect-link-section" class="border-t border-zinc-700 pt-4 hidden">
             <h4 class="text-sm font-semibold text-white mb-2">Stripe Connect (payouts)</h4>
             <p class="text-zinc-500 text-xs mb-2">Send this link to the driver to complete bank details & identity for payouts.</p>
@@ -140,122 +164,78 @@ require_once __DIR__ . '/header.php';
     fetch('api/drivers.php?action=all')
       .then(function(r) { return r.json(); })
       .then(function(drivers) {
-        if (!Array.isArray(drivers)) { driversList.innerHTML = '<p class="text-red-400">Failed to load</p>'; return; }
+        if (!Array.isArray(drivers)) { driversList.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-red-400">Failed to load</td></tr>'; return; }
         if (drivers.length === 0) {
-          driversList.innerHTML = '<p class="text-zinc-500">No drivers. Click Add driver or they will appear after onboarding.</p>';
+          driversList.innerHTML = '<tr><td colspan="8" class="py-12 text-center text-zinc-500">No drivers. Click Add driver or they will appear after onboarding.</td></tr>';
           return;
         }
-        function escape(s) { if (s == null || s === '') return ''; var x = String(s); return x.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/\\/g,'\\\\'); }
-        function vehicleRows(v) {
-          if (!v || typeof v !== 'object') return '';
-          var rows = [
-            { label: 'Reg', value: v.registrationNumber, mono: true },
-            { label: 'Make', value: v.make }, { label: 'Model', value: v.model },
-            { label: 'Colour', value: v.colour }, { label: 'Fuel', value: v.fuelType },
-            { label: 'Year', value: v.yearOfManufacture }, { label: 'Engine', value: v.engineCapacity ? v.engineCapacity + ' cc' : '' },
-            { label: 'MOT status', value: v.mot && v.mot.motStatus }, { label: 'MOT due', value: v.mot && v.mot.motDueDate }, { label: 'MOT days', value: v.mot && v.mot.days != null ? v.mot.days + ' days' : '' },
-            { label: 'Tax status', value: v.tax && v.tax.taxStatus }, { label: 'Tax due', value: v.tax && v.tax.taxDueDate },
-            { label: 'CO₂', value: v.co2Emissions != null ? v.co2Emissions + ' g/km' : '' }, { label: 'V5C issued', value: v.dateOfLastV5CIssued }
-          ];
-          var html = '';
-          rows.forEach(function(r) {
-            if (r.value === undefined || r.value === null || r.value === '') return;
-            html += '<dt class="text-zinc-500">' + escape(r.label) + '</dt><dd class="text-zinc-300' + (r.mono ? ' font-mono' : '') + '">' + escape(String(r.value)) + '</dd>';
-          });
-          return html;
-        }
-        function kycSummary(k, insuranceUrl) {
-          if (!k || typeof k !== 'object') k = {};
-          var items = [];
-          if (k.rightToWork) items.push('Right to work');
-          if (k.licenceVerified) items.push('Licence OK');
-          if (k.licenceNumber) items.push('Lic: ' + escape(k.licenceNumber).substring(0,12) + (k.licenceNumber.length > 12 ? '…' : ''));
-          if (k.insuranceValid) items.push('Insurance OK');
-          if (insuranceUrl) items.push('<span class="text-green-400">Doc uploaded</span>');
-          if (k.idVerified) items.push('ID verified');
-          if (items.length === 0) return '';
-          return '<div class="mt-2 pt-2 border-t border-zinc-700"><p class="text-zinc-500 text-xs mb-1">KYC</p><p class="text-zinc-400 text-xs">' + items.join(' · ') + '</p></div>';
-        }
-        function equipSummary(e) {
-          if (!e || typeof e !== 'object') return '';
-          var items = [];
-          if (e.jack) items.push('Jack');
-          if (e.torqueWrench) items.push('Torque');
-          if (e.compressor) items.push('Compressor');
-          if (e.lockingNut) items.push('Lock nut');
-          if (e.pressureGauge) items.push('Gauge');
-          if (e.chocks) items.push('Chocks');
-          if (e.other) items.push(escape(e.other).substring(0, 20) + (e.other.length > 20 ? '…' : ''));
-          if (items.length === 0) return '';
-          return '<div class="mt-2 pt-2 border-t border-zinc-700"><p class="text-zinc-500 text-xs mb-1">Equipment</p><p class="text-zinc-400 text-xs">' + items.join(' · ') + '</p></div>';
-        }
+        function escape(s) { if (s == null || s === '') return ''; var x = String(s); return x.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
         driversList.innerHTML = drivers.map(function(d) {
           var phone = (d.phone||'').trim();
           var van = (d.van||'').trim();
           var vanReg = (d.vanReg||'').trim();
-          var notes = (d.notes||'').trim();
           var v = d.vehicleData;
           var active = d.active !== false;
           var blacklisted = !!d.blacklisted;
-          var blockedReason = (d.blocked_reason||'').trim();
           var driverRate = d.driver_rate != null ? d.driver_rate : 80;
           var source = d.source || 'admin';
+          var blockCount = d.block_count != null ? d.block_count : 0;
+          var vanDisplay = (van || '').trim();
+          var regDisplay = (vanReg || '').trim();
+          if (v && typeof v === 'object' && (v.registrationNumber || v.make || v.model)) {
+            if (!vanDisplay && (v.make || v.model)) vanDisplay = [v.make, v.model].filter(Boolean).join(' ');
+            if (!regDisplay && v.registrationNumber) regDisplay = v.registrationNumber;
+          }
+          var vanRegStr = [vanDisplay, regDisplay].filter(Boolean).join(' / ');
+          if (!vanRegStr) vanRegStr = '—';
           var statusBadge = blacklisted ? '<span class="px-2 py-0.5 rounded text-xs font-medium bg-red-900/60 text-red-300">Blocked</span>' : (active ? '<span class="px-2 py-0.5 rounded text-xs font-medium bg-green-900/50 text-green-300">Active</span>' : '<span class="px-2 py-0.5 rounded text-xs font-medium bg-zinc-700 text-zinc-400">Inactive</span>');
           var sourceBadge = source === 'connect' ? '<span class="px-2 py-0.5 rounded text-xs bg-safety/20 text-safety">Connect</span>' : '<span class="px-2 py-0.5 rounded text-xs bg-zinc-700 text-zinc-400">Admin</span>';
-          var rateBadge = '<span class="px-2 py-0.5 rounded text-xs bg-zinc-700 text-zinc-400" title="Driver share of job value">' + driverRate + '%</span>';
-          var blockedReasonHtml = blockedReason ? '<div class="mt-2 p-2 rounded bg-red-900/30 border border-red-800/50"><p class="text-zinc-500 text-xs mb-0.5">Block reason</p><p class="text-red-300 text-sm">' + escape(blockedReason) + '</p></div>' : '';
-          var vehicleSection = v && typeof v === 'object' && (v.registrationNumber || v.make || v.model)
-            ? '<div class="mt-3 pt-3 border-t border-zinc-700"><p class="text-zinc-500 text-xs font-medium mb-2">Vehicle details</p><dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">' + vehicleRows(v) + '</dl></div>'
-            : ('<dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">' +
-                '<dt class="text-zinc-500">Van</dt><dd class="text-zinc-300">' + escape(van||'—') + '</dd>' +
-                '<dt class="text-zinc-500">Reg</dt><dd class="text-zinc-300 font-mono">' + escape(vanReg||'—') + '</dd>' +
-              '</dl>');
-          var statusBtns = (blacklisted ? '<button type="button" class="btn-unblock px-2 py-1 rounded bg-zinc-600 text-zinc-200 text-xs" data-id="' + (d.id||'') + '">Unblock</button>' : '<button type="button" class="btn-block px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + (d.id||'') + '">Block</button>') +
-            (active ? '<button type="button" class="btn-deactivate px-2 py-1 rounded bg-zinc-600 text-zinc-200 text-xs" data-id="' + (d.id||'') + '">Deactivate</button>' : '<button type="button" class="btn-activate px-2 py-1 rounded bg-green-900/50 text-green-300 text-xs" data-id="' + (d.id||'') + '">Activate</button>');
-          return '<div class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4' + (blacklisted ? ' opacity-75 border-red-900/50' : '') + '" data-id="' + (d.id||'') + '">' +
-            '<div class="flex justify-between items-start gap-3 mb-3">' +
-              '<div class="flex flex-wrap items-center gap-2">' +
-                '<p class="font-semibold text-white">' + escape(d.name||'—') + '</p>' +
-                statusBadge +
-                sourceBadge +
-                rateBadge +
-              '</div>' +
-              '<div class="flex gap-1 shrink-0">' +
-                '<button type="button" class="btn-edit-driver px-2 py-1 rounded bg-zinc-700 text-zinc-300 text-xs" data-id="' + (d.id||'') + '">Edit</button>' +
-                (source === 'admin' ? '<button type="button" class="btn-delete-driver px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + (d.id||'') + '">Delete</button>' : '') +
-              '</div>' +
-            '</div>' +
-            '<div class="flex flex-wrap gap-1 mb-2">' + statusBtns + '</div>' +
-            '<dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">' +
-              '<dt class="text-zinc-500">Phone</dt><dd class="text-zinc-300">' + escape(phone||'—') + '</dd>' +
-            '</dl>' +
-            vehicleSection +
-            blockedReasonHtml +
-            kycSummary(d.kyc, d.insurance_url) +
-            equipSummary(d.equipment) +
-            (notes ? '<div class="mt-2 pt-2 border-t border-zinc-700"><p class="text-zinc-500 text-xs">Notes</p><p class="text-zinc-400 text-sm">' + escape(notes) + '</p></div>' : '') +
+          var blockCountDisplay = blockCount > 0 ? '<span class="font-medium' + (blacklisted ? ' text-red-300' : ' text-zinc-400') + '">' + blockCount + '</span>' : '<span class="text-zinc-500">0</span>';
+          var actionBtns = '<div class="flex flex-wrap gap-1 justify-end">' +
+            '<button type="button" class="btn-edit-driver px-2 py-1 rounded bg-zinc-700 text-zinc-300 text-xs" data-id="' + escape(d.id||'') + '">Edit</button>' +
+            (source === 'admin' ? '<button type="button" class="btn-delete-driver px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + escape(d.id||'') + '">Delete</button>' : '') +
+            (blacklisted ? '<button type="button" class="btn-unblock px-2 py-1 rounded bg-zinc-600 text-zinc-200 text-xs" data-id="' + escape(d.id||'') + '">Unblock</button>' : '<button type="button" class="btn-block px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + escape(d.id||'') + '">Block</button>') +
+            (active ? '<button type="button" class="btn-deactivate px-2 py-1 rounded bg-zinc-600 text-zinc-200 text-xs" data-id="' + escape(d.id||'') + '">Deactivate</button>' : '<button type="button" class="btn-activate px-2 py-1 rounded bg-green-900/50 text-green-300 text-xs" data-id="' + escape(d.id||'') + '">Activate</button>') +
           '</div>';
+          return '<tr class="driver-row border-b border-zinc-700/50 hover:bg-zinc-800/50 cursor-pointer' + (blacklisted ? ' opacity-80' : '') + '" data-id="' + escape(d.id||'') + '" role="button" tabindex="0">' +
+            '<td class="py-3 px-4 font-semibold text-white">' + escape(d.name||'—') + '</td>' +
+            '<td class="py-3 px-4 text-zinc-400">' + escape(phone||'—') + '</td>' +
+            '<td class="py-3 px-4 text-zinc-300 font-mono text-xs">' + escape(vanRegStr.length > 24 ? vanRegStr.substring(0,21)+'…' : vanRegStr) + '</td>' +
+            '<td class="py-3 px-4">' + statusBadge + '</td>' +
+            '<td class="py-3 px-4">' + sourceBadge + '</td>' +
+            '<td class="py-3 px-4">' + blockCountDisplay + '</td>' +
+            '<td class="py-3 px-4 text-zinc-400">' + driverRate + '%</td>' +
+            '<td class="py-3 px-4 text-right" onclick="event.stopPropagation()">' + actionBtns + '</td>' +
+          '</tr>';
         }).join('');
+        driversList.querySelectorAll('.driver-row').forEach(function(row) {
+          row.addEventListener('click', function(e) {
+            if (e.target.closest('button')) return;
+            openDriverModal(row.getAttribute('data-id'));
+          });
+          row.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDriverModal(row.getAttribute('data-id')); } });
+        });
         driversList.querySelectorAll('.btn-edit-driver').forEach(function(b) {
-          b.addEventListener('click', function() { openDriverModal(b.getAttribute('data-id')); });
+          b.addEventListener('click', function(e) { e.stopPropagation(); openDriverModal(b.getAttribute('data-id')); });
         });
         driversList.querySelectorAll('.btn-delete-driver').forEach(function(b) {
-          b.addEventListener('click', function() {
-            if (confirm('Delete this driver?')) deleteDriver(b.getAttribute('data-id'));
-          });
+          b.addEventListener('click', function(e) { e.stopPropagation(); if (confirm('Delete this driver?')) deleteDriver(b.getAttribute('data-id')); });
         });
         driversList.querySelectorAll('.btn-activate').forEach(function(b) {
-          b.addEventListener('click', function() { setDriverStatus(b.getAttribute('data-id'), 'activate'); });
+          b.addEventListener('click', function(e) { e.stopPropagation(); setDriverStatus(b.getAttribute('data-id'), 'activate'); });
         });
         driversList.querySelectorAll('.btn-deactivate').forEach(function(b) {
-          b.addEventListener('click', function() { setDriverStatus(b.getAttribute('data-id'), 'deactivate'); });
+          b.addEventListener('click', function(e) { e.stopPropagation(); setDriverStatus(b.getAttribute('data-id'), 'deactivate'); });
         });
         driversList.querySelectorAll('.btn-block').forEach(function(b) {
-          b.addEventListener('click', function() { openBlockModal(b.getAttribute('data-id')); });
+          b.addEventListener('click', function(e) { e.stopPropagation(); openBlockModal(b.getAttribute('data-id')); });
         });
         driversList.querySelectorAll('.btn-unblock').forEach(function(b) {
-          b.addEventListener('click', function() { setDriverStatus(b.getAttribute('data-id'), 'unblock'); });
+          b.addEventListener('click', function(e) { e.stopPropagation(); setDriverStatus(b.getAttribute('data-id'), 'unblock'); });
         });
+      })
+      .catch(function() {
+        driversList.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-red-400">Failed to load drivers.</td></tr>';
       });
   }
 
@@ -292,7 +272,7 @@ require_once __DIR__ . '/header.php';
           document.getElementById('equip-pressure-gauge').checked = !!eq.pressureGauge;
           document.getElementById('equip-chocks').checked = !!eq.chocks;
           document.getElementById('equip-other').value = eq.other || '';
-          if (d.vehicleData && typeof d.vehicleData === 'object') renderVehicleSummary(d.vehicleData);
+          renderVehicleDetails(d.vehicleData, d.van || '', d.vanReg || '');
           var insDiv = document.getElementById('driver-insurance-uploaded');
           var insLink = document.getElementById('driver-insurance-view');
           var insDate = document.getElementById('driver-insurance-date');
@@ -302,6 +282,25 @@ require_once __DIR__ . '/header.php';
             insDate.textContent = d.insurance_uploaded_at ? 'Uploaded ' + d.insurance_uploaded_at : '';
           } else if (insDiv) {
             insDiv.classList.add('hidden');
+          }
+          var blockHist = document.getElementById('driver-block-history-section');
+          var blockCountEl = document.getElementById('driver-block-count');
+          var blockListEl = document.getElementById('driver-block-history-list');
+          if (blockHist && blockCountEl && blockListEl) {
+            var hist = Array.isArray(d.block_history) ? d.block_history : [];
+            var cnt = d.block_count != null ? d.block_count : hist.length;
+            blockCountEl.textContent = cnt;
+            if (hist.length > 0) {
+              blockHist.classList.remove('hidden');
+              blockListEl.innerHTML = hist.slice().reverse().map(function(h) {
+                var reason = (h.reason || '').trim() || 'No reason given';
+                var at = h.blocked_at || '';
+                return '<div class="rounded bg-zinc-700/50 p-2 text-sm"><p class="text-red-300">' + String(reason).replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>' + (at ? '<p class="text-zinc-500 text-xs mt-0.5">' + String(at).replace(/</g,'&lt;') + '</p>' : '') + '</div>';
+              }).join('');
+            } else {
+              blockHist.classList.remove('hidden');
+              blockListEl.innerHTML = cnt > 0 ? '<p class="text-zinc-500 text-sm">No detailed history (blocked before tracking was added)</p>' : '<p class="text-zinc-500 text-sm">Never blocked</p>';
+            }
           }
         }
       });
@@ -313,6 +312,8 @@ require_once __DIR__ . '/header.php';
       document.getElementById('driver-vehicle-summary').classList.add('hidden');
       document.getElementById('driver-insurance-uploaded').classList.add('hidden');
       document.getElementById('connect-link-section').classList.add('hidden');
+      var blockHist = document.getElementById('driver-block-history-section');
+      if (blockHist) blockHist.classList.add('hidden');
     }
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
@@ -394,40 +395,68 @@ require_once __DIR__ . '/header.php';
     var s = String(statusStr).toLowerCase();
     return /expired|not valid|no mot|untaxed|sorn|unlicensed|not licensed|fail/.test(s);
   }
-  function renderVehicleSummary(data) {
+  function renderVehicleDetails(vehicleData, van, vanReg) {
     var panel = document.getElementById('driver-vehicle-summary');
     var dl = document.getElementById('driver-vehicle-dl');
     var ok = document.getElementById('driver-vehicle-ok');
     var warn = document.getElementById('driver-vehicle-warn');
-    if (!data || !data.registrationNumber) { panel.classList.add('hidden'); return; }
-    var rows = [
-      { label: 'Year', value: data.yearOfManufacture },
-      { label: 'Colour', value: data.colour },
-      { label: 'Fuel', value: data.fuelType },
-      { label: 'Engine', value: data.engineCapacity ? data.engineCapacity + ' cc' : '' },
-      { label: 'MOT status', value: data.mot && data.mot.motStatus },
-      { label: 'MOT due', value: data.mot && data.mot.motDueDate },
-      { label: 'MOT days', value: data.mot && data.mot.days != null ? data.mot.days + ' days' : '' },
-      { label: 'Tax status', value: data.tax && data.tax.taxStatus },
-      { label: 'Tax due', value: data.tax && data.tax.taxDueDate },
-      { label: 'V5C issued', value: data.dateOfLastV5CIssued }
-    ];
-    var html = '';
-    rows.forEach(function(r) {
-      if (r.value === undefined || r.value === null || r.value === '') return;
-      html += '<dt class="text-zinc-500">' + (r.label||'').replace(/</g,'&lt;') + '</dt><dd class="text-zinc-300">' + String(r.value).replace(/</g,'&lt;') + '</dd>';
-    });
-    dl.innerHTML = html;
-    var motExpired = isExpiredStatus(data.mot && data.mot.motStatus) || (data.mot && data.mot.motDueDate && isExpiredOrSoon(data.mot.motDueDate, 0));
-    var taxExpired = isExpiredStatus(data.tax && data.tax.taxStatus) || (data.tax && data.tax.taxDueDate && isExpiredOrSoon(data.tax.taxDueDate, 0));
-    if (motExpired || taxExpired) {
-      ok.classList.add('hidden');
-      warn.classList.remove('hidden');
+    var placeholder = document.getElementById('driver-vehicle-placeholder');
+    if (!panel || !dl) return;
+    ok.classList.add('hidden');
+    warn.classList.add('hidden');
+    var v = vehicleData && typeof vehicleData === 'object' ? vehicleData : null;
+    var hasFullData = v && (v.registrationNumber || v.make || v.model);
+    var hasBasicData = (van || '').trim() || (vanReg || '').trim();
+    if (hasFullData) {
+      var rows = [
+        { label: 'Reg', value: v.registrationNumber, mono: true },
+        { label: 'Make', value: v.make },
+        { label: 'Model', value: v.model },
+        { label: 'Year', value: v.yearOfManufacture },
+        { label: 'Colour', value: v.colour },
+        { label: 'Fuel', value: v.fuelType },
+        { label: 'Engine', value: v.engineCapacity ? v.engineCapacity + ' cc' : '' },
+        { label: 'MOT status', value: v.mot && v.mot.motStatus },
+        { label: 'MOT due', value: v.mot && v.mot.motDueDate },
+        { label: 'MOT days', value: v.mot && v.mot.days != null ? v.mot.days + ' days' : '' },
+        { label: 'Tax status', value: v.tax && v.tax.taxStatus },
+        { label: 'Tax due', value: v.tax && v.tax.taxDueDate },
+        { label: 'V5C issued', value: v.dateOfLastV5CIssued }
+      ];
+      var html = '';
+      rows.forEach(function(r) {
+        if (r.value === undefined || r.value === null || r.value === '') return;
+        html += '<dt class="text-zinc-500">' + (r.label||'').replace(/</g,'&lt;') + '</dt><dd class="text-zinc-300' + (r.mono ? ' font-mono' : '') + '">' + String(r.value).replace(/</g,'&lt;') + '</dd>';
+      });
+      dl.innerHTML = html;
+      if (placeholder) placeholder.classList.add('hidden');
+      var motExpired = isExpiredStatus(v.mot && v.mot.motStatus) || (v.mot && v.mot.motDueDate && isExpiredOrSoon(v.mot.motDueDate, 0));
+      var taxExpired = isExpiredStatus(v.tax && v.tax.taxStatus) || (v.tax && v.tax.taxDueDate && isExpiredOrSoon(v.tax.taxDueDate, 0));
+      if (motExpired || taxExpired) {
+        warn.classList.remove('hidden');
+      } else {
+        ok.classList.remove('hidden');
+      }
+    } else if (hasBasicData) {
+      var basicRows = [
+        { label: 'Reg', value: (vanReg || '').trim(), mono: true },
+        { label: 'Make / Model', value: (van || '').trim() }
+      ].filter(function(r) { return r.value; });
+      var html = '';
+      basicRows.forEach(function(r) {
+        html += '<dt class="text-zinc-500">' + (r.label||'').replace(/</g,'&lt;') + '</dt><dd class="text-zinc-300' + (r.mono ? ' font-mono' : '') + '">' + String(r.value).replace(/</g,'&lt;') + '</dd>';
+      });
+      dl.innerHTML = html;
+      if (placeholder) placeholder.classList.add('hidden');
     } else {
-      ok.classList.remove('hidden');
-      warn.classList.add('hidden');
+      dl.innerHTML = '';
+      if (placeholder) placeholder.classList.remove('hidden');
     }
     panel.classList.remove('hidden');
+  }
+
+  function renderVehicleSummary(data) {
+    renderVehicleDetails(data, '', '');
   }
 
   document.getElementById('driver-lookup-vrm').addEventListener('click', function() {

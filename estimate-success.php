@@ -174,7 +174,7 @@ if ($session && $BOT_TOKEN && !empty($CHAT_IDS)) {
       $keyboardButtons[] = ['text' => '📍 Open location', 'url' => $mapUrl];
     }
     if ($driverScannerUrl !== '') {
-      $keyboardButtons[] = ['text' => '📱 Scan QR', 'url' => $driverScannerUrl];
+      $keyboardButtons[] = ['text' => '📱 Enter reference', 'url' => $driverScannerUrl];
     }
     if (!empty($keyboardButtons)) {
       $basePayload['reply_markup'] = ['inline_keyboard' => [$keyboardButtons]];
@@ -373,7 +373,7 @@ $qrCodeUrl = $verifyUrl ? 'https://api.qrserver.com/v1/create-qr-code/?size=120x
   <title>Thank you – Deposit paid | Mobile Tyre Fitting London</title>
   <meta name="robots" content="noindex, follow">
   <meta name="theme-color" content="#18181b">
-  <link rel="icon" type="image/png" href="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png" sizes="any">
+  <link rel="icon" type="image/png" href="logo.php" sizes="any">
   <link rel="stylesheet" href="styles.css">
   <style media="print">
     body { background: #fff !important; }
@@ -421,7 +421,7 @@ $qrCodeUrl = $verifyUrl ? 'https://api.qrserver.com/v1/create-qr-code/?size=120x
   <header class="sticky top-0 z-50 bg-zinc-900 border-b border-zinc-700 shadow-lg no-print">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14 sm:h-16">
       <a href="index.html" class="flex items-center shrink-0">
-        <img src="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png" alt="No 5 Tyre and MOT logo" class="h-8 sm:h-9 w-auto object-contain" loading="lazy">
+        <img src="logo.php" alt="No 5 Tyre and MOT logo" class="h-8 sm:h-9 w-auto object-contain" loading="lazy">
       </a>
       <a href="estimate.html" class="text-sm font-medium text-zinc-400 hover:text-safety transition-colors">Back to estimate</a>
     </div>
@@ -441,7 +441,7 @@ $qrCodeUrl = $verifyUrl ? 'https://api.qrserver.com/v1/create-qr-code/?size=120x
     <?php if ($paymentStatus === 'paid' && $sessionId): ?>
     <div id="receipt" class="receipt-print rounded-xl border border-zinc-700 bg-zinc-800/50 p-4 sm:p-5 mb-8 text-left max-w-xs mx-auto text-sm">
       <div class="text-center border-b border-zinc-600 pb-3 mb-3">
-        <img src="https://no5tyreandmot.co.uk/wp-content/uploads/2026/02/Car-Service-Logo-with-Wrench-and-Tyre-Icon-370-x-105-px.png" alt="No 5 Tyre & MOT" class="h-7 w-auto mx-auto mb-1" loading="lazy">
+        <img src="logo.php" alt="No 5 Tyre & MOT" class="h-7 w-auto mx-auto mb-1" loading="lazy">
         <p class="text-zinc-400 text-xs font-semibold">PAYMENT RECEIPT</p>
       </div>
       <?php if ($reference): ?>
