@@ -19,13 +19,14 @@ require_once __DIR__ . '/header.php';
           <th class="text-left py-4 px-4 text-zinc-400 font-medium">Van / Reg</th>
           <th class="text-left py-4 px-4 text-zinc-400 font-medium">Status</th>
           <th class="text-left py-4 px-4 text-zinc-400 font-medium">Source</th>
+          <th class="text-left py-4 px-4 text-zinc-400 font-medium">Referral</th>
           <th class="text-left py-4 px-4 text-zinc-400 font-medium">Blocked</th>
           <th class="text-left py-4 px-4 text-zinc-400 font-medium">Rate</th>
           <th class="text-right py-4 px-4 text-zinc-400 font-medium">Actions</th>
         </tr>
       </thead>
       <tbody id="drivers-list">
-        <tr><td colspan="8" class="py-12 text-center text-zinc-500">Loading…</td></tr>
+        <tr><td colspan="9" class="py-12 text-center text-zinc-500">Loading…</td></tr>
       </tbody>
     </table>
   </div>
@@ -119,6 +120,26 @@ require_once __DIR__ . '/header.php';
             <label for="driver-notes" class="block text-sm font-medium text-zinc-300 mb-1">Notes</label>
             <textarea id="driver-notes" rows="2" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none"></textarea>
           </div>
+          <div id="referral-section" class="border-t border-zinc-700 pt-4">
+            <h4 class="text-sm font-semibold text-white mb-3">Referral</h4>
+            <div class="space-y-3">
+              <div>
+                <label class="block text-sm text-zinc-400 mb-1">This driver's referral code</label>
+                <div class="flex gap-2">
+                  <input type="text" id="driver-referral-code" readonly class="flex-1 px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-safety font-mono">
+                  <button type="button" id="btn-copy-referral-code" class="px-3 py-2 rounded-lg bg-zinc-600 text-zinc-200 text-sm whitespace-nowrap">Copy</button>
+                </div>
+                <p class="text-zinc-500 text-xs mt-0.5">Share this link: <span id="referral-link-preview" class="text-safety font-mono text-xs break-all"></span></p>
+              </div>
+              <div>
+                <label for="driver-referred-by" class="block text-sm text-zinc-400 mb-1">Referred by</label>
+                <select id="driver-referred-by" class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none">
+                  <option value="">— None —</option>
+                </select>
+                <p class="text-zinc-500 text-xs mt-0.5">Which driver referred this person (if any)</p>
+              </div>
+            </div>
+          </div>
           <div id="driver-block-history-section" class="border-t border-zinc-700 pt-4 hidden">
             <h4 class="text-sm font-semibold text-white mb-2">Block history</h4>
             <p class="text-zinc-500 text-xs mb-2">This account has been blocked <strong id="driver-block-count" class="text-white">0</strong> time(s).</p>
@@ -174,6 +195,20 @@ require_once __DIR__ . '/header.php';
       </div>
 </div>
 
+<!-- Delete driver modal -->
+<div id="delete-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/70" style="display: none;">
+  <div class="w-full max-w-md rounded-2xl border border-red-500/50 bg-zinc-800 p-6">
+    <h3 class="text-lg font-bold text-red-400 mb-2">Delete driver</h3>
+    <p class="text-zinc-400 text-sm mb-2">Are you sure you want to delete this driver? It cannot be undone.</p>
+    <p class="text-zinc-500 text-xs mb-4">The driver will be removed from everywhere: account, job assignments, and messages.</p>
+    <p id="delete-driver-name" class="font-semibold text-white mb-4"></p>
+    <div class="flex gap-2">
+      <button type="button" id="delete-confirm" class="px-4 py-2 bg-red-600 text-white font-medium rounded-lg text-sm hover:bg-red-700">Yes, delete</button>
+      <button type="button" id="delete-cancel" class="px-4 py-2 border border-zinc-600 text-zinc-400 rounded-lg text-sm hover:bg-zinc-700">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function() {
   var driversList = document.getElementById('drivers-list');
@@ -187,9 +222,9 @@ require_once __DIR__ . '/header.php';
     ]).then(function(results) {
       var drivers = results[0];
       var unreadCounts = results[1];
-        if (!Array.isArray(drivers)) { driversList.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-red-400">Failed to load</td></tr>'; return; }
+        if (!Array.isArray(drivers)) { driversList.innerHTML = '<tr><td colspan="9" class="py-8 text-center text-red-400">Failed to load</td></tr>'; return; }
         if (drivers.length === 0) {
-          driversList.innerHTML = '<tr><td colspan="8" class="py-12 text-center text-zinc-500">No drivers. Click Add driver or they will appear after onboarding.</td></tr>';
+          driversList.innerHTML = '<tr><td colspan="9" class="py-12 text-center text-zinc-500">No drivers. Click Add driver or they will appear after onboarding.</td></tr>';
           return;
         }
         function escape(s) { if (s == null || s === '') return ''; var x = String(s); return x.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
@@ -212,14 +247,17 @@ require_once __DIR__ . '/header.php';
           var vanRegStr = [vanDisplay, regDisplay].filter(Boolean).join(' / ');
           if (!vanRegStr) vanRegStr = '—';
           var statusBadge = blacklisted ? '<span class="px-2 py-0.5 rounded text-xs font-medium bg-red-900/60 text-red-300">Blocked</span>' : (active ? '<span class="px-2 py-0.5 rounded text-xs font-medium bg-green-900/50 text-green-300">Active</span>' : '<span class="px-2 py-0.5 rounded text-xs font-medium bg-zinc-700 text-zinc-400">Inactive</span>');
-          var sourceBadge = source === 'connect' ? '<span class="px-2 py-0.5 rounded text-xs bg-safety/20 text-safety">Connect</span>' : '<span class="px-2 py-0.5 rounded text-xs bg-zinc-700 text-zinc-400">Admin</span>';
+          var sourceBadge = source === 'connect' ? '<span class="px-2 py-0.5 rounded text-xs bg-safety/20 text-safety" title="Self-registered via Stripe Connect">Stripe Connect</span>' : '<span class="px-2 py-0.5 rounded text-xs bg-zinc-700 text-zinc-400" title="Added by admin">Admin</span>';
           var blockCountDisplay = blockCount > 0 ? '<span class="font-medium' + (blacklisted ? ' text-red-300' : ' text-zinc-400') + '">' + blockCount + '</span>' : '<span class="text-zinc-500">0</span>';
+          var refCode = (d.referral_code || '').trim();
+          var referredBy = (d.referred_by_name || '').trim();
+          var referralDisplay = refCode ? ('<span class="font-mono text-safety text-xs">' + escape(refCode) + '</span>' + (referredBy ? '<br><span class="text-zinc-500 text-xs">by ' + escape(referredBy) + '</span>' : '')) : '—';
           var unread = unreadCounts[d.id] || 0;
           var msgBtn = '<button type="button" class="btn-message px-2 py-1 rounded bg-safety/20 text-safety text-xs relative inline-flex items-center gap-1 shrink-0" data-id="' + escape(d.id||'') + '" data-name="' + escape(d.name||'') + '">Message' + (unread > 0 ? '<span class="ml-0.5 min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold inline-flex items-center justify-center shrink-0">' + (unread > 99 ? '99+' : unread) + '</span>' : '') + '</button>';
           var actionBtns = '<div class="flex flex-wrap gap-1 justify-end">' +
             msgBtn +
             '<button type="button" class="btn-edit-driver px-2 py-1 rounded bg-zinc-700 text-zinc-300 text-xs" data-id="' + escape(d.id||'') + '">Edit</button>' +
-            '<button type="button" class="btn-delete-driver px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + escape(d.id||'') + '">Delete</button>' +
+            '<button type="button" class="btn-delete-driver px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + escape(d.id||'') + '" data-name="' + escape(d.name||'—') + '">Delete</button>' +
             (blacklisted ? '<button type="button" class="btn-unblock px-2 py-1 rounded bg-zinc-600 text-zinc-200 text-xs" data-id="' + escape(d.id||'') + '">Unblock</button>' : '<button type="button" class="btn-block px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + escape(d.id||'') + '">Block</button>') +
             (active ? '<button type="button" class="btn-deactivate px-2 py-1 rounded bg-zinc-600 text-zinc-200 text-xs" data-id="' + escape(d.id||'') + '">Deactivate</button>' : '<button type="button" class="btn-activate px-2 py-1 rounded bg-green-900/50 text-green-300 text-xs" data-id="' + escape(d.id||'') + '">Activate</button>') +
           '</div>';
@@ -229,6 +267,7 @@ require_once __DIR__ . '/header.php';
             '<td class="py-3 px-4 text-zinc-300 font-mono text-xs">' + escape(vanRegStr.length > 24 ? vanRegStr.substring(0,21)+'…' : vanRegStr) + '</td>' +
             '<td class="py-3 px-4">' + statusBadge + '</td>' +
             '<td class="py-3 px-4">' + sourceBadge + '</td>' +
+            '<td class="py-3 px-4 text-xs">' + referralDisplay + '</td>' +
             '<td class="py-3 px-4">' + blockCountDisplay + '</td>' +
             '<td class="py-3 px-4 text-zinc-400">' + driverRate + '%</td>' +
             '<td class="py-3 px-4 text-right" onclick="event.stopPropagation()">' + actionBtns + '</td>' +
@@ -245,7 +284,7 @@ require_once __DIR__ . '/header.php';
           b.addEventListener('click', function(e) { e.stopPropagation(); openDriverModal(b.getAttribute('data-id')); });
         });
         driversList.querySelectorAll('.btn-delete-driver').forEach(function(b) {
-          b.addEventListener('click', function(e) { e.stopPropagation(); if (confirm('Delete this driver? They will no longer be able to log in.')) deleteDriver(b.getAttribute('data-id')); });
+          b.addEventListener('click', function(e) { e.stopPropagation(); openDeleteModal(b.getAttribute('data-id'), b.getAttribute('data-name') || 'this driver'); });
         });
         driversList.querySelectorAll('.btn-activate').forEach(function(b) {
           b.addEventListener('click', function(e) { e.stopPropagation(); setDriverStatus(b.getAttribute('data-id'), 'activate'); });
@@ -264,7 +303,7 @@ require_once __DIR__ . '/header.php';
         });
     })
     .catch(function() {
-      driversList.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-red-400">Failed to load drivers.</td></tr>';
+      driversList.innerHTML = '<tr><td colspan="9" class="py-8 text-center text-red-400">Failed to load drivers.</td></tr>';
     });
   }
 
@@ -276,7 +315,14 @@ require_once __DIR__ . '/header.php';
     if (id) {
       fetch('api/drivers.php?action=all').then(function(r) { return r.json(); }).then(function(drivers) {
         var d = Array.isArray(drivers) ? drivers.find(function(x) { return (x.id||'') === id; }) : null;
+        populateReferredBySelect(drivers, id);
         if (d) {
+          document.getElementById('driver-referral-code').value = (d.referral_code || '').trim() || '—';
+          var refCode = (d.referral_code || '').trim();
+          var basePath = (window.location.pathname || '/').replace(/\/[^/]*$/, '') || '/';
+          var refLink = refCode ? (window.location.origin + basePath + '../driver/onboarding.html?ref=' + encodeURIComponent(refCode)) : '';
+          document.getElementById('referral-link-preview').textContent = refLink || 'Save driver to get code';
+          document.getElementById('driver-referred-by').value = d.referred_by_driver_id || '';
           document.getElementById('driver-name').value = d.name || '';
           document.getElementById('driver-email').value = d.email || '';
           document.getElementById('driver-password').value = '';
@@ -334,10 +380,16 @@ require_once __DIR__ . '/header.php';
         }
       });
     } else {
+      fetch('api/drivers.php?action=all').then(function(r) { return r.json(); }).then(function(drivers) {
+        populateReferredBySelect(drivers, null);
+      });
       form.reset();
       document.getElementById('driver-id').value = '';
       document.getElementById('driver-vehicleData').value = '';
       document.getElementById('driver-rate').value = 80;
+      document.getElementById('driver-referral-code').value = '';
+      document.getElementById('referral-link-preview').textContent = 'Save driver to get code';
+      document.getElementById('driver-referred-by').value = '';
       document.getElementById('driver-vehicle-summary').classList.add('hidden');
       document.getElementById('driver-insurance-uploaded').classList.add('hidden');
       document.getElementById('connect-link-section').classList.add('hidden');
@@ -351,6 +403,17 @@ require_once __DIR__ . '/header.php';
   function closeDriverModal() {
     modal.classList.add('hidden');
     modal.style.display = 'none';
+  }
+
+  function populateReferredBySelect(drivers, excludeId) {
+    var sel = document.getElementById('driver-referred-by');
+    if (!sel) return;
+    var opts = ['<option value="">— None —</option>'];
+    (drivers || []).forEach(function(drv) {
+      if ((drv.id || '') === excludeId) return;
+      opts.push('<option value="' + (drv.id||'').replace(/"/g,'&quot;') + '">' + (drv.name || drv.email || drv.id || '—').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</option>');
+    });
+    sel.innerHTML = opts.join('');
   }
 
   function deleteDriver(id) {
@@ -398,6 +461,27 @@ require_once __DIR__ . '/header.php';
   });
   document.getElementById('block-cancel').addEventListener('click', closeBlockModal);
   document.getElementById('block-modal').addEventListener('click', function(e) { if (e.target.id === 'block-modal') closeBlockModal(); });
+
+  var pendingDeleteId = null;
+  function openDeleteModal(driverId, driverName) {
+    pendingDeleteId = driverId;
+    document.getElementById('delete-driver-name').textContent = driverName ? ('Deleting: ' + driverName) : 'Are you sure?';
+    document.getElementById('delete-modal').classList.remove('hidden');
+    document.getElementById('delete-modal').style.display = 'flex';
+  }
+  function closeDeleteModal() {
+    pendingDeleteId = null;
+    document.getElementById('delete-modal').classList.add('hidden');
+    document.getElementById('delete-modal').style.display = 'none';
+  }
+  document.getElementById('delete-confirm').addEventListener('click', function() {
+    if (pendingDeleteId) {
+      deleteDriver(pendingDeleteId);
+      closeDeleteModal();
+    }
+  });
+  document.getElementById('delete-cancel').addEventListener('click', closeDeleteModal);
+  document.getElementById('delete-modal').addEventListener('click', function(e) { if (e.target.id === 'delete-modal') closeDeleteModal(); });
 
   function escMsg(s) { if (s == null || s === '') return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function openMessageModal(driverId, driverName) {
@@ -464,6 +548,23 @@ require_once __DIR__ . '/header.php';
   });
 
   document.getElementById('btn-add-driver').addEventListener('click', function() { openDriverModal(); });
+
+  document.getElementById('btn-copy-referral-code').addEventListener('click', function() {
+    var inp = document.getElementById('driver-referral-code');
+    var code = (inp && inp.value && inp.value !== '—') ? inp.value : '';
+    if (code) {
+      var link = document.getElementById('referral-link-preview').textContent || '';
+      var toCopy = link || code;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(toCopy).then(function() { this.textContent = 'Copied!'; var t = this; setTimeout(function() { t.textContent = 'Copy'; }, 1500); }.bind(this));
+      } else {
+        var ta = document.createElement('textarea'); ta.value = toCopy; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+        this.textContent = 'Copied!'; var t = this; setTimeout(function() { t.textContent = 'Copy'; }, 1500);
+      }
+    } else {
+      alert('Save the driver first to get a referral code.');
+    }
+  });
   document.getElementById('driver-modal-cancel').addEventListener('click', closeDriverModal);
   modal.addEventListener('click', function(e) { if (e.target === modal) closeDriverModal(); });
 
@@ -589,6 +690,7 @@ require_once __DIR__ . '/header.php';
       vanReg: document.getElementById('driver-vanReg').value,
       driver_rate: parseInt(document.getElementById('driver-rate').value, 10) || 80,
       notes: document.getElementById('driver-notes').value,
+      referred_by_driver_id: document.getElementById('driver-referred-by').value || undefined,
       kyc: {
         rightToWork: document.getElementById('kyc-right-to-work').checked,
         licenceVerified: document.getElementById('kyc-licence-verified').checked,

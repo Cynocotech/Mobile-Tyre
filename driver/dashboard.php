@@ -54,6 +54,13 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
     </div>
   </div>
 
+  <!-- Blocked driver banner -->
+  <div id="blocked-banner" class="hidden bg-red-900/90 border-b border-red-700 text-white px-4 py-3">
+    <p class="font-semibold">Your account has been blocked.</p>
+    <p id="blocked-reason-text" class="text-sm text-red-200 mt-0.5"></p>
+    <p class="text-xs text-red-300 mt-1">Contact the office to resolve this.</p>
+  </div>
+
   <!-- App-style header with status -->
   <header class="sticky top-0 z-40 app-surface/95 backdrop-blur border-b app-border">
     <div class="max-w-2xl mx-auto px-4 py-5">
@@ -75,16 +82,16 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
   </header>
 
   <main class="max-w-2xl mx-auto px-4 py-4 pb-36">
-    <!-- Map -->
-    <div id="map-container" class="relative rounded-2xl mb-4 shadow-lg" style="height: 280px; width: 100%;">
+    <!-- Map (shown only when driver has jobs) -->
+    <div id="map-container" class="relative rounded-2xl mb-4 shadow-lg hidden" style="height: 280px; width: 100%;">
       <div id="map" style="width: 100% !important; height: 280px !important; min-height: 280px !important; position: relative; background: var(--app-map-bg, #e4e4e7);"></div>
       <button type="button" id="btn-map-expand" class="absolute top-2 right-2 z-[400] w-9 h-9 rounded-full app-surface border app-border shadow flex items-center justify-center app-text-muted hover:opacity-80" aria-label="Expand map">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
       </button>
     </div>
 
-    <!-- Opportunities -->
-    <div class="rounded-2xl app-surface border app-border p-4 mb-4 flex items-center justify-between gap-4">
+    <!-- Opportunities (shown only when driver has jobs) -->
+    <div id="opportunities-section" class="rounded-2xl app-surface border app-border p-4 mb-4 flex items-center justify-between gap-4 hidden">
       <div class="flex-1 min-w-0">
         <h2 class="font-semibold app-text text-base flex items-center gap-2">
           Opportunities
@@ -112,11 +119,15 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       </div>
     </div>
 
-    <div id="jobs-loading" class="app-text-muted py-8 text-center">Loading jobs…</div>
+    <div id="jobs-loading" class="app-text-muted py-8 text-center hidden">Loading jobs…</div>
     <div id="jobs-list" class="space-y-4 hidden mt-6 pb-8"></div>
     <div id="jobs-empty" class="hidden text-center py-12 app-text-muted">
       <p class="text-lg">No jobs assigned yet.</p>
       <p class="text-sm mt-2">Jobs will appear here when assigned by the office.</p>
+      <button type="button" id="btn-get-location-empty" class="mt-6 px-6 py-3 rounded-xl bg-safety text-zinc-900 font-bold text-sm hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety flex items-center justify-center gap-2 mx-auto">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+        Update my location
+      </button>
     </div>
   </main>
 
@@ -339,6 +350,14 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       if (!d) return;
       document.getElementById('jobs-loading').classList.add('hidden');
       driverData = d.driver || {};
+      var blockedBanner = document.getElementById('blocked-banner');
+      var blockedReason = document.getElementById('blocked-reason-text');
+      if (driverData.blacklisted && blockedBanner && blockedReason) {
+        blockedBanner.classList.remove('hidden');
+        blockedReason.textContent = (driverData.blocked_reason || '').trim() || 'No reason provided.';
+      } else if (blockedBanner) {
+        blockedBanner.classList.add('hidden');
+      }
       var unread = d.unreadMessages != null ? d.unreadMessages : -1;
       if (unread < 0) {
         fetch(API_BASE + 'api/messages.php', { credentials: 'same-origin' })
@@ -363,15 +382,24 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       var verified = driverData.kyc_verified;
           document.getElementById('verification-banner').classList.toggle('hidden', verified);
           setOnlineBtn(driverData.is_online);
-          setOpportunitiesText(jobs.length, driverData.wallet_earned);
-          updateMap(jobs, driverData);
-          var list = document.getElementById('jobs-list');
-          var empty = document.getElementById('jobs-empty');
+          var mapEl = document.getElementById('map-container');
+          var oppEl = document.getElementById('opportunities-section');
           if (jobs.length === 0) {
+            if (mapEl) mapEl.classList.add('hidden');
+            if (oppEl) oppEl.classList.add('hidden');
+            setOpportunitiesText(0, driverData.wallet_earned);
+            var list = document.getElementById('jobs-list');
+            var empty = document.getElementById('jobs-empty');
             list.classList.add('hidden');
             empty.classList.remove('hidden');
             return;
           }
+          if (mapEl) mapEl.classList.remove('hidden');
+          if (oppEl) oppEl.classList.remove('hidden');
+          setOpportunitiesText(jobs.length, driverData.wallet_earned);
+          updateMap(jobs, driverData);
+          var list = document.getElementById('jobs-list');
+          var empty = document.getElementById('jobs-empty');
           empty.classList.add('hidden');
           list.classList.remove('hidden');
           list.innerHTML = jobs.map(function(j) {
@@ -383,14 +411,22 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
             var startBtn = j.job_started_at ? '<span class="text-green-400 text-xs">Started</span>' : (canStart ? '<button type="button" class="start-btn px-2 py-1 rounded bg-safety text-zinc-900 text-xs font-medium" data-ref="' + (j.reference||'') + '">Start job</button>' : '<span class="text-amber-400 text-xs">Verify first</span>');
             var jobDone = !!(j.proof_url || j.cash_paid_at || j.job_completed_at);
             var reviewBtn = (jobDone && googleReviewUrl) ? '<button type="button" class="review-btn px-2 py-1 rounded bg-safety/20 text-safety text-xs font-medium" data-ref="' + (j.reference||'') + '">Leave review</button>' : '';
+            var phone = (j.phone || '').trim();
+            var phoneLink = phone ? '<a href="tel:' + escapeHtml(phone.replace(/\D/g,'')) + '" class="text-safety hover:underline">' + escapeHtml(phone) + '</a>' : '';
+            var custLine = escapeHtml(j.name||j.email||'') + (phoneLink ? ' · ' + phoneLink : '');
+            var tyreWheels = [j.tyre_size, j.wheels ? j.wheels + ' wheels' : ''].filter(Boolean).join(' · ');
+            var mapLink = (j.lat && j.lng) ? '<a href="https://www.google.com/maps?q=' + encodeURIComponent(j.lat + ',' + j.lng) + '" target="_blank" rel="noopener" class="text-safety text-xs hover:underline">Directions</a>' : '';
             return '<div class="rounded-xl app-surface border app-border p-4" data-ref="' + (j.reference||'') + '">' +
               '<div class="flex justify-between items-start mb-2">' +
                 '<span class="font-mono font-bold text-safety">#' + (j.reference||'') + '</span>' +
-                '<span class="text-zinc-500 text-sm">' + (j.date||j.postcode||'') + '</span>' +
+                '<span class="text-zinc-500 text-sm">' + escapeHtml(j.date||j.postcode||'') + '</span>' +
               '</div>' +
-              '<p class="text-white font-medium">' + escapeHtml(v) + '</p>' +
-              '<p class="text-zinc-400 text-sm mt-1">' + escapeHtml(j.postcode||'') + ' · ' + escapeHtml(j.name||j.email||'') + '</p>' +
+              '<p class="text-white font-medium">' + escapeHtml(v) + (j.colour ? ' · ' + escapeHtml(j.colour) : '') + '</p>' +
+              '<p class="text-zinc-400 text-sm mt-1">' + escapeHtml(j.postcode||'') + '</p>' +
+              '<p class="text-zinc-400 text-sm mt-0.5">' + custLine + '</p>' +
+              (tyreWheels ? '<p class="text-zinc-500 text-xs mt-1">' + escapeHtml(tyreWheels) + '</p>' : '') +
               '<p class="text-zinc-500 text-xs mt-2">' + payment + '</p>' +
+              (mapLink ? '<p class="mt-1">' + mapLink + '</p>' : '') +
               '<div class="flex flex-wrap items-center gap-2 mt-3">' +
                 startBtn +
                 '<button type="button" class="loc-btn px-2 py-1 rounded bg-zinc-700 text-xs" data-ref="' + (j.reference||'') + '">Update location</button>' +
@@ -433,17 +469,20 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       var loadingEl = document.getElementById('jobs-loading');
       var emptyEl = document.getElementById('jobs-empty');
       var listEl = document.getElementById('jobs-list');
-      var oppEl = document.getElementById('opportunities-text');
+      var mapEl = document.getElementById('map-container');
+      var oppSection = document.getElementById('opportunities-section');
+      var oppTextEl = document.getElementById('opportunities-text');
+      loadingEl.classList.remove('hidden');
       function showError() {
         loadingEl.classList.add('hidden');
         listEl.classList.add('hidden');
+        if (mapEl) mapEl.classList.add('hidden');
+        if (oppSection) oppSection.classList.add('hidden');
         if (emptyEl) {
           emptyEl.classList.remove('hidden');
           emptyEl.innerHTML = '<p class="text-lg">Could not load jobs</p><p class="text-sm mt-2">Check your connection and refresh. Make sure you are logged in.</p><button type="button" onclick="location.reload()" class="mt-4 px-4 py-2 rounded-xl bg-safety text-zinc-900 font-medium text-sm">Refresh</button>';
         }
-        if (oppEl) oppEl.textContent = 'Pull down to refresh.';
-        initMap();
-        if (map) map.setView([51.5074, -0.1278], 10);
+        if (oppTextEl) oppTextEl.textContent = 'Pull down to refresh.';
       }
       var controller = new AbortController();
       var timeoutId = setTimeout(function() { controller.abort(); }, 15000);
@@ -530,6 +569,8 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
     document.getElementById('btn-menu').addEventListener('click', openMenu);
     document.getElementById('nav-menu').addEventListener('click', openMenu);
     document.getElementById('menu-btn-location').addEventListener('click', function() { closeMenu(); currentRef = null; openLocationModal(null); });
+    var btnGetLocEmpty = document.getElementById('btn-get-location-empty');
+    if (btnGetLocEmpty) btnGetLocEmpty.addEventListener('click', function() { openLocationModal(null); });
     document.getElementById('menu-btn-ref').addEventListener('click', function() { closeMenu(); openRefModal(); });
     document.getElementById('menu-btn-theme').addEventListener('click', function() {
       var html = document.documentElement;

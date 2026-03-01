@@ -40,6 +40,11 @@
           <label for="pin" class="block text-sm font-medium text-zinc-300 mb-1">PIN (4–6 digits, optional)</label>
           <input type="password" id="pin" name="pin" pattern="[0-9]{4,6}" maxlength="6" inputmode="numeric" class="w-full px-4 py-3 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none" placeholder="Quick login on mobile">
         </div>
+        <div>
+          <label for="referral_code" class="block text-sm font-medium text-zinc-300 mb-1">Referral code (optional)</label>
+          <input type="text" id="referral_code" name="referral_code" maxlength="10" class="w-full px-4 py-3 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none font-mono" placeholder="e.g. ABC123">
+          <p class="text-zinc-500 text-xs mt-0.5">Enter the code from the driver who referred you</p>
+        </div>
         <hr class="border-zinc-700">
         <h3 class="text-base font-semibold text-white">Driving licence</h3>
         <div>
@@ -80,6 +85,9 @@
     var stepForm = document.getElementById('step-form');
     var stepStripe = document.getElementById('step-stripe');
     var container = document.getElementById('connect-onboarding-container');
+    var urlParams = new URLSearchParams(window.location.search);
+    var refFromUrl = (urlParams.get('ref') || '').trim();
+    if (refFromUrl) document.getElementById('referral_code').value = refFromUrl;
 
     function showError(msg) {
       status.textContent = msg;
@@ -103,6 +111,8 @@
       };
       var pin = document.getElementById('pin').value;
       if (pin) payload.pin = pin;
+      var refCode = document.getElementById('referral_code').value.trim();
+      if (refCode) payload.referral_code = refCode;
       fetch('api/register.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

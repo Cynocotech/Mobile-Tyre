@@ -62,3 +62,29 @@ function getDriverByEmail($email) {
   }
   return null;
 }
+
+function getDriverByReferralCode($code) {
+  if (!$code || strlen($code) < 3) return null;
+  $code = strtoupper(preg_replace('/[^A-Z0-9]/', '', trim($code)));
+  $db = getDriverDb();
+  $adminPath = dirname(__DIR__) . '/admin/data/drivers.json';
+  foreach ($db as $id => $d) {
+    if (strtoupper(trim($d['referral_code'] ?? '')) === $code) return array_merge($d, ['id' => $id]);
+  }
+  if (is_file($adminPath)) {
+    $admin = json_decode(file_get_contents($adminPath), true) ?: [];
+    foreach (is_array($admin) ? $admin : [] as $d) {
+      if (strtoupper(trim($d['referral_code'] ?? '')) === $code) return $d;
+    }
+  }
+  return null;
+}
+
+function generateReferralCode() {
+  $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  do {
+    $code = '';
+    for ($i = 0; $i < 6; $i++) $code .= $chars[random_int(0, strlen($chars) - 1)];
+    if (!getDriverByReferralCode($code)) return $code;
+  } while (true);
+}

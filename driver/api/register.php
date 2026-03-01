@@ -20,6 +20,7 @@ $pin = $input['pin'] ?? '';
 $license = trim($input['license_number'] ?? '');
 $vanMake = trim($input['van_make'] ?? '');
 $vanReg = trim($input['van_reg'] ?? '');
+$referralCode = trim($input['referral_code'] ?? '');
 
 if (!$name || !$email || strlen($password) < 8 || !$license || !$vanMake || !$vanReg) {
   http_response_code(400);
@@ -70,9 +71,14 @@ if ($code !== 200 || empty($acc['id'])) {
 
 $stripeAccountId = $acc['id'];
 
-// Save driver
+$referredByDriverId = null;
+if ($referralCode) {
+  $referrer = getDriverByReferralCode($referralCode);
+  if ($referrer && !empty($referrer['id'])) $referredByDriverId = $referrer['id'];
+}
 $driverId = 'd_' . bin2hex(random_bytes(8));
 $db = getDriverDb();
+$referralCodeNew = generateReferralCode();
 $db[$driverId] = [
   'id' => $driverId,
   'email' => $email,
@@ -85,6 +91,9 @@ $db[$driverId] = [
   'van_reg' => $vanReg,
   'stripe_account_id' => $stripeAccountId,
   'stripe_onboarding_complete' => false,
+  'referral_code' => $referralCodeNew,
+  'referred_by_driver_id' => $referredByDriverId,
+  'source' => 'connect',
   'created_at' => date('Y-m-d H:i:s'),
   'updated_at' => date('Y-m-d H:i:s'),
 ];

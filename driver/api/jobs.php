@@ -87,6 +87,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
       'identity_verified' => !empty($driverRecord['identity_verified']),
       'kyc_verified' => $verified,
       'wallet_earned' => round($walletEarned, 2),
+      'blacklisted' => !empty($driver['blacklisted']),
+      'blocked_reason' => trim($driver['blocked_reason'] ?? ''),
     ],
   ]);
   exit;

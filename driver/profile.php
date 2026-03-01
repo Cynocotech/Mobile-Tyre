@@ -6,6 +6,9 @@ $vd = $driver['vehicleData'] ?? null;
 $licenseNum = $driver['license_number'] ?? $driver['kyc']['licenceNumber'] ?? '';
 $insuranceUrl = $driver['insurance_url'] ?? null;
 $insuranceUploadedAt = $driver['insurance_uploaded_at'] ?? null;
+$referralCode = trim($driver['referral_code'] ?? '');
+$baseDir = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/driver/'), '/');
+$referralLink = $referralCode ? ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $baseDir . '/onboarding.html?ref=' . urlencode($referralCode)) : '';
 ?>
 <!DOCTYPE html>
 <html lang="en-GB" id="html-theme">
@@ -29,6 +32,7 @@ $insuranceUploadedAt = $driver['insurance_uploaded_at'] ?? null;
   </style>
 </head>
 <body class="antialiased min-h-screen">
+  <?php require_once __DIR__ . '/includes/blocked-banner.php'; ?>
   <header class="border-b" style="background: var(--app-surface); border-color: var(--app-border);">
     <div class="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
       <a href="dashboard.php" class="text-sm" style="color: var(--app-text-muted);">← Back</a>
@@ -113,6 +117,20 @@ $insuranceUploadedAt = $driver['insurance_uploaded_at'] ?? null;
       </div>
     </div>
 
+    <?php if ($referralCode): ?>
+    <div class="rounded-2xl border border-zinc-700 bg-zinc-800/50 overflow-hidden mb-6">
+      <h2 class="px-4 py-3 text-sm font-semibold text-zinc-400 border-b border-zinc-700">Refer a driver</h2>
+      <div class="p-4">
+        <p class="text-zinc-400 text-sm mb-2">Share your referral code with new drivers. When they sign up with your code, you get credited.</p>
+        <div class="flex gap-2 items-center flex-wrap">
+          <span class="font-mono text-safety font-bold text-lg px-4 py-2 rounded-lg bg-zinc-700/80"><?php echo htmlspecialchars($referralCode); ?></span>
+          <button type="button" id="btn-copy-ref" class="px-4 py-2 rounded-lg bg-safety text-zinc-900 font-medium text-sm hover:bg-[#e5c900]">Copy link</button>
+        </div>
+        <p class="text-zinc-500 text-xs mt-2 break-all"><?php echo htmlspecialchars($referralLink); ?></p>
+      </div>
+    </div>
+    <?php endif; ?>
+
     <div class="rounded-2xl border border-zinc-700 bg-zinc-800/50 overflow-hidden">
       <h2 class="px-4 py-3 text-sm font-semibold text-zinc-400 border-b border-zinc-700">Payouts & verification</h2>
       <dl class="divide-y divide-zinc-700">
@@ -157,6 +175,19 @@ $insuranceUploadedAt = $driver['insurance_uploaded_at'] ?? null;
             } else alert(d.error || 'Failed');
           })
           .catch(function() { alert('Update failed.'); });
+      });
+    }
+
+    var btnCopyRef = document.getElementById('btn-copy-ref');
+    if (btnCopyRef) {
+      btnCopyRef.addEventListener('click', function() {
+        var link = <?php echo json_encode($referralLink); ?>;
+        if (link && navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(link).then(function() { btnCopyRef.textContent = 'Copied!'; setTimeout(function() { btnCopyRef.textContent = 'Copy link'; }, 1500); });
+        } else if (link) {
+          var ta = document.createElement('textarea'); ta.value = link; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+          btnCopyRef.textContent = 'Copied!'; setTimeout(function() { btnCopyRef.textContent = 'Copy link'; }, 1500);
+        }
       });
     }
 

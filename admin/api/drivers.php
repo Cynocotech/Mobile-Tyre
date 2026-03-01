@@ -9,6 +9,26 @@ $dbFolder = $base . '/database';
 $jobsPath = $dbFolder . '/jobs.json';
 $csvPath = $dbFolder . '/customers.csv';
 
+function getDriverNameById($id, $db, $adminDrivers) {
+  if ($id && isset($db[$id])) return $db[$id]['name'] ?? '';
+  foreach (is_array($adminDrivers) ? $adminDrivers : [] as $a) {
+    if (($a['id'] ?? '') === $id) return $a['name'] ?? '';
+  }
+  return '';
+}
+
+function generateReferralCodeLocal($db, $adminDrivers) {
+  $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  $used = [];
+  foreach ($db as $d) { if (!empty($d['referral_code'])) $used[strtoupper($d['referral_code'])] = true; }
+  foreach (is_array($adminDrivers) ? $adminDrivers : [] as $d) { if (!empty($d['referral_code'])) $used[strtoupper($d['referral_code'])] = true; }
+  do {
+    $code = '';
+    for ($i = 0; $i < 6; $i++) $code .= $chars[random_int(0, strlen($chars) - 1)];
+    if (empty($used[$code])) return $code;
+  } while (true);
+}
+
 function loadDrivers($path) {
   if (!is_file($path)) return [];
   $d = @json_decode(file_get_contents($path), true);
@@ -81,11 +101,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $all = [];
     $seen = [];
     $dbPath = $base . '/database/drivers.json';
+    $raw = [];
+    $adminDrivers = loadDrivers($driversPath);
     if (is_file($dbPath)) {
       $raw = json_decode(file_get_contents($dbPath), true) ?: [];
+      $adminDriversForCode = loadDrivers($driversPath);
       foreach ($raw as $id => $d) {
         if (is_array($d)) {
           $seen[$id] = true;
+          if (empty(trim($d['referral_code'] ?? ''))) {
+            $raw[$id]['referral_code'] = generateReferralCodeLocal($raw, $adminDriversForCode);
+            file_put_contents($dbPath, json_encode($raw, JSON_PRETTY_PRINT), LOCK_EX);
+          }
+          $refById = $d['referred_by_driver_id'] ?? '';
           $all[] = [
             'id' => $id,
             'name' => $d['name'] ?? '',
@@ -98,6 +126,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'equipment' => $d['equipment'] ?? null,
             'notes' => $d['notes'] ?? '',
             'source' => 'connect',
+            'referral_code' => trim($raw[$id]['referral_code'] ?? $d['referral_code'] ?? ''),
+            'referred_by_driver_id' => $refById,
+            'referred_by_name' => getDriverNameById($refById, $raw, $adminDrivers),
             'active' => isset($d['active']) ? (bool)$d['active'] : true,
             'blacklisted' => !empty($d['blacklisted']),
             'blocked_reason' => trim($d['blocked_reason'] ?? ''),
@@ -111,12 +142,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
       }
     }
-    $adminDrivers = loadDrivers($driversPath);
-    foreach (is_array($adminDrivers) ? $adminDrivers : [] as $d) {
+    $adminNeedsSave = false;
+    foreach (is_array($adminDrivers) ? $adminDrivers : [] as $ai => $d) {
       $id = $d['id'] ?? '';
       if ($id && empty($seen[$id])) {
         $seen[$id] = true;
+        $refById = $d['referred_by_driver_id'] ?? '';
+        if (empty(trim($d['referral_code'] ?? ''))) {
+          $adminDrivers[$ai]['referral_code'] = generateReferralCodeLocal($raw, $adminDrivers);
+          $adminNeedsSave = true;
+        }
         $d['source'] = 'admin';
+        $d['referral_code'] = trim($adminDrivers[$ai]['referral_code'] ?? $d['referral_code'] ?? '');
+        $d['referred_by_driver_id'] = $refById;
+        $d['referred_by_name'] = getDriverNameById($refById, $raw, $adminDrivers);
         $d['active'] = isset($d['active']) ? (bool)$d['active'] : true;
         $d['blacklisted'] = !empty($d['blacklisted']);
         $d['blocked_reason'] = trim($d['blocked_reason'] ?? '');
@@ -126,6 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $all[] = $d;
       }
     }
+    if ($adminNeedsSave) saveDrivers($driversPath, $adminDrivers);
     echo json_encode($all);
   } else {
     echo json_encode(['drivers' => loadDrivers($driversPath), 'jobs' => loadJobs()]);
@@ -157,6 +197,7 @@ switch ($action) {
       'vanReg' => trim($input['vanReg'] ?? ''),
       'notes' => trim($input['notes'] ?? ''),
       'driver_rate' => $driverRate,
+      'referred_by_driver_id' => trim($input['referred_by_driver_id'] ?? '') ?: null,
     ];
     if (isset($input['kyc']) && is_array($input['kyc'])) {
       $d['kyc'] = [
@@ -184,6 +225,15 @@ switch ($action) {
     } elseif (isset($input['vehicleData']) && $input['vehicleData'] === null) {
       $d['vehicleData'] = null;
     }
+    $dbPath = $base . '/database/drivers.json';
+    $db = is_file($dbPath) ? (json_decode(file_get_contents($dbPath), true) ?: []) : [];
+    $existingInDb = $db[$d['id']] ?? null;
+    $existingCode = $existingInDb['referral_code'] ?? null;
+    foreach (is_array($drivers) ? $drivers : [] as $ad) {
+      if (($ad['id'] ?? '') === $d['id'] && !empty($ad['referral_code'])) { $existingCode = $ad['referral_code']; break; }
+    }
+    $d['referral_code'] = $existingCode ?: generateReferralCodeLocal($db, $drivers);
+
     $idx = array_search($d['id'], array_column($drivers, 'id'));
     if ($idx !== false) {
       $existing = $drivers[$idx];
@@ -203,8 +253,6 @@ switch ($action) {
     if (saveDrivers($driversPath, $drivers)) {
       $tempPassword = null;
       if ($d['email']) {
-        $dbPath = $base . '/database/drivers.json';
-        $db = is_file($dbPath) ? (json_decode(file_get_contents($dbPath), true) ?: []) : [];
         $newPass = trim($input['password'] ?? '');
         if (strlen($newPass) >= 8) {
           $password = $newPass;
@@ -233,6 +281,9 @@ switch ($action) {
         $dbRecord['license_number'] = $d['kyc']['licenceNumber'] ?? $existing['license_number'] ?? '';
         if ($password) $dbRecord['password_hash'] = password_hash($password, PASSWORD_DEFAULT);
         if (empty($dbRecord['created_at'])) $dbRecord['created_at'] = date('Y-m-d H:i:s');
+        $dbRecord['referral_code'] = $d['referral_code'];
+        $dbRecord['referred_by_driver_id'] = $d['referred_by_driver_id'] ?? null;
+        $dbRecord['source'] = 'admin';
         $db[$d['id']] = $dbRecord;
         if (!is_dir(dirname($dbPath))) @mkdir(dirname($dbPath), 0755, true);
         file_put_contents($dbPath, json_encode($db, JSON_PRETTY_PRINT), LOCK_EX);

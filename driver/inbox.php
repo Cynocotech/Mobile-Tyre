@@ -32,6 +32,7 @@ require_once __DIR__ . '/auth.php';
   </style>
 </head>
 <body class="antialiased min-h-screen transition-colors duration-200">
+  <?php require_once __DIR__ . '/includes/blocked-banner.php'; ?>
   <header class="sticky top-0 z-40 app-surface border-b app-border">
     <div class="max-w-2xl mx-auto px-4 py-5">
       <div class="flex items-center justify-between">
