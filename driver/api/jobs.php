@@ -40,6 +40,7 @@ function saveJob($path, $ref, $updates) {
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
   $jobs = loadJobs($jobsPath);
   $mine = [];
+  $walletEarned = 0;
   foreach ($jobs as $ref => $job) {
     if (($job['assigned_driver_id'] ?? '') === $driverId) {
       $job['reference'] = $ref;
@@ -47,6 +48,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
       $paid = (float) preg_replace('/[^0-9.]/', '', $job['amount_paid'] ?? 0);
       $job['balance_due'] = $est > 0 ? '£' . number_format(max(0, $est - $paid), 2) : '—';
       $mine[] = $job;
+      if (!empty($job['job_completed_at']) && ($job['payment_method'] ?? '') !== 'cash' && $paid > 0) {
+        $walletEarned += $paid * 0.8;
+      }
+      if (!empty($job['job_completed_at']) && ($job['payment_method'] ?? '') === 'cash' && $est > 0) {
+        $walletEarned += $est * 0.8;
+      }
     }
   }
   usort($mine, function ($a, $b) {
@@ -54,7 +61,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $db = $b['date'] ?? $b['created_at'] ?? '';
     return strcmp($db, $da);
   });
-  echo json_encode(['jobs' => $mine]);
+  $driverDb = getDriverDb();
+  $driverRecord = $driverDb[$driverId] ?? [];
+  $verified = !empty($driverRecord['identity_verified']) || !empty($driverRecord['stripe_onboarding_complete']);
+  echo json_encode([
+    'jobs' => $mine,
+    'driver' => [
+      'is_online' => !empty($driverRecord['is_online']),
+      'driver_lat' => $driverRecord['driver_lat'] ?? null,
+      'driver_lng' => $driverRecord['driver_lng'] ?? null,
+      'stripe_onboarding_complete' => !empty($driverRecord['stripe_onboarding_complete']),
+      'identity_verified' => !empty($driverRecord['identity_verified']),
+      'kyc_verified' => $verified,
+      'wallet_earned' => round($walletEarned, 2),
+    ],
+  ]);
   exit;
 }
 
@@ -88,6 +109,14 @@ switch ($action) {
       $updates['job_started_at'] = date('Y-m-d H:i:s');
     }
     saveJob($jobsPath, $ref, $updates);
+    $db = getDriverDb();
+    if (isset($db[$driverId])) {
+      $db[$driverId]['driver_lat'] = $lat;
+      $db[$driverId]['driver_lng'] = $lng;
+      $db[$driverId]['driver_location_updated_at'] = date('Y-m-d H:i:s');
+      $db[$driverId]['updated_at'] = date('Y-m-d H:i:s');
+      saveDriverDb($db);
+    }
     echo json_encode(['ok' => true]);
     break;
 
@@ -124,8 +153,35 @@ switch ($action) {
     echo json_encode(['ok' => true, 'proof_url' => $proofUrl]);
     break;
 
+  case 'set_online':
+    $db = getDriverDb();
+    if (!isset($db[$driverId])) {
+      http_response_code(404);
+      echo json_encode(['error' => 'Driver not found']);
+      exit;
+    }
+    $v = $input['online'] ?? true;
+    $online = ($v === true || $v === 'true' || $v === 1 || $v === '1');
+    $db[$driverId]['is_online'] = $online;
+    $db[$driverId]['updated_at'] = date('Y-m-d H:i:s');
+    if (saveDriverDb($db)) {
+      echo json_encode(['ok' => true, 'is_online' => $online]);
+    } else {
+      http_response_code(500);
+      echo json_encode(['error' => 'Failed to update']);
+    }
+    break;
+
   case 'job_start':
     $ref = trim($input['reference'] ?? '');
+    $driverDb = getDriverDb();
+    $driverRecord = $driverDb[$driverId] ?? [];
+    $verified = !empty($driverRecord['identity_verified']) || !empty($driverRecord['stripe_onboarding_complete']);
+    if (!$verified) {
+      http_response_code(403);
+      echo json_encode(['error' => 'Verify your identity (license/ID) and complete payout setup before starting jobs. Complete onboarding and verify in Profile.']);
+      exit;
+    }
     $jobs = loadJobs($jobsPath);
     if (!$ref || !isset($jobs[$ref]) || ($jobs[$ref]['assigned_driver_id'] ?? '') !== $driverId) {
       http_response_code(404);

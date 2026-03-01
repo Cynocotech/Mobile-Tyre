@@ -28,7 +28,8 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
         <div class="px-4 py-4 flex justify-between"><dt class="text-zinc-500">Phone</dt><dd class="text-white"><a href="tel:<?php echo htmlspecialchars(preg_replace('/\D/', '', $driver['phone'] ?? '')); ?>" class="text-safety"><?php echo htmlspecialchars($driver['phone'] ?? '—'); ?></a></dd></div>
         <div class="px-4 py-4 flex justify-between"><dt class="text-zinc-500">Licence</dt><dd class="text-white font-mono"><?php echo htmlspecialchars($driver['license_number'] ?? '—'); ?></dd></div>
         <div class="px-4 py-4 flex justify-between"><dt class="text-zinc-500">Van</dt><dd class="text-white"><?php echo htmlspecialchars($driver['van_make'] ?? '—'); ?> <?php echo htmlspecialchars($driver['van_reg'] ?? ''); ?></dd></div>
-        <div class="px-4 py-4 flex justify-between"><dt class="text-zinc-500">Stripe payouts</dt><dd class="text-white"><?php echo !empty($driver['stripe_onboarding_complete']) ? '<span class="text-green-400">Connected</span>' : '<span class="text-amber-400">Pending</span>'; ?></dd></div>
+        <div class="px-4 py-4 flex justify-between"><dt class="text-zinc-500">Stripe payouts</dt><dd class="text-white"><?php echo !empty($driver['stripe_onboarding_complete']) ? '<span class="text-green-400">Connected</span>' : '<a href="onboarding.html" class="text-amber-400 hover:underline">Complete setup</a>'; ?></dd></div>
+        <div class="px-4 py-4 flex justify-between"><dt class="text-zinc-500">ID / license verified</dt><dd class="text-white"><?php echo !empty($driver['identity_verified']) ? '<span class="text-green-400">Verified</span>' : '<a href="dashboard.php" class="text-amber-400 hover:underline">Verify now</a>'; ?></dd></div>
       </dl>
     </div>
   </main>

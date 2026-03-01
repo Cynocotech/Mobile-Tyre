@@ -58,7 +58,9 @@ if (is_file($csvPath)) {
 }
 
 $driversPath = $dbFolder . '/drivers.json';
+$adminDriversPath = dirname(__DIR__) . '/data/drivers.json';
 $drivers = is_file($driversPath) ? json_decode(file_get_contents($driversPath), true) : [];
+$adminDrivers = is_file($adminDriversPath) ? json_decode(file_get_contents($adminDriversPath), true) : [];
 
 if (is_file($jobsPath)) {
   $jobs = @json_decode(file_get_contents($jobsPath), true) ?: [];
@@ -70,8 +72,18 @@ if (is_file($jobsPath)) {
       $order = $jobData;
       if (empty($order['date'])) $order['date'] = $order['created_at'] ?? '';
     }
-    if (!empty($order['assigned_driver_id']) && isset($drivers[$order['assigned_driver_id']])) {
-      $order['assigned_driver_name'] = $drivers[$order['assigned_driver_id']]['name'] ?? '';
+    $assignId = $order['assigned_driver_id'] ?? '';
+    if ($assignId) {
+      if (isset($drivers[$assignId])) {
+        $order['assigned_driver_name'] = $drivers[$assignId]['name'] ?? '';
+      } else {
+        foreach (is_array($adminDrivers) ? $adminDrivers : [] as $d) {
+          if (($d['id'] ?? '') === $assignId) {
+            $order['assigned_driver_name'] = $d['name'] ?? '';
+            break;
+          }
+        }
+      }
     }
   }
 }

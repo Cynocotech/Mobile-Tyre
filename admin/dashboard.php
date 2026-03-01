@@ -201,13 +201,28 @@ require_once __DIR__ . '/header.php';
       var btn = document.getElementById('assign-driver-btn');
       if (btn) btn.onclick = function() {
         var did = sel.value;
-        if (!did) return;
+        if (!did) {
+          alert('Select a driver first.');
+          return;
+        }
+        btn.disabled = true;
+        btn.textContent = 'Assigning…';
         fetch('api/assign-driver.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ reference: ref, driver_id: did })
         }).then(function(r) { return r.json(); }).then(function(res) {
-          if (res.ok) showOrder(ref); else alert(res.error || 'Failed');
+          btn.disabled = false;
+          btn.textContent = 'Assign';
+          if (res.ok) {
+            showOrder(ref);
+          } else {
+            alert(res.error || 'Failed to assign driver');
+          }
+        }).catch(function() {
+          btn.disabled = false;
+          btn.textContent = 'Assign';
+          alert('Network error. Try again.');
         });
       };
     });

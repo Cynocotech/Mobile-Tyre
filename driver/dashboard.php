@@ -18,6 +18,8 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
   <meta name="theme-color" content="#18181b">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { theme: { extend: { colors: { safety: '#fede00' } } } }</script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </head>
 <body class="bg-zinc-900 text-zinc-200 antialiased min-h-screen">
   <header class="sticky top-0 z-40 bg-zinc-900/95 backdrop-blur border-b border-zinc-700">
@@ -27,6 +29,9 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
         <p class="text-zinc-500 text-xs">My jobs</p>
       </div>
       <div class="flex items-center gap-2">
+        <button type="button" id="btn-online" class="px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+          <span id="online-label">Go online</span>
+        </button>
         <a href="profile.php" class="px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 text-sm">Profile</a>
         <a href="logout.php" class="px-3 py-2 rounded-lg text-zinc-500 hover:text-red-400 text-sm">Logout</a>
       </div>
@@ -34,10 +39,29 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
   </header>
 
   <main class="max-w-2xl mx-auto px-4 py-6">
-    <div class="flex items-center justify-between mb-6">
-      <button type="button" id="btn-location" class="px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-zinc-300 text-sm hover:bg-zinc-700">
-        Update my location
-      </button>
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+      <div class="flex items-center gap-3">
+        <div id="wallet-card" class="rounded-xl border border-zinc-700 bg-zinc-800/50 px-4 py-3">
+          <p class="text-zinc-500 text-xs">Wallet earned</p>
+          <p id="wallet-amount" class="text-safety font-bold text-xl">£0.00</p>
+        </div>
+        <button type="button" id="btn-location" class="px-4 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-zinc-300 text-sm hover:bg-zinc-700 whitespace-nowrap">
+          Update my location
+        </button>
+      </div>
+    </div>
+
+    <div id="map-container" class="rounded-xl border border-zinc-700 overflow-hidden mb-6" style="height: 240px;">
+      <div id="map" class="w-full h-full bg-zinc-800"></div>
+    </div>
+
+    <div id="verification-banner" class="hidden rounded-xl border border-amber-700 bg-amber-900/30 p-4 mb-6">
+      <p class="text-amber-200 text-sm font-medium">Verify your identity (KYC)</p>
+      <p class="text-amber-300/80 text-xs mt-1">Complete payout setup (Stripe) and verify your license/ID with Stripe Identity before you can start jobs.</p>
+      <div class="flex flex-wrap gap-2 mt-2">
+        <button type="button" id="btn-verify-identity" class="px-3 py-1.5 rounded-lg bg-amber-600 text-amber-900 font-medium text-sm hover:bg-amber-500">Verify license/ID</button>
+        <a href="onboarding.html" class="px-3 py-1.5 rounded-lg bg-zinc-700 text-zinc-200 text-sm hover:bg-zinc-600">Complete payout setup</a>
+      </div>
     </div>
 
     <div id="jobs-loading" class="text-zinc-500 py-8 text-center">Loading jobs…</div>
@@ -63,15 +87,70 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
   <script>
   (function() {
     var currentLat, currentLng, currentRef;
+    var map, driverMarker, jobMarkers = [];
+    var driverData = {};
+
+    function initMap() {
+      if (map) return;
+      map = L.map('map').setView([51.5074, -0.1278], 10);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap',
+        maxZoom: 19
+      }).addTo(map);
+    }
+
+    function updateMap(jobs, driver) {
+      initMap();
+      jobMarkers.forEach(function(m) { map.removeLayer(m); });
+      jobMarkers = [];
+      var bounds = [];
+      if (driver.driver_lat && driver.driver_lng) {
+        var lat = parseFloat(driver.driver_lat), lng = parseFloat(driver.driver_lng);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          if (driverMarker) map.removeLayer(driverMarker);
+          driverMarker = L.marker([lat, lng]).addTo(map).bindPopup('Your location');
+          driverMarker._icon && driverMarker._icon.classList.add('driver-marker');
+          bounds.push([lat, lng]);
+        }
+      }
+      (jobs || []).forEach(function(j) {
+        var lat = parseFloat(j.lat), lng = parseFloat(j.lng);
+        if (isNaN(lat) || isNaN(lng)) return;
+        var m = L.marker([lat, lng]).addTo(map).bindPopup('#' + (j.reference||'') + ' ' + (j.postcode||''));
+        jobMarkers.push(m);
+        bounds.push([lat, lng]);
+      });
+      if (bounds.length > 0) {
+        map.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
+      }
+    }
+
+    function setOnlineBtn(online) {
+      var btn = document.getElementById('btn-online');
+      var lbl = document.getElementById('online-label');
+      if (online) {
+        btn.className = 'px-3 py-2 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-500';
+        lbl.textContent = 'Online';
+      } else {
+        btn.className = 'px-3 py-2 rounded-lg text-sm font-medium bg-zinc-700 text-zinc-300 hover:bg-zinc-600';
+        lbl.textContent = 'Go online';
+      }
+    }
 
     function loadJobs() {
       fetch('api/jobs.php')
         .then(function(r) { return r.json(); })
         .then(function(d) {
           document.getElementById('jobs-loading').classList.add('hidden');
+          driverData = d.driver || {};
+          var jobs = d.jobs || [];
+          var verified = driverData.kyc_verified;
+          document.getElementById('verification-banner').classList.toggle('hidden', verified);
+          document.getElementById('wallet-amount').textContent = '£' + (driverData.wallet_earned || 0).toFixed(2);
+          setOnlineBtn(driverData.is_online);
+          updateMap(jobs, driverData);
           var list = document.getElementById('jobs-list');
           var empty = document.getElementById('jobs-empty');
-          var jobs = d.jobs || [];
           if (jobs.length === 0) {
             list.classList.add('hidden');
             empty.classList.remove('hidden');
@@ -84,14 +163,15 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
             var payment = j.payment_method === 'cash' ? '<span class="text-amber-400">Cash</span>' + (j.cash_paid_at ? ' (marked paid)' : '');
             else payment = 'Card (deposit) – balance due: ' + (j.balance_due || '—');
             var proofBtn = j.proof_url ? '<span class="text-green-400 text-xs">Proof uploaded</span>' : '<button type="button" class="proof-btn px-2 py-1 rounded bg-zinc-700 text-xs" data-ref="' + j.reference + '">Upload proof</button>';
-            var startBtn = j.job_started_at ? '<span class="text-green-400 text-xs">Started</span>' : '<button type="button" class="start-btn px-2 py-1 rounded bg-zinc-700 text-xs" data-ref="' + (j.reference||'') + '">Start job</button>';
+            var canStart = verified;
+            var startBtn = j.job_started_at ? '<span class="text-green-400 text-xs">Started</span>' : (canStart ? '<button type="button" class="start-btn px-2 py-1 rounded bg-safety text-zinc-900 text-xs font-medium" data-ref="' + (j.reference||'') + '">Start job</button>' : '<span class="text-amber-400 text-xs">Verify first</span>');
             return '<div class="rounded-xl border border-zinc-700 bg-zinc-800/50 p-4" data-ref="' + (j.reference||'') + '">' +
               '<div class="flex justify-between items-start mb-2">' +
                 '<span class="font-mono font-bold text-safety">#' + (j.reference||'') + '</span>' +
                 '<span class="text-zinc-500 text-sm">' + (j.date||j.postcode||'') + '</span>' +
               '</div>' +
-              '<p class="text-white font-medium">' + v + '</p>' +
-              '<p class="text-zinc-400 text-sm mt-1">' + (j.postcode||'') + ' · ' + (j.name||j.email||'') + '</p>' +
+              '<p class="text-white font-medium">' + escapeHtml(v) + '</p>' +
+              '<p class="text-zinc-400 text-sm mt-1">' + escapeHtml(j.postcode||'') + ' · ' + escapeHtml(j.name||j.email||'') + '</p>' +
               '<p class="text-zinc-500 text-xs mt-2">' + payment + '</p>' +
               '<div class="flex flex-wrap items-center gap-2 mt-3">' +
                 startBtn +
@@ -132,8 +212,17 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
         });
     }
 
+    function escapeHtml(s) {
+      if (!s) return '';
+      var d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
     function openLocationModal(ref) {
       currentRef = ref;
+      currentLat = null;
+      currentLng = null;
       document.getElementById('location-modal').classList.remove('hidden');
       document.getElementById('location-modal').style.display = 'flex';
       document.getElementById('location-status').textContent = 'Getting your position…';
@@ -144,9 +233,14 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
             currentLng = p.coords.longitude;
             document.getElementById('location-status').textContent = 'Location ready. Click Update to save.';
           },
-          function() {
-            document.getElementById('location-status').textContent = 'Could not get location. Enable GPS or enter manually later.';
-          }
+          function(err) {
+            var msg = 'Could not get location. ';
+            if (err.code === 1) msg += 'Allow location access in browser settings.';
+            else if (err.code === 2) msg += 'Position unavailable.';
+            else if (err.code === 3) msg += 'Request timed out.';
+            document.getElementById('location-status').textContent = msg;
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
       } else {
         document.getElementById('location-status').textContent = 'Geolocation not supported.';
@@ -158,28 +252,55 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       openLocationModal(null);
     });
 
+    document.getElementById('btn-verify-identity').addEventListener('click', function() {
+      var btn = this;
+      btn.disabled = true;
+      btn.textContent = 'Loading…';
+      fetch('api/verification-session.php', { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          if (d.url) window.location.href = d.url;
+          else { alert(d.error || 'Failed'); btn.disabled = false; btn.textContent = 'Verify license/ID'; }
+        })
+        .catch(function() { alert('Network error'); btn.disabled = false; btn.textContent = 'Verify license/ID'; });
+    });
+
+    document.getElementById('btn-online').addEventListener('click', function() {
+      var wantOnline = !driverData.is_online;
+      fetch('api/jobs.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'set_online', online: wantOnline })
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (d.ok) {
+          driverData.is_online = d.is_online;
+          setOnlineBtn(d.is_online);
+        } else alert(d.error || 'Failed');
+      });
+    });
+
     document.getElementById('location-confirm').addEventListener('click', function() {
-      if (!currentLat || !currentLng) {
-        alert('Location not available yet.');
+      if (currentLat == null || currentLng == null || isNaN(currentLat) || isNaN(currentLng)) {
+        alert('Location not available yet. Wait for GPS or check permissions.');
         return;
       }
       if (currentRef) {
         var fd = new FormData();
         fd.append('action', 'location');
-        fd.append('lat', currentLat);
-        fd.append('lng', currentLng);
+        fd.append('lat', String(currentLat));
+        fd.append('lng', String(currentLng));
         fd.append('reference', currentRef);
         fetch('api/jobs.php', { method: 'POST', body: fd }).then(function(r) { return r.json(); }).then(function(d) {
           if (d.ok) { closeLocationModal(); loadJobs(); } else alert(d.error || 'Failed');
-        });
+        }).catch(function() { alert('Update failed. Check connection.'); });
       } else {
         fetch('api/location.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ lat: currentLat, lng: currentLng })
         }).then(function(r) { return r.json(); }).then(function(d) {
-          if (d.ok) { closeLocationModal(); } else alert(d.error || 'Failed');
-        });
+          if (d.ok) { closeLocationModal(); loadJobs(); } else alert(d.error || 'Failed');
+        }).catch(function() { alert('Update failed. Check connection.'); });
       }
     });
 
@@ -216,8 +337,25 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       input.click();
     }
 
+    var urlParams = new URLSearchParams(window.location.search);
+    var verify = urlParams.get('verify');
+    if (verify === 'success') {
+      alert('Identity verified. You can now start jobs.');
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (verify === 'pending') {
+      alert('Verification submitted. We\'ll review it shortly. You can start jobs once approved.');
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (verify === 'error') {
+      alert('Verification could not be completed.');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
     loadJobs();
   })();
   </script>
+  <style>
+  .driver-marker { filter: hue-rotate(45deg) saturate(1.5); }
+  #map.leaflet-container { background: #27272a !important; }
+  </style>
 </body>
 </html>
