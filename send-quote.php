@@ -87,6 +87,16 @@ foreach ($CHAT_IDS as $chatId) {
 }
 
 if ($anyOk) {
+  $quotesPath = __DIR__ . '/database/quotes.json';
+  $quotes = [];
+  if (is_file($quotesPath)) {
+    $quotes = @json_decode(file_get_contents($quotesPath), true) ?: [];
+  }
+  if (!is_array($quotes)) $quotes = [];
+  $quotes[] = ['date' => date('Y-m-d H:i:s'), 'vrm' => $vrm, 'location' => $location, 'mobile' => $mobile];
+  $dbDir = dirname($quotesPath);
+  if (!is_dir($dbDir)) @mkdir($dbDir, 0755, true);
+  @file_put_contents($quotesPath, json_encode($quotes, JSON_PRETTY_PRINT), LOCK_EX);
   http_response_code(200);
   echo json_encode(['ok' => true]);
 } else {

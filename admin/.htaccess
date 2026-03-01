@@ -1,0 +1,4 @@
+# Protect admin – optional: add IP restrict or use stronger auth
+<Files "config.json">
+  Require all denied
+</Files>

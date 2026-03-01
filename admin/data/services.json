@@ -1,0 +1,9 @@
+[
+  {"id":"labor","key":"laborPrice","label":"Labour (call-out)","price":50,"description":"","enabled":true,"seo":{"title":"","description":"","ogImage":""},"icon":"wrench"},
+  {"id":"puncture","key":"punctureRepair","label":"Puncture repair","price":25,"description":"","enabled":true,"seo":{"title":"","description":"","ogImage":""},"icon":"wrench"},
+  {"id":"tyre","key":"pricePerTyre","label":"Tyre fitting (per tyre)","price":15,"description":"","enabled":true,"seo":{"title":"","description":"","ogImage":""},"icon":"circle"},
+  {"id":"balance","key":"priceBalance","label":"Wheel balancing (per wheel)","price":12,"description":"","enabled":true,"seo":{"title":"","description":"","ogImage":""},"icon":"circle"},
+  {"id":"locking","key":"lockingWheelNutRemoval","label":"Locking wheel nut removal","price":30,"description":"","enabled":true,"seo":{"title":"","description":"","ogImage":""},"icon":"wrench"},
+  {"id":"jump","key":"jumpStart","label":"Jump start","price":35,"description":"","enabled":true,"seo":{"title":"","description":"","ogImage":""},"icon":"bolt"},
+  {"id":"battery","key":"batteryReplacement","label":"Battery replacement","price":45,"description":"","enabled":true,"seo":{"title":"","description":"","ogImage":""},"icon":"bolt"}
+]

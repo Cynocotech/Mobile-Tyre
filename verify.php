@@ -220,9 +220,6 @@ elseif ($vehicleVrm !== '') $vehicleDesc .= ' (' . $vehicleVrm . ')';
             <dt class="text-zinc-400">VRM</dt><dd class="font-semibold text-white"><?php echo htmlspecialchars($vehicleVrm !== '' ? $vehicleVrm : '—'); ?></dd>
             <dt class="text-zinc-400">Make</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleMake !== '' ? $vehicleMake : '—'); ?></dd>
             <dt class="text-zinc-400">Model</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleModel !== '' ? $vehicleModel : '—'); ?></dd>
-            <dt class="text-zinc-400">Colour</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleColour !== '' ? $vehicleColour : '—'); ?></dd>
-            <dt class="text-zinc-400">Year</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleYear !== '' ? $vehicleYear : '—'); ?></dd>
-            <dt class="text-zinc-400">Fuel</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleFuel !== '' ? $vehicleFuel : '—'); ?></dd>
             <dt class="text-zinc-400">Tyre size</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleTyreSize !== '' ? $vehicleTyreSize : '—'); ?></dd>
             <dt class="text-zinc-400">Wheels</dt><dd class="font-medium text-white"><?php echo htmlspecialchars($vehicleWheels !== '' ? $vehicleWheels : '—'); ?></dd>
           </dl>

@@ -140,35 +140,6 @@
         </div>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
-        <label for="estimate-colour" class="sr-only">Vehicle colour</label>
-        <div class="form-field-icon-wrap">
-          <span class="form-field-icon" aria-hidden="true">
-            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-2.5 9h-1c-.55 0-1-.45-1-1s.45-1 1-1h1c.28 0 .5-.22.5-.5s-.22-.5-.5-.5h-1c-1.1 0-2 .9-2 2s.9 2 2 2h1c.55 0 1 .45 1 1s-.45 1-1 1h-1c-.28 0-.5.22-.5.5s.22.5.5.5h1c1.1 0 2-.9 2-2s-.9-2-2-2z"/></svg>
-          </span>
-          <input id="estimate-colour" type="text" name="vehicle_colour" placeholder="Colour (e.g. Silver)" class="px-4 py-3.5 text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-0 text-base" autocomplete="off">
-        </div>
-        <label for="estimate-year" class="sr-only">Vehicle year</label>
-        <div class="form-field-icon-wrap">
-          <span class="form-field-icon" aria-hidden="true">
-            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm-8 4H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg>
-          </span>
-          <input id="estimate-year" type="text" name="vehicle_year" placeholder="Year (e.g. 2018)" class="px-4 py-3.5 text-zinc-100 placeholder-zinc-400 focus:outline-none focus:ring-0 text-base" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off">
-        </div>
-        <label for="estimate-fuel" class="sr-only">Fuel type</label>
-        <div class="form-field-icon-wrap">
-          <span class="form-field-icon" aria-hidden="true">
-            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M19.77 7.23l.01-.01-3.72-3.72L15 4.56l2.11 2.11c-.94.36-1.61 1.26-1.61 2.33 0 1.38 1.12 2.5 2.5 2.5.36 0 .69-.08 1-.21v7.21c0 .55-.45 1-1 1s-1-.45-1-1V14c0-1.1-.9-2-2-2h-1V5c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v16h10v-7.5h1.5v5.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V9c0-1.1-.9-2-2-2h-.28c.31-.6 1.04-.97 1.76-.97l.01-.01zM12 10H6V5h6v5zm-2 2.5c-.83 0-1.5-.67-1.5-1.5S9.17 9.5 10 9.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-          </span>
-          <select id="estimate-fuel" name="vehicle_fuel" class="px-4 py-3.5 text-zinc-100 focus:outline-none focus:ring-0 text-base" aria-label="Fuel type">
-            <option value="">Fuel type</option>
-            <option value="Petrol">Petrol</option>
-            <option value="Diesel">Diesel</option>
-            <option value="Hybrid">Hybrid</option>
-            <option value="Electric">Electric</option>
-          </select>
-        </div>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
         <label for="estimate-tyre-size" class="sr-only">Tyre size</label>
         <div class="form-field-icon-wrap col-span-1 sm:col-span-3">
           <span class="form-field-icon" aria-hidden="true">
@@ -399,6 +370,11 @@
           if (data.prices && typeof data.prices === 'object') {
             Object.keys(data.prices).forEach(function (k) { CONFIG.prices[k] = Number(data.prices[k]) || 0; });
           }
+          if (data.services && Array.isArray(data.services) && data.services.length > 0) {
+            serviceDefs = data.services.map(function (s) {
+              return { id: s.id || '', label: s.label || '', key: s.key || '', price: Number(s.price) || 0 };
+            });
+          }
           return CONFIG;
         }).catch(function () { return CONFIG; });
       }
@@ -411,14 +387,15 @@
         return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
       }
 
-      function getPrice(key) {
-        return key === 'laborPrice' ? CONFIG.laborPrice : (CONFIG.prices[key] || 0);
+      function getPrice(def) {
+        if (def.price != null && def.price > 0) return def.price;
+        return def.key === 'laborPrice' ? CONFIG.laborPrice : (CONFIG.prices[def.key] || 0);
       }
 
       function addService(id) {
         var def = serviceDefs.find(function (d) { return d.id === id; });
         if (!def) return;
-        var price = getPrice(def.key);
+        var price = getPrice(def);
         var existing = selectedLines.find(function (l) { return l.id === id && !l.custom; });
         if (existing) {
           existing.qty += 1;
@@ -439,7 +416,7 @@
         if (!availableEl) return;
         availableEl.innerHTML = '';
         serviceDefs.forEach(function (def) {
-          var price = getPrice(def.key);
+          var price = getPrice(def);
           var div = document.createElement('div');
           div.className = 'flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-600';
           div.innerHTML =
@@ -703,18 +680,9 @@
         var tyreSize = (tyreSizeSelect && tyreSizeSelect.value === 'Other' && tyreSizeOther) ? (tyreSizeOther.value || '').trim() : ((tyreSizeSelect && tyreSizeSelect.value) || '');
         var wheelsEl = document.getElementById('estimate-wheels');
         var wheels = (wheelsEl && wheelsEl.value) ? wheelsEl.value : '';
-        var colourEl = document.getElementById('estimate-colour');
-        var colour = (colourEl && colourEl.value) ? colourEl.value.trim() : '';
-        var yearEl = document.getElementById('estimate-year');
-        var year = (yearEl && yearEl.value) ? yearEl.value.trim() : '';
-        var fuelEl = document.getElementById('estimate-fuel');
-        var fuel = (fuelEl && fuelEl.value) ? fuelEl.value : '';
         if (vrm) payload.vehicle_vrm = vrm.substring(0, 20);
         if (carMake) payload.vehicle_make = carMake.substring(0, 200);
         if (carModel) payload.vehicle_model = carModel.substring(0, 200);
-        if (colour) payload.vehicle_colour = colour.substring(0, 50);
-        if (year) payload.vehicle_year = year.substring(0, 4);
-        if (fuel) payload.vehicle_fuel = fuel.substring(0, 20);
         if (tyreSize) payload.vehicle_tyre_size = tyreSize.substring(0, 50);
         if (wheels) payload.vehicle_wheels = wheels;
         fetch('create-checkout-session.php', {
