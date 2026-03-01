@@ -28,8 +28,8 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
   <meta name="theme-color" content="#18181b">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { theme: { extend: { colors: { safety: '#fede00', primary: '#2563eb' } } } }</script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <style>
     [data-theme="light"] { --app-bg: #f4f4f5; --app-surface: #ffffff; --app-border: #e4e4e7; --app-text: #18181b; --app-text-muted: #71717a; --app-accent: #2563eb; --app-accent-hover: #1d4ed8; --app-online: #16a34a; --app-map-bg: #e4e4e7; }
     [data-theme="dark"] { --app-bg: #09090b; --app-surface: #18181b; --app-border: #3f3f46; --app-text: #fafafa; --app-text-muted: #a1a1aa; --app-accent: #3b82f6; --app-accent-hover: #2563eb; --app-online: #22c55e; --app-map-bg: #27272a; }
@@ -76,8 +76,8 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
 
   <main class="max-w-2xl mx-auto px-4 py-4 pb-36">
     <!-- Map -->
-    <div id="map-container" class="relative rounded-2xl overflow-hidden mb-4 shadow-lg" style="height: 280px; min-height: 280px;">
-      <div id="map" style="width: 100%; height: 280px; min-height: 280px; background: var(--app-map-bg);"></div>
+    <div id="map-container" class="relative rounded-2xl mb-4 shadow-lg" style="height: 280px; width: 100%;">
+      <div id="map" style="width: 100% !important; height: 280px !important; min-height: 280px !important; position: relative; background: var(--app-map-bg, #e4e4e7);"></div>
       <button type="button" id="btn-map-expand" class="absolute top-2 right-2 z-[400] w-9 h-9 rounded-full app-surface border app-border shadow flex items-center justify-center app-text-muted hover:opacity-80" aria-label="Expand map">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
       </button>
@@ -248,14 +248,21 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
     function initMap() {
       if (map) return;
       var el = document.getElementById('map');
-      if (!el || typeof L === 'undefined') return;
-      map = L.map('map', { center: [51.5074, -0.1278], zoom: 10 });
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        maxZoom: 19
-      }).addTo(map);
-      setTimeout(function() { if (map) map.invalidateSize(); }, 250);
-      window.addEventListener('resize', function() { if (map) map.invalidateSize(); });
+      if (!el) return;
+      if (typeof L === 'undefined') {
+        setTimeout(initMap, 100);
+        return;
+      }
+      try {
+        map = L.map('map', { center: [51.5074, -0.1278], zoom: 10 });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap',
+          maxZoom: 19
+        }).addTo(map);
+        requestAnimationFrame(function() {
+          if (map) { map.invalidateSize(); map.setView([51.5074, -0.1278], 10); }
+        });
+      } catch (e) { console.error('Map init:', e); }
     }
 
     function updateMap(jobs, driver) {
@@ -737,8 +744,11 @@ $driver = getDriverById($_SESSION[DRIVER_SESSION_KEY]);
       initMap();
       loadJobs();
     }
-    if (document.readyState === 'complete') onReady();
-    else window.addEventListener('load', onReady);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', onReady);
+    } else {
+      onReady();
+    }
     if (typeof EventSource !== 'undefined') {
       var evtSrc = new EventSource(API_BASE + 'api/stream.php');
       evtSrc.addEventListener('update', function(e) {
