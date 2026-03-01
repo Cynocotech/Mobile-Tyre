@@ -90,8 +90,17 @@ switch ($action) {
       'vanReg' => trim($input['vanReg'] ?? ''),
       'notes' => trim($input['notes'] ?? '')
     ];
+    if (isset($input['vehicleData']) && is_array($input['vehicleData'])) {
+      $d['vehicleData'] = $input['vehicleData'];
+    } elseif (isset($input['vehicleData']) && $input['vehicleData'] === null) {
+      $d['vehicleData'] = null;
+    }
     $idx = array_search($d['id'], array_column($drivers, 'id'));
     if ($idx !== false) {
+      $existing = $drivers[$idx];
+      if (!array_key_exists('vehicleData', $input) && !empty($existing['vehicleData'])) {
+        $d['vehicleData'] = $existing['vehicleData'];
+      }
       $drivers[$idx] = $d;
     } else {
       $drivers[] = $d;

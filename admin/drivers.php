@@ -21,6 +21,7 @@ require_once __DIR__ . '/header.php';
         <h3 id="driver-modal-title" class="text-lg font-bold text-white mb-4">Add driver</h3>
         <form id="driver-form" class="space-y-3">
           <input type="hidden" id="driver-id">
+          <input type="hidden" id="driver-vehicleData" value="">
           <div>
             <label for="driver-name" class="block text-sm font-medium text-zinc-300 mb-1">Name *</label>
             <input type="text" id="driver-name" required class="w-full px-4 py-2 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none">
@@ -91,17 +92,50 @@ require_once __DIR__ . '/header.php';
           driversList.innerHTML = '<p class="text-zinc-500">No drivers. Click Add driver.</p>';
           return;
         }
+        function escape(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+        function vehicleRows(v) {
+          if (!v || typeof v !== 'object') return '';
+          var rows = [
+            { label: 'Reg', value: v.registrationNumber, mono: true },
+            { label: 'Make', value: v.make }, { label: 'Model', value: v.model },
+            { label: 'Colour', value: v.colour }, { label: 'Fuel', value: v.fuelType },
+            { label: 'Year', value: v.yearOfManufacture }, { label: 'Engine', value: v.engineCapacity ? v.engineCapacity + ' cc' : '' },
+            { label: 'MOT status', value: v.mot && v.mot.motStatus }, { label: 'MOT due', value: v.mot && v.mot.motDueDate }, { label: 'MOT days', value: v.mot && v.mot.days != null ? v.mot.days + ' days' : '' },
+            { label: 'Tax status', value: v.tax && v.tax.taxStatus }, { label: 'Tax due', value: v.tax && v.tax.taxDueDate },
+            { label: 'CO₂', value: v.co2Emissions != null ? v.co2Emissions + ' g/km' : '' }, { label: 'V5C issued', value: v.dateOfLastV5CIssued }
+          ];
+          var html = '';
+          rows.forEach(function(r) {
+            if (r.value === undefined || r.value === null || r.value === '') return;
+            html += '<dt class="text-zinc-500">' + escape(r.label) + '</dt><dd class="text-zinc-300' + (r.mono ? ' font-mono' : '') + '">' + escape(String(r.value)) + '</dd>';
+          });
+          return html;
+        }
         driversList.innerHTML = drivers.map(function(d) {
-          return '<div class="flex justify-between items-start gap-3 rounded-lg border border-zinc-700 bg-zinc-800/50 p-4" data-id="' + (d.id||'') + '">' +
-            '<div>' +
-              '<p class="font-semibold text-white">' + (d.name||'—') + '</p>' +
-              '<p class="text-zinc-400 text-sm">' + (d.van||'') + (d.vanReg ? ' ' + d.vanReg : '') + '</p>' +
-              (d.phone ? '<p class="text-safety text-sm">' + d.phone + '</p>' : '') +
+          var phone = (d.phone||'').trim();
+          var van = (d.van||'').trim();
+          var vanReg = (d.vanReg||'').trim();
+          var notes = (d.notes||'').trim();
+          var v = d.vehicleData;
+          var vehicleSection = v && typeof v === 'object' && (v.registrationNumber || v.make || v.model)
+            ? '<div class="mt-3 pt-3 border-t border-zinc-700"><p class="text-zinc-500 text-xs font-medium mb-2">Vehicle details</p><dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">' + vehicleRows(v) + '</dl></div>'
+            : ('<dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">' +
+                '<dt class="text-zinc-500">Van</dt><dd class="text-zinc-300">' + escape(van||'—') + '</dd>' +
+                '<dt class="text-zinc-500">Reg</dt><dd class="text-zinc-300 font-mono">' + escape(vanReg||'—') + '</dd>' +
+              '</dl>');
+          return '<div class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4" data-id="' + (d.id||'') + '">' +
+            '<div class="flex justify-between items-start gap-3 mb-3">' +
+              '<p class="font-semibold text-white">' + escape(d.name||'—') + '</p>' +
+              '<div class="flex gap-1 shrink-0">' +
+                '<button type="button" class="btn-edit-driver px-2 py-1 rounded bg-zinc-700 text-zinc-300 text-xs" data-id="' + (d.id||'') + '">Edit</button>' +
+                '<button type="button" class="btn-delete-driver px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + (d.id||'') + '">Delete</button>' +
+              '</div>' +
             '</div>' +
-            '<div class="flex gap-1">' +
-              '<button type="button" class="btn-edit-driver px-2 py-1 rounded bg-zinc-700 text-zinc-300 text-xs" data-id="' + (d.id||'') + '">Edit</button>' +
-              '<button type="button" class="btn-delete-driver px-2 py-1 rounded bg-red-900/50 text-red-300 text-xs" data-id="' + (d.id||'') + '">Delete</button>' +
-            '</div>' +
+            '<dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">' +
+              '<dt class="text-zinc-500">Phone</dt><dd class="text-zinc-300">' + escape(phone||'—') + '</dd>' +
+            '</dl>' +
+            vehicleSection +
+            (notes ? '<div class="mt-2 pt-2 border-t border-zinc-700"><p class="text-zinc-500 text-xs">Notes</p><p class="text-zinc-400 text-sm">' + escape(notes) + '</p></div>' : '') +
           '</div>';
         }).join('');
         driversList.querySelectorAll('.btn-edit-driver').forEach(function(b) {
@@ -148,11 +182,13 @@ require_once __DIR__ . '/header.php';
           document.getElementById('driver-van').value = d.van || '';
           document.getElementById('driver-vanReg').value = d.vanReg || '';
           document.getElementById('driver-notes').value = d.notes || '';
+          document.getElementById('driver-vehicleData').value = (d.vehicleData && typeof d.vehicleData === 'object') ? JSON.stringify(d.vehicleData) : '';
         }
       });
     } else {
       form.reset();
       document.getElementById('driver-id').value = '';
+      document.getElementById('driver-vehicleData').value = '';
     }
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
@@ -190,6 +226,7 @@ require_once __DIR__ . '/header.php';
           var make = (data.make || '').trim();
           var model = (data.model || '').trim();
           document.getElementById('driver-van').value = [make, model].filter(Boolean).join(' ') || document.getElementById('driver-van').value;
+          document.getElementById('driver-vehicleData').value = JSON.stringify(data);
         } else {
           alert(data.error || 'Vehicle not found');
         }
@@ -200,6 +237,7 @@ require_once __DIR__ . '/header.php';
 
   form.addEventListener('submit', function(e) {
     e.preventDefault();
+    var vd = document.getElementById('driver-vehicleData').value.trim();
     var payload = {
       action: 'save',
       id: document.getElementById('driver-id').value || undefined,
@@ -209,6 +247,11 @@ require_once __DIR__ . '/header.php';
       vanReg: document.getElementById('driver-vanReg').value,
       notes: document.getElementById('driver-notes').value
     };
+    if (vd) {
+      try { payload.vehicleData = JSON.parse(vd); } catch (e) {}
+    } else {
+      payload.vehicleData = null;
+    }
     fetch('api/drivers.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
