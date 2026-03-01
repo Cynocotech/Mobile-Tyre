@@ -3,8 +3,14 @@
  * Pay remaining balance – creates Checkout for balance with driver split when assigned.
  * GET ?reference=XXXXXX or ?session_id=cs_xxx
  */
-$ref = isset($_GET['reference']) ? trim(preg_replace('/[^0-9]/', '', $_GET['reference'])) : '';
-$sessionId = isset($_GET['session_id']) ? trim($_GET['session_id']) : '';
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+
+$ref = isset($_GET['reference']) ? preg_replace('/[^0-9]/', '', trim((string) $_GET['reference'])) : '';
+$sessionId = isset($_GET['session_id']) ? trim((string) $_GET['session_id']) : '';
+if ($sessionId !== '' && !preg_match('/^cs_[a-zA-Z0-9_]+$/', $sessionId)) {
+  $sessionId = '';
+}
 
 $jobsPath = __DIR__ . '/database/jobs.json';
 $jobs = is_file($jobsPath) ? @json_decode(file_get_contents($jobsPath), true) : [];

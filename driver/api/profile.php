@@ -25,8 +25,8 @@ if (empty($input)) {
   $raw = file_get_contents('php://input');
   $input = json_decode($raw, true) ?: [];
 }
-$name = trim($input['name'] ?? '');
-$phone = trim($input['phone'] ?? '');
+$name = substr(preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', trim((string) ($input['name'] ?? ''))), 0, 200);
+$phone = substr(preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', trim((string) ($input['phone'] ?? ''))), 0, 30);
 
 if ($name === '') {
   http_response_code(400);

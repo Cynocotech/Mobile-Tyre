@@ -4,7 +4,7 @@
  */
 require_once __DIR__ . '/config.php';
 
-$driverId = isset($_GET['state']) ? trim($_GET['state']) : '';
+$driverId = isset($_GET['state']) ? preg_replace('/[^a-zA-Z0-9_\-]/', '', trim((string) $_GET['state'])) : '';
 $driver = $driverId ? getDriverById($driverId) : null;
 
 if (!$driver) {

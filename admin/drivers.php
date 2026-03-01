@@ -145,7 +145,7 @@ require_once __DIR__ . '/header.php';
           driversList.innerHTML = '<p class="text-zinc-500">No drivers. Click Add driver or they will appear after onboarding.</p>';
           return;
         }
-        function escape(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+        function escape(s) { if (s == null || s === '') return ''; var x = String(s); return x.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/\\/g,'\\\\'); }
         function vehicleRows(v) {
           if (!v || typeof v !== 'object') return '';
           var rows = [

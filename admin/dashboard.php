@@ -144,7 +144,8 @@ require_once __DIR__ . '/header.php';
     locations.forEach(function(d) {
       var lat = parseFloat(d.lat), lng = parseFloat(d.lng);
       if (isNaN(lat) || isNaN(lng)) return;
-      var popup = (d.name || 'Driver') + (d.is_online ? ' <span class="text-green-400">• Online</span>' : '');
+      var name = (d.name || 'Driver').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      var popup = name + (d.is_online ? ' <span class="text-green-400">• Online</span>' : '');
       var m = L.marker([lat, lng]).addTo(adminMap).bindPopup(popup);
       adminMarkers.push(m);
       bounds.push([lat, lng]);
@@ -170,15 +171,16 @@ require_once __DIR__ . '/header.php';
       var tbody = document.getElementById('recent-deposits-body');
       var rows = data.recentDeposits || [];
       if (rows.length === 0) return;
+      function esc(s) { if (s == null || s === '') return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
       tbody.innerHTML = rows.map(function(d) {
-        var ref = (d.reference || '').toString();
+        var ref = esc((d.reference || '').toString());
         return '<tr class="order-row border-b border-zinc-700/50 hover:bg-zinc-800/50 cursor-pointer" data-ref="' + ref + '" role="button" tabindex="0">' +
-          '<td class="py-3 px-4 text-zinc-300">' + (d.date || '—') + '</td>' +
-          '<td class="py-3 px-4 font-mono text-safety">' + (d.reference || '—') + '</td>' +
-          '<td class="py-3 px-4 text-zinc-300">' + (d.email || '—') + '</td>' +
-          '<td class="py-3 px-4 text-zinc-400">' + (d.postcode || '—') + '</td>' +
-          '<td class="py-3 px-4 text-right font-semibold text-white">' + (d.amount_paid || '—') + '</td>' +
-          '<td class="py-3 px-4 text-right text-zinc-400">' + (d.estimate_total || '—') + '</td>' +
+          '<td class="py-3 px-4 text-zinc-300">' + esc(d.date) + '</td>' +
+          '<td class="py-3 px-4 font-mono text-safety">' + esc(d.reference) + '</td>' +
+          '<td class="py-3 px-4 text-zinc-300">' + esc(d.email) + '</td>' +
+          '<td class="py-3 px-4 text-zinc-400">' + esc(d.postcode) + '</td>' +
+          '<td class="py-3 px-4 text-right font-semibold text-white">' + esc(d.amount_paid) + '</td>' +
+          '<td class="py-3 px-4 text-right text-zinc-400">' + esc(d.estimate_total) + '</td>' +
         '</tr>';
       }).join('');
       tbody.querySelectorAll('.order-row').forEach(function(row) {
@@ -214,30 +216,31 @@ require_once __DIR__ . '/header.php';
           var paid = parseFloat(String(o.amount_paid).replace(/[^0-9.]/g, ''));
           if (!isNaN(est) && !isNaN(paid)) bal = '£' + Math.max(0, est - paid).toFixed(2);
         }
+        function esc2(s) { if (s == null || s === '') return '—'; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
         detailEl.innerHTML =
           '<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">' +
             '<div class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">' +
               '<h3 class="text-sm font-semibold text-zinc-400 mb-3">Payment</h3>' +
               '<dl class="space-y-2 text-sm">' +
-                '<div class="flex justify-between"><dt class="text-zinc-500">Date</dt><dd class="text-white">' + (o.date || '—') + '</dd></div>' +
-                '<div class="flex justify-between"><dt class="text-zinc-500">Deposit paid</dt><dd class="font-semibold text-safety">' + (o.amount_paid || '—') + '</dd></div>' +
-                '<div class="flex justify-between"><dt class="text-zinc-500">Estimate total</dt><dd class="text-white">' + (o.estimate_total || '—') + '</dd></div>' +
-                '<div class="flex justify-between"><dt class="text-zinc-500">Balance due</dt><dd class="font-semibold text-safety">' + (bal || '—') + '</dd></div>' +
-                '<div class="flex justify-between"><dt class="text-zinc-500">Status</dt><dd class="text-white">' + (o.payment_status || '—') + '</dd></div>' +
+                '<div class="flex justify-between"><dt class="text-zinc-500">Date</dt><dd class="text-white">' + esc2(o.date) + '</dd></div>' +
+                '<div class="flex justify-between"><dt class="text-zinc-500">Deposit paid</dt><dd class="font-semibold text-safety">' + esc2(o.amount_paid) + '</dd></div>' +
+                '<div class="flex justify-between"><dt class="text-zinc-500">Estimate total</dt><dd class="text-white">' + esc2(o.estimate_total) + '</dd></div>' +
+                '<div class="flex justify-between"><dt class="text-zinc-500">Balance due</dt><dd class="font-semibold text-safety">' + esc2(bal) + '</dd></div>' +
+                '<div class="flex justify-between"><dt class="text-zinc-500">Status</dt><dd class="text-white">' + esc2(o.payment_status) + '</dd></div>' +
               '</dl>' +
             '</div>' +
             '<div class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">' +
               '<h3 class="text-sm font-semibold text-zinc-400 mb-3">Customer</h3>' +
               '<dl class="space-y-2 text-sm">' +
-                '<div class="flex justify-between"><dt class="text-zinc-500">Name</dt><dd class="text-white">' + (o.name || '—') + '</dd></div>' +
-                '<div class="flex justify-between"><dt class="text-zinc-500">Email</dt><dd class="text-white break-all">' + (o.email || '—') + '</dd></div>' +
-                '<div class="flex justify-between"><dt class="text-zinc-500">Phone</dt><dd class="text-white"><a href="tel:' + (o.phone||'').replace(/\D/g,'') + '" class="text-safety hover:underline">' + (o.phone || '—') + '</a></dd></div>' +
+                '<div class="flex justify-between"><dt class="text-zinc-500">Name</dt><dd class="text-white">' + esc2(o.name) + '</dd></div>' +
+                '<div class="flex justify-between"><dt class="text-zinc-500">Email</dt><dd class="text-white break-all">' + esc2(o.email) + '</dd></div>' +
+                '<div class="flex justify-between"><dt class="text-zinc-500">Phone</dt><dd class="text-white"><a href="tel:' + esc2((o.phone||'').replace(/\D/g,'')) + '" class="text-safety hover:underline">' + esc2(o.phone) + '</a></dd></div>' +
               '</dl>' +
             '</div>' +
           '</div>' +
           '<div class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">' +
             '<h3 class="text-sm font-semibold text-zinc-400 mb-3">Location</h3>' +
-            '<p class="text-white font-medium">' + (o.postcode || '—') + '</p>' +
+            '<p class="text-white font-medium">' + esc2(o.postcode) + '</p>' +
             (o.lat && o.lng ? '<a href="https://www.google.com/maps?q=' + encodeURIComponent(o.lat + ',' + o.lng) + '" target="_blank" rel="noopener" class="inline-flex items-center gap-1 text-safety text-sm mt-2 hover:underline">Open in Maps</a>' : '') +
           '</div>' +
           (o.session_id ? '<div class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">' +
@@ -246,7 +249,7 @@ require_once __DIR__ . '/header.php';
           '<div class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">' +
             '<h3 class="text-sm font-semibold text-zinc-400 mb-3">Driver</h3>' +
             '<div class="flex flex-wrap items-center gap-2">' +
-              '<span class="text-white">' + (o.assigned_driver_name || '—') + '</span>' +
+              '<span class="text-white">' + esc2(o.assigned_driver_name) + '</span>' +
               '<select id="assign-driver-select" class="px-3 py-1.5 rounded bg-zinc-700 border border-zinc-600 text-white text-sm">' +
                 '<option value="">Assign driver…</option>' +
               '</select>' +
@@ -258,11 +261,11 @@ require_once __DIR__ . '/header.php';
           '<div class="rounded-lg border border-zinc-700 bg-zinc-800/50 p-4">' +
             '<h3 class="text-sm font-semibold text-zinc-400 mb-3">Vehicle</h3>' +
             '<dl class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">' +
-              '<dt class="text-zinc-500">VRM</dt><dd class="text-white font-mono">' + (o.vrm || '—') + '</dd>' +
-              '<dt class="text-zinc-500">Make</dt><dd class="text-white">' + (o.make || '—') + '</dd>' +
-              '<dt class="text-zinc-500">Model</dt><dd class="text-white">' + (o.model || '—') + '</dd>' +
-              '<dt class="text-zinc-500">Tyre size</dt><dd class="text-white">' + (o.tyre_size || '—') + '</dd>' +
-              '<dt class="text-zinc-500">Wheels</dt><dd class="text-white">' + (o.wheels || '—') + '</dd>' +
+              '<dt class="text-zinc-500">VRM</dt><dd class="text-white font-mono">' + esc2(o.vrm) + '</dd>' +
+              '<dt class="text-zinc-500">Make</dt><dd class="text-white">' + esc2(o.make) + '</dd>' +
+              '<dt class="text-zinc-500">Model</dt><dd class="text-white">' + esc2(o.model) + '</dd>' +
+              '<dt class="text-zinc-500">Tyre size</dt><dd class="text-white">' + esc2(o.tyre_size) + '</dd>' +
+              '<dt class="text-zinc-500">Wheels</dt><dd class="text-white">' + esc2(o.wheels) + '</dd>' +
             '</dl>' +
           '</div>';
         return o;

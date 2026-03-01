@@ -51,17 +51,18 @@ require_once __DIR__ . '/header.php';
           jobsTbody.innerHTML = '<tr><td colspan="6" class="py-12 text-center text-zinc-500">No jobs yet</td></tr>';
           return;
         }
+        function jobEsc(s) { if (s == null || s === '') return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
         jobsTbody.innerHTML = jobs.map(function(j) {
           var v = (j.make||'') + ' ' + (j.model||''); if (!v.trim()) v = j.vrm || '—'; else if (j.vrm) v += ' (' + j.vrm + ')';
-          var ref = (j.reference||'').toString();
-          var driver = (j.assigned_driver_name || '—');
+          var ref = jobEsc((j.reference||'').toString());
+          var driver = jobEsc(j.assigned_driver_name);
           return '<tr class="job-row border-b border-zinc-700/50 hover:bg-zinc-800/50 cursor-pointer" data-ref="' + ref + '" role="button" tabindex="0">' +
-            '<td class="py-3 px-4 font-mono text-safety font-semibold">' + (j.reference||'—') + '</td>' +
-            '<td class="py-3 px-4 text-zinc-400">' + (j.date||'—') + '</td>' +
-            '<td class="py-3 px-4 text-zinc-300">' + (v.length > 40 ? v.substring(0,37)+'…' : v) + '</td>' +
-            '<td class="py-3 px-4 text-zinc-400">' + (j.postcode||'—') + '</td>' +
+            '<td class="py-3 px-4 font-mono text-safety font-semibold">' + jobEsc(j.reference) + '</td>' +
+            '<td class="py-3 px-4 text-zinc-400">' + jobEsc(j.date) + '</td>' +
+            '<td class="py-3 px-4 text-zinc-300">' + jobEsc(v.length > 40 ? v.substring(0,37)+'…' : v) + '</td>' +
+            '<td class="py-3 px-4 text-zinc-400">' + jobEsc(j.postcode) + '</td>' +
             '<td class="py-3 px-4 text-zinc-400">' + driver + '</td>' +
-            '<td class="py-3 px-4 text-right font-semibold text-white">' + (j.amount_paid||j.estimate_total||'—') + '</td>' +
+            '<td class="py-3 px-4 text-right font-semibold text-white">' + jobEsc(j.amount_paid||j.estimate_total) + '</td>' +
           '</tr>';
         }).join('');
         jobsTbody.querySelectorAll('.job-row').forEach(function(row) {
@@ -89,7 +90,7 @@ require_once __DIR__ . '/header.php';
       .then(function(o) {
         loading.classList.add('hidden');
         content.classList.remove('hidden');
-        var esc = function(s) { if (s == null || s === '') return '—'; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+        var esc = function(s) { if (s == null || s === '') return '—'; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); };
         var proofHtml = o.proof_url
           ? '<div class="rounded-lg border border-zinc-600 overflow-hidden"><a href="api/proof.php?ref=' + encodeURIComponent(ref) + '" target="_blank" class="block"><img src="api/proof.php?ref=' + encodeURIComponent(ref) + '" alt="Proof" class="w-full max-h-64 object-contain bg-zinc-900"></a><p class="text-zinc-500 text-xs p-2">Completion proof' + (o.proof_uploaded_at ? ' – ' + esc(o.proof_uploaded_at) : '') + '</p></div>'
           : '<p class="text-zinc-500 text-sm">No proof uploaded yet</p>';

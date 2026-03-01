@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/includes/security.php';
 if (!empty($_SESSION['admin_ok'])) {
   header('Location: index.php');
   exit;
@@ -20,7 +21,8 @@ if (!empty($_SESSION['admin_ok'])) {
     <?php if (isset($_POST['password'])): ?>
     <p class="text-red-400 text-sm mb-4">Invalid password.</p>
     <?php endif; ?>
-    <form method="post" class="space-y-4">
+    <form method="post" class="space-y-4" autocomplete="off">
+      <?php echo csrf_field(); ?>
       <div>
         <label for="password" class="block text-sm font-medium text-zinc-300 mb-1">Password</label>
         <input id="password" type="password" name="password" required autofocus class="w-full px-4 py-3 rounded-lg bg-zinc-700 border border-zinc-600 text-white focus:border-safety focus:outline-none focus:ring-2 focus:ring-safety/30">

@@ -14,10 +14,18 @@ if (!$job || ($job['assigned_driver_id'] ?? '') !== $_SESSION[DRIVER_SESSION_KEY
   http_response_code(404);
   exit;
 }
-$path = $base . '/' . ($job['proof_url'] ?? '');
-if (!is_file($path) || !preg_match('/\.(jpg|jpeg|png)$/i', $path)) {
+$proofUrl = $job['proof_url'] ?? '';
+if ($proofUrl === '' || !preg_match('#^database/proofs/[a-zA-Z0-9_\-]+\.(jpg|jpeg|png)$#i', $proofUrl)) {
   http_response_code(404);
   exit;
 }
-header('Content-Type: ' . (preg_match('/\.png$/i', $path) ? 'image/png' : 'image/jpeg'));
-readfile($path);
+$path = $base . '/' . $proofUrl;
+$realPath = realpath($path);
+$baseReal = realpath($base);
+if (!$realPath || !$baseReal || strpos($realPath, $baseReal) !== 0 || !is_file($realPath)) {
+  http_response_code(404);
+  exit;
+}
+header('Content-Type: ' . (preg_match('/\.png$/i', $realPath) ? 'image/png' : 'image/jpeg'));
+header('X-Content-Type-Options: nosniff');
+readfile($realPath);

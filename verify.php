@@ -5,8 +5,13 @@
  * Displays: reference, customer, vehicle, location, amounts for driver to verify match.
  */
 header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+header('X-XSS-Protection: 1; mode=block');
 
 $sessionId = isset($_GET['session_id']) ? trim((string) $_GET['session_id']) : '';
+if ($sessionId !== '' && !preg_match('/^cs_[a-zA-Z0-9_]{20,}$/', $sessionId)) {
+  $sessionId = '';
+}
 $ref = isset($_GET['ref']) ? preg_replace('/[^0-9]/', '', trim((string) $_GET['ref'])) : '';
 
 $reference = '';

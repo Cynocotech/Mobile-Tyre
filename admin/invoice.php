@@ -4,7 +4,7 @@
  */
 require_once __DIR__ . '/auth.php';
 
-$ref = isset($_GET['ref']) ? trim(preg_replace('/[^0-9]/', '', $_GET['ref'])) : '';
+$ref = isset($_GET['ref']) ? substr(preg_replace('/[^0-9]/', '', trim((string) $_GET['ref'])), 0, 12) : '';
 if (!$ref) {
   header('Location: dashboard.php');
   exit;

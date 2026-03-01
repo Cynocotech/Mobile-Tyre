@@ -102,7 +102,8 @@ require_once __DIR__ . '/header.php';
 
   function escape(s) {
     if (s == null || s === '') return '—';
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    var x = String(s);
+    return x.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
   function loadReports() {

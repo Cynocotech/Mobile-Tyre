@@ -2,9 +2,10 @@
 /**
  * Contact form: forwards to same Telegram bot as send-quote.php.
  * Validates math captcha then sends full name, number and message.
- * Uses same BOT_TOKEN and CHAT_ID as send-quote.php.
+ * Uses dynamic.json for telegramBotToken and telegramChatIds.
  */
 header('Content-Type: application/json');
+header('X-Content-Type-Options: nosniff');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
@@ -20,8 +21,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
   exit;
 }
 
-$BOT_TOKEN = '8798625642:AAHaq1No3a4lcO3tdHDz2jrmWC24VUF_N3s';
-$CHAT_ID   = '1819809453';
+$configPath = __DIR__ . '/dynamic.json';
+$config = is_file($configPath) ? json_decode(file_get_contents($configPath), true) : [];
+$BOT_TOKEN = !empty($config['telegramBotToken']) ? trim((string) $config['telegramBotToken']) : '';
+$CHAT_IDS = [];
+if (!empty($config['telegramChatIds']) && is_array($config['telegramChatIds'])) {
+  foreach ($config['telegramChatIds'] as $id) {
+    $id = trim((string) $id);
+    if ($id !== '') $CHAT_IDS[] = $id;
+  }
+}
 
 $input = json_decode(file_get_contents('php://input'), true) ?: [];
 
@@ -59,24 +68,37 @@ $lines = [
 ];
 $text = implode("\n", $lines);
 
-$url = "https://api.telegram.org/bot{$BOT_TOKEN}/sendMessage";
-$body = json_encode(['chat_id' => $CHAT_ID, 'text' => $text]);
+if (!$BOT_TOKEN || empty($CHAT_IDS)) {
+  http_response_code(500);
+  echo json_encode(['ok' => false, 'error' => 'Server config missing. Set telegramBotToken and telegramChatIds in dynamic.json.']);
+  exit;
+}
 
-$ctx = stream_context_create([
-  'http' => [
-    'method'  => 'POST',
-    'header'  => "Content-Type: application/json\r\n",
-    'content' => $body,
-  ],
-]);
+$sent = false;
+$lastError = 'Telegram error';
+foreach ($CHAT_IDS as $CHAT_ID) {
+  $url = "https://api.telegram.org/bot" . urlencode($BOT_TOKEN) . "/sendMessage";
+  $body = json_encode(['chat_id' => $CHAT_ID, 'text' => $text]);
+  $ctx = stream_context_create([
+    'http' => [
+      'method'  => 'POST',
+      'header'  => "Content-Type: application/json\r\n",
+      'content' => $body,
+    ],
+  ]);
+  $res = @file_get_contents($url, false, $ctx);
+  $data = $res ? json_decode($res, true) : null;
+  if (!empty($data['ok'])) {
+    $sent = true;
+    break;
+  }
+  $lastError = $data['description'] ?? 'Telegram error';
+}
 
-$res = @file_get_contents($url, false, $ctx);
-$data = $res ? json_decode($res, true) : null;
-
-if (!empty($data['ok'])) {
+if ($sent) {
   http_response_code(200);
   echo json_encode(['ok' => true]);
 } else {
   http_response_code(400);
-  echo json_encode(['ok' => false, 'error' => $data['description'] ?? 'Telegram error']);
+  echo json_encode(['ok' => false, 'error' => $lastError]);
 }

@@ -6,7 +6,7 @@ session_start();
 if (empty($_SESSION['admin_ok'])) { http_response_code(403); header('Content-Type: application/json'); echo json_encode(['error' => 'Unauthorized']); exit; }
 header('Content-Type: application/json');
 
-$ref = isset($_GET['ref']) ? trim(preg_replace('/[^0-9]/', '', $_GET['ref'])) : '';
+$ref = isset($_GET['ref']) ? substr(preg_replace('/[^0-9]/', '', trim((string) $_GET['ref'])), 0, 12) : '';
 if ($ref === '') {
   http_response_code(400);
   echo json_encode(['error' => 'Reference required']);
