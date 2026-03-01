@@ -9,6 +9,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
   <title><?php echo htmlspecialchars($pageTitle ?? 'Admin'); ?> | No 5 Tyre Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { theme: { extend: { colors: { safety: '#fede00' } } } }</script>
+  <script src="js/admin-api.js"></script>
 </head>
 <body class="bg-zinc-900 text-zinc-200 antialiased min-h-screen">
   <header class="sticky top-0 z-50 bg-zinc-900/95 backdrop-blur border-b border-zinc-700 shadow">

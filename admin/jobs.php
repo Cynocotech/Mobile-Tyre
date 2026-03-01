@@ -43,11 +43,7 @@ require_once __DIR__ . '/header.php';
   var jobsTbody = document.getElementById('jobs-tbody');
 
   function loadJobs() {
-    fetch('api/drivers.php?action=jobs')
-      .then(function(r) {
-        if (!r.ok) throw new Error('Server error ' + r.status);
-        return r.json();
-      })
+    AdminAPI.fetchWithTimeout('api/drivers.php?action=jobs')
       .then(function(jobs) {
         if (!Array.isArray(jobs)) {
           var err = (jobs && jobs.error) ? jobs.error : 'Unexpected response';
@@ -92,11 +88,7 @@ require_once __DIR__ . '/header.php';
     modal.style.display = 'flex';
     content.classList.add('hidden');
     loading.classList.remove('hidden');
-    fetch('api/order.php?ref=' + encodeURIComponent(ref))
-      .then(function(r) {
-        if (!r.ok) throw new Error('Server error ' + r.status);
-        return r.json();
-      })
+    AdminAPI.fetchWithTimeout('api/order.php?ref=' + encodeURIComponent(ref))
       .then(function(o) {
         loading.classList.add('hidden');
         content.classList.remove('hidden');
@@ -166,50 +158,7 @@ require_once __DIR__ . '/header.php';
   }
 
   function loadDriversForAssign(ref, assignedDriverId) {
-    fetch('api/drivers-list.php').then(function(r) {
-      if (!r.ok) throw new Error('Failed to load drivers');
-      return r.json();
-    }).then(function(d) {
-      var sel = document.getElementById('assign-driver-select');
-      if (!sel) return;
-      var drivers = d.drivers || [];
-      var connectFirst = drivers.filter(function(drv) { return drv.source === 'connect'; });
-      var adminOnly = drivers.filter(function(drv) { return drv.source === 'admin'; });
-      var allDrivers = connectFirst.concat(adminOnly);
-      if (allDrivers.length === 0) {
-        sel.innerHTML = '<option value="">No drivers – add drivers in Drivers or they appear after onboarding</option>';
-      } else {
-        sel.innerHTML = '<option value="">Assign driver…</option>' + allDrivers.map(function(drv) {
-        var selAttr = (assignedDriverId && drv.id === assignedDriverId) ? ' selected' : '';
-        var label = (drv.name || drv.email || drv.id) + (drv.van_make || drv.van_reg ? ' – ' + (drv.van_make || '') + ' ' + (drv.van_reg || '') : '');
-        return '<option value="' + String(drv.id).replace(/"/g,'&quot;') + '"' + selAttr + '>' + label.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</option>';
-      }).join('');
-      }
-      var btn = document.getElementById('assign-driver-btn');
-      if (btn) btn.onclick = function() {
-        var did = sel.value;
-        if (!did) { alert('Select a driver first.'); return; }
-        btn.disabled = true;
-        btn.textContent = 'Assigning…';
-        fetch('api/assign-driver.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reference: ref, driver_id: did })
-        }).then(function(r) { return r.json(); }).then(function(res) {
-          btn.disabled = false;
-          btn.textContent = 'Assign';
-          if (res.ok) showJobDetail(ref);
-          else alert(res.error || 'Failed to assign driver');
-        }).catch(function() {
-          btn.disabled = false;
-          btn.textContent = 'Assign';
-          alert('Network error. Try again.');
-        });
-      };
-    }).catch(function() {
-      var sel = document.getElementById('assign-driver-select');
-      if (sel) sel.innerHTML = '<option value="">Failed to load drivers</option>';
-    });
+    AdminAPI.loadDriversForAssign(ref, assignedDriverId, showJobDetail);
   }
 
   function closeJobModal() {
