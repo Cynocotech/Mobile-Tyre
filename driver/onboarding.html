@@ -60,9 +60,16 @@
         </div>
         <p id="form-status" class="text-sm hidden"></p>
         <button type="submit" id="submit-btn" class="w-full px-4 py-3 bg-safety text-zinc-900 font-bold rounded-lg hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety">
-          Create account & continue to Stripe
+          Create account & set up payouts
         </button>
       </form>
+    </div>
+
+    <!-- Embedded Stripe Connect onboarding (shown after form) -->
+    <div id="step-stripe" class="hidden rounded-2xl border border-zinc-700 bg-zinc-800/50 p-6">
+      <h2 class="text-lg font-semibold text-white mb-2">Set up your payout account</h2>
+      <p class="text-zinc-400 text-sm mb-4">Complete the form below to receive payments. All done on this page.</p>
+      <div id="connect-onboarding-container" class="min-h-[400px]"></div>
     </div>
   </main>
 
@@ -70,6 +77,16 @@
   (function() {
     var form = document.getElementById('driver-register-form');
     var status = document.getElementById('form-status');
+    var stepForm = document.getElementById('step-form');
+    var stepStripe = document.getElementById('step-stripe');
+    var container = document.getElementById('connect-onboarding-container');
+
+    function showError(msg) {
+      status.textContent = msg;
+      status.classList.remove('hidden', 'text-green-400');
+      status.classList.add('text-red-400');
+    }
+
     form.addEventListener('submit', function(e) {
       e.preventDefault();
       status.classList.add('hidden');
@@ -91,21 +108,61 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       }).then(function(r) { return r.json(); }).then(function(d) {
-        if (d.url) {
-          window.location.href = d.url;
+        if (d.accountId && d.driverId) {
+          stepForm.classList.add('hidden');
+          stepStripe.classList.remove('hidden');
+          startEmbeddedOnboarding(d.accountId, d.driverId);
         } else {
-          status.textContent = d.error || 'Something went wrong.';
-          status.classList.remove('hidden', 'text-green-400');
-          status.classList.add('text-red-400');
+          showError(d.error || 'Something went wrong.');
           btn.disabled = false;
         }
       }).catch(function() {
-        status.textContent = 'Network error. Try again.';
-        status.classList.remove('hidden', 'text-green-400');
-        status.classList.add('text-red-400');
+        showError('Network error. Try again.');
         btn.disabled = false;
       });
     });
+
+    function startEmbeddedOnboarding(accountId, driverId) {
+      fetch('api/config.php').then(function(r) { return r.json(); }).then(function(cfg) {
+        var pk = (cfg.stripePublishableKey || '').trim();
+        if (!pk) {
+          container.innerHTML = '<p class="text-red-400">Stripe not configured. Contact support.</p>';
+          return;
+        }
+        container.innerHTML = '<p class="text-zinc-400">Loading payout form…</p>';
+        var fetchClientSecret = function() {
+          return fetch('api/account-session.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ account: accountId })
+          }).then(function(r) { return r.json(); }).then(function(d) {
+            if (d.client_secret) return d.client_secret;
+            throw new Error(d.error || 'Could not load payout form');
+          });
+        };
+        window.StripeConnect = window.StripeConnect || {};
+        window.StripeConnect.onLoad = function() {
+          var instance = window.StripeConnect.init({
+            publishableKey: pk,
+            fetchClientSecret: fetchClientSecret,
+            appearance: { variables: { colorPrimary: '#fede00' } }
+          });
+          var onboarding = instance.create('account-onboarding');
+          onboarding.setOnExit(function() {
+            window.location.href = 'connect-return.php?state=' + encodeURIComponent(driverId);
+          });
+          container.innerHTML = '';
+          container.appendChild(onboarding);
+        };
+        var script = document.createElement('script');
+        script.src = 'https://connect-js.stripe.com/v1.0/connect.js';
+        script.async = true;
+        script.onerror = function() {
+          container.innerHTML = '<p class="text-red-400">Failed to load. Check your connection.</p>';
+        };
+        document.head.appendChild(script);
+      });
+    }
   })();
   </script>
 </body>

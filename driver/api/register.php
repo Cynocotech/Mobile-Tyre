@@ -41,13 +41,7 @@ if (!$stripeSecretKey) {
 }
 
 // Create Stripe Connect Express account
-$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$base = rtrim($scheme . '://' . $host . dirname($_SERVER['SCRIPT_NAME'], 2), '/');
-$returnUrl = $base . '/driver/connect-return.php';
-$refreshUrl = $base . '/driver/onboarding.html';
-
-$ch = curl_init('https://api.stripe.com/v1/accounts');
+$ch = curl_init('https://api.stripe.com/v1/accounts');'https://api.stripe.com/v1/accounts');
 curl_setopt_array($ch, [
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_POST => true,
@@ -76,33 +70,6 @@ if ($code !== 200 || empty($acc['id'])) {
 
 $stripeAccountId = $acc['id'];
 
-// Create account link for onboarding
-$ch2 = curl_init('https://api.stripe.com/v1/account_links');
-curl_setopt_array($ch2, [
-  CURLOPT_RETURNTRANSFER => true,
-  CURLOPT_POST => true,
-  CURLOPT_HTTPHEADER => [
-    'Authorization: Bearer ' . $stripeSecretKey,
-    'Content-Type: application/x-www-form-urlencoded',
-    'Stripe-Version: 2024-11-20.acacia',
-  ],
-  CURLOPT_POSTFIELDS => http_build_query([
-    'account' => $stripeAccountId,
-    'type' => 'account_onboarding',
-    'return_url' => $returnUrl,
-    'refresh_url' => $refreshUrl,
-  ]),
-]);
-$linkResp = curl_exec($ch2);
-$linkData = $linkResp ? json_decode($linkResp, true) : null;
-curl_close($ch2);
-
-if (empty($linkData['url'])) {
-  http_response_code(500);
-  echo json_encode(['error' => 'Could not create onboarding link.']);
-  exit;
-}
-
 // Save driver
 $driverId = 'd_' . bin2hex(random_bytes(8));
 $db = getDriverDb();
@@ -123,26 +90,8 @@ $db[$driverId] = [
 ];
 saveDriverDb($db);
 
-// Pass driver id in state so return URL can resume
-$returnWithState = $returnUrl . '?state=' . urlencode($driverId);
-$ch3 = curl_init('https://api.stripe.com/v1/account_links');
-curl_setopt_array($ch3, [
-  CURLOPT_RETURNTRANSFER => true,
-  CURLOPT_POST => true,
-  CURLOPT_HTTPHEADER => [
-    'Authorization: Bearer ' . $stripeSecretKey,
-    'Content-Type: application/x-www-form-urlencoded',
-    'Stripe-Version: 2024-11-20.acacia',
-  ],
-  CURLOPT_POSTFIELDS => http_build_query([
-    'account' => $stripeAccountId,
-    'type' => 'account_onboarding',
-    'return_url' => $returnWithState,
-    'refresh_url' => $refreshUrl,
-  ]),
+// Return account + driver IDs for embedded onboarding (no redirect)
+echo json_encode([
+  'accountId' => $stripeAccountId,
+  'driverId' => $driverId,
 ]);
-$linkResp2 = curl_exec($ch3);
-$linkData2 = $linkResp2 ? json_decode($linkResp2, true) : null;
-curl_close($ch3);
-
-echo json_encode(['url' => $linkData2['url'] ?? $linkData['url']]);

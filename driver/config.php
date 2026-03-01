@@ -6,6 +6,7 @@ $base = dirname(__DIR__);
 $configPath = $base . '/dynamic.json';
 $config = is_file($configPath) ? json_decode(file_get_contents($configPath), true) : [];
 $stripeSecretKey = getenv('STRIPE_SECRET_KEY') ?: ($config['stripeSecretKey'] ?? '');
+$GLOBALS['stripeSecretKey'] = $stripeSecretKey;
 
 define('DRIVER_DB_PATH', $base . '/database/drivers.json');
 define('DRIVER_SESSION_KEY', 'driver_id');

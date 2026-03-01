@@ -473,8 +473,19 @@ $qrCodeUrl = $verifyUrl ? 'https://api.qrserver.com/v1/create-qr-code/?size=120x
       </div>
     </div>
 
+    <?php
+    $balancePence = ($estimateTotal !== '' && (float) $estimateTotal > 0 && $amountTotal > 0)
+      ? (int) round(max(0, (float) $estimateTotal - $amountTotal / 100) * 100)
+      : 0;
+    $hasBalance = $balancePence >= 50;
+    ?>
     <div class="flex flex-col sm:flex-row gap-3 justify-center no-print">
-      <button type="button" onclick="window.print()" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-safety text-zinc-900 font-bold rounded-lg hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900 transition-colors">
+      <?php if ($hasBalance): ?>
+      <a href="pay-balance.php?reference=<?php echo htmlspecialchars($reference ?: ''); ?><?php echo $sessionId ? '&session_id=' . urlencode($sessionId) : ''; ?>" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-safety text-zinc-900 font-bold rounded-lg hover:bg-[#e5c900] focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900 transition-colors">
+        Pay remaining balance (<?php echo '£' . number_format($balancePence / 100, 2); ?>)
+      </a>
+      <?php endif; ?>
+      <button type="button" onclick="window.print()" class="inline-flex items-center justify-center gap-2 px-6 py-3 <?php echo $hasBalance ? 'border-2 border-zinc-600 text-zinc-300' : 'bg-safety text-zinc-900'; ?> font-bold rounded-lg hover:border-safety hover:text-safety focus:outline-none focus:ring-2 focus:ring-safety focus:ring-offset-2 focus:ring-offset-zinc-900 transition-colors">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293L17 7.586A2 2 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>
         Download PDF
       </button>

@@ -176,6 +176,30 @@ if (!empty($input['vehicle_wheels']) && preg_match('/^[1-4]$/', (string) $input[
   $payload['metadata']['vehicle_wheels'] = $input['vehicle_wheels'];
 }
 
+// Payment split: when assigned_driver_id provided and driver has Stripe Connect, split 80% driver / 20% platform
+$assignedDriverId = isset($input['assigned_driver_id']) ? trim((string) $input['assigned_driver_id']) : '';
+$stripeAccountId = null;
+if ($assignedDriverId !== '' && preg_match('/^d_[a-f0-9]+$/', $assignedDriverId)) {
+  $driversPath = __DIR__ . '/database/drivers.json';
+  if (is_file($driversPath)) {
+    $drivers = @json_decode(file_get_contents($driversPath), true);
+    if (is_array($drivers) && isset($drivers[$assignedDriverId])) {
+      $driver = $drivers[$assignedDriverId];
+      if (!empty($driver['stripe_account_id']) && !empty($driver['stripe_onboarding_complete'])) {
+        $stripeAccountId = $driver['stripe_account_id'];
+        $payload['metadata']['assigned_driver_id'] = $assignedDriverId;
+      }
+    }
+  }
+}
+if ($stripeAccountId) {
+  $platformFeePence = (int) ceil($amountPence * 20 / 100);
+  $payload['payment_intent_data'] = [
+    'application_fee_amount' => $platformFeePence,
+    'transfer_data' => ['destination' => $stripeAccountId],
+  ];
+}
+
 // Stripe v1 API expects application/x-www-form-urlencoded, not JSON
 $postFields = http_build_query($payload);
 

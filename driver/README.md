@@ -4,7 +4,7 @@ Driver onboarding, login, dashboard, and job management.
 
 ## Pages
 
-- **onboarding.html** – New driver sign-up (name, email, licence, van) + Stripe Connect
+- **onboarding.html** – New driver sign-up (name, email, licence, van) + embedded Stripe Connect payout setup (all on-site)
 - **login.php** – Email/password or PIN login
 - **dashboard.php** – Assigned jobs, update location, upload proof, mark cash paid
 - **profile.php** – View driver details
@@ -12,7 +12,9 @@ Driver onboarding, login, dashboard, and job management.
 
 ## APIs
 
-- `api/register.php` – Create driver + Stripe Connect account
+- `api/register.php` – Create driver + Stripe Connect account (returns accountId, driverId for embedded onboarding)
+- `api/account-session.php` – Create AccountSession for Connect embedded components
+- `api/config.php` – Returns stripePublishableKey for client-side
 - `api/jobs.php` – List jobs (GET), location/proof/cash_paid (POST)
 - `api/location.php` – Update driver’s general location
 
